@@ -36,16 +36,19 @@ export class JobsService {
       location: 'Remote',
       salary: 2000,
     };
-  }
-
-  create(createJobDto: any) {
+  } 
+ 
+  create(createJobDto: unknown) { 
     return {
+
+
       message: 'Job created',
+
       data: createJobDto,
     };
   }
 
-  update(id: number, updateJobDto: any) {
+  update(id: number, updateJobDto: unknown) {
     return {
       message: `Job ${id} updated`,
       data: updateJobDto,
