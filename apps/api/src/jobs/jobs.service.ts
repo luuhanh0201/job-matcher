@@ -41,9 +41,10 @@ export class JobsService {
   create(createJobDto: unknown) {
     return {
       message: 'Job created',
-
       data: createJobDto,
     };
+
+    
   }
 
   update(id: number, updateJobDto: unknown) {
