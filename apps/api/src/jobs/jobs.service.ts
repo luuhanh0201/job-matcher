@@ -43,8 +43,6 @@ export class JobsService {
       message: 'Job created',
       data: createJobDto,
     };
-
-    
   }
 
   update(id: number, updateJobDto: unknown) {
