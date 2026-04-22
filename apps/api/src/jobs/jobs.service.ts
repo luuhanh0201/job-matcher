@@ -6,7 +6,7 @@ export class JobsService {
     return [
       {
         id: 1,
-        title: 'Frontend Developer',
+        title: 'Frontend Developer 123',
         company: 'OpenAI',
         location: 'Remote',
         salary: 2000,

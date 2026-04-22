@@ -7,7 +7,7 @@ type Job = {
 };
 
 async function getJobs(): Promise<Job[]> {
-  const res = await fetch('http://localhost:3000/api/jobs', {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs`, {
     cache: 'no-store',
   });
 
@@ -20,7 +20,7 @@ async function getJobs(): Promise<Job[]> {
 
 export default async function Home() {
   const jobs = await getJobs();
-
+console.log(process.env.NEXT_PUBLIC_API_URL);
   return (
     <main style={{ padding: '24px' }}>
       <h1>Job Matcher</h1>
