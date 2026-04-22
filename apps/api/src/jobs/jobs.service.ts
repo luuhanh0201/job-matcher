@@ -36,12 +36,10 @@ export class JobsService {
       location: 'Remote',
       salary: 2000,
     };
-  } 
- 
-  create(createJobDto: unknown) { 
+  }
+
+  create(createJobDto: unknown) {
     return {
-
-
       message: 'Job created',
 
       data: createJobDto,
