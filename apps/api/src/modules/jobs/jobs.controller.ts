@@ -8,10 +8,14 @@ import {
   Post,
 } from '@nestjs/common';
 import { JobsService } from './jobs.service';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('jobs')
 export class JobsController {
-  constructor(private readonly jobsService: JobsService) {}
+  constructor(
+    private readonly jobsService: JobsService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post()
   create(@Body() createJobDto: any) {
@@ -20,6 +24,11 @@ export class JobsController {
 
   @Get()
   findAll() {
+    console.log(
+      'Check ',
+      this.configService.get('NODE_ENV', { infer: true }) === 'development',
+    );
+
     return this.jobsService.findAll();
   }
 

@@ -16,7 +16,6 @@ export const getDatabaseConfig = (
     configService.get('DB_NAME', { infer: true });
   const useSsl =
     String(configService.get('DB_SSL', { infer: true }) ?? 'false') === 'true';
-
   return {
     type: 'postgres',
     host: configService.get('DB_HOST', { infer: true }),
@@ -25,7 +24,7 @@ export const getDatabaseConfig = (
     password: configService.get('DB_PASSWORD', { infer: true }),
     database,
     autoLoadEntities: true,
-    synchronize: isDev,
+    synchronize: false,
     logging: isDev,
     ssl: useSsl ? { rejectUnauthorized: false } : false,
   };
