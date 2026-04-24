@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import {
   Body,
   Controller,
@@ -7,8 +8,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { JobsService } from './jobs.service';
-import { ConfigService } from '@nestjs/config';
+import { JobsService } from '@/modules/jobs/jobs.service';
 
 @Controller('jobs')
 export class JobsController {

@@ -1,21 +1,23 @@
+import { EmploymentType, JobStatus, SeniorityLevel } from '@/enum/index.enum';
+import { User } from '@/modules/user/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import {
-  EmploymentType,
-  JobStatus,
-  SeniorityLevel,
-} from '../../../../enum/index.enum';
 
 @Entity('jobs')
 export class Job {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @OneToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
+  createdBy!: User;
   @Column({ nullable: false })
   title!: string;
 

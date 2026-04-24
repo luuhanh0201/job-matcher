@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { JobsModule } from './modules/jobs/jobs.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { getDatabaseConfig } from 'config/database.config';
-import { UserModule } from './modules/user/user.module';
+import { AppController } from '@/app.controller';
+import { AppService } from '@/app.service';
+import { getDatabaseConfig } from '@/config/database.config';
+import { JobsModule } from '@/modules/jobs/jobs.module';
+import { UserModule } from '@/modules/user/user.module';
 
 @Module({
   imports: [

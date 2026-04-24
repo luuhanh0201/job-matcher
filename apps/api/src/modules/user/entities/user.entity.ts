@@ -1,4 +1,4 @@
-import { UserRole, UserStatus } from 'enum/index.enum';
+import { UserRole, UserStatus } from '@/enum/index.enum';
 import {
   Column,
   CreateDateColumn,
