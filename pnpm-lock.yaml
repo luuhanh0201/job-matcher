@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@nestjs/mapped-types':
+        specifier: '*'
+        version: 2.1.1(@nestjs/common@11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)
     devDependencies:
       '@nestjs/cli':
         specifier: ^11.0.21

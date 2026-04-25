@@ -23,7 +23,11 @@
     "migration:generate": "node -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate src/migrations/Migration -d typeorm.config.ts",
     "migration:show": "node -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:show -d typeorm.config.ts",
     "migration:run": "node -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d typeorm.config.ts",
-    "migration:revert": "node -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d typeorm.config.ts"
+    "migration:revert": "node -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d typeorm.config.ts",
+    "migration:revert:all": "node -r ts-node/register -r tsconfig-paths/register -e \"const {DataSource}=require('typeorm'); const ds=require('./typeorm.config').default; ds.initialize().then(async()=>{let r=1;while(r){try{await ds.undoLastMigration();r++}catch{break}}await ds.destroy();}).catch(console.error)\"",
+    "migration:drop": "node -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:drop -d typeorm.config.ts",
+    "migration:sync": "node -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:sync -d typeorm.config.ts",
+    "seed:jobs": "node -r ts-node/register -r tsconfig-paths/register src/scripts/seed-jobs.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

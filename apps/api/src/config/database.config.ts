@@ -26,8 +26,8 @@ export const getDatabaseConfig = (
     database,
     autoLoadEntities: true,
     synchronize: false,
-    entities: ['src/**/*.entity.ts'],
-    migrations: ['src/migrations/*.ts'],
+    entities: [__dirname + '/**/*.entity{.ts,.js}'],
+    migrations: [__dirname + '/migrations/*{.ts,.js}'],
     logging: isDev,
     ssl: useSsl ? { rejectUnauthorized: false } : false,
   };

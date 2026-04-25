@@ -24,11 +24,6 @@ export class JobsController {
 
   @Get()
   findAll() {
-    console.log(
-      'Check ',
-      this.configService.get('NODE_ENV', { infer: true }) === 'development',
-    );
-
     return this.jobsService.findAll();
   }
 

@@ -1,31 +1,19 @@
 import { Injectable } from '@nestjs/common';
-
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from '../user/entities/user.entity';
+import { Job } from './entities/job.entity';
+import { Repository } from 'typeorm';
 @Injectable()
 export class JobsService {
-  findAll() {
-    return [
-      {
-        id: 1,
-        title: 'Frontend Developer 123',
-        company: 'OpenAI',
-        location: 'Remote',
-        salary: 2000,
-      },
-      {
-        id: 2,
-        title: 'Backend Developer',
-        company: 'Google',
-        location: 'Hanoi',
-        salary: 2500,
-      },
-      {
-        id: 3,
-        title: 'Fullstack Developer',
-        company: 'Meta',
-        location: 'Ho Chi Minh City',
-        salary: 3000,
-      },
-    ];
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Job)
+    private readonly jobRepository: Repository<Job>,
+  ) {}
+  async findAll(): Promise<Job[]> {
+    const jobs = await this.jobRepository.find();
+    return jobs;
   }
 
   findOne(id: number) {
