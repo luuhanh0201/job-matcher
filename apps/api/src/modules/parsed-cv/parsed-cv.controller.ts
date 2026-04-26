@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { ParsedCvService } from './parsed-cv.service';
 import { CreateParsedCvDto } from './dto/create-parsed-cv.dto';
 import { UpdateParsedCvDto } from './dto/update-parsed-cv.dto';
@@ -23,7 +31,10 @@ export class ParsedCvController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateParsedCvDto: UpdateParsedCvDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateParsedCvDto: UpdateParsedCvDto,
+  ) {
     return this.parsedCvService.update(+id, updateParsedCvDto);
   }
 

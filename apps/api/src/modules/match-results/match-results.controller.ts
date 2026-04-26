@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { MatchResultsService } from './match-results.service';
 import { CreateMatchResultDto } from './dto/create-match-result.dto';
 import { UpdateMatchResultDto } from './dto/update-match-result.dto';
@@ -23,7 +31,10 @@ export class MatchResultsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMatchResultDto: UpdateMatchResultDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateMatchResultDto: UpdateMatchResultDto,
+  ) {
     return this.matchResultsService.update(+id, updateMatchResultDto);
   }
 

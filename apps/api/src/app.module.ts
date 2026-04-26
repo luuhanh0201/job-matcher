@@ -9,6 +9,7 @@ import { UserModule } from '@/modules/user/user.module';
 import { CvModule } from './modules/cv/cv.module';
 import { ParsedCvModule } from './modules/parsed-cv/parsed-cv.module';
 import { MatchResultsModule } from './modules/match-results/match-results.module';
+import { UploadCloudinaryModule } from './modules/upload-cloudinary/upload-cloudinary.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { MatchResultsModule } from './modules/match-results/match-results.module
     CvModule,
     ParsedCvModule,
     MatchResultsModule,
+    UploadCloudinaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
