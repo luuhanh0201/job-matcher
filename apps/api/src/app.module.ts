@@ -10,6 +10,7 @@ import { CvModule } from './modules/cv/cv.module';
 import { ParsedCvModule } from './modules/parsed-cv/parsed-cv.module';
 import { MatchResultsModule } from './modules/match-results/match-results.module';
 import { UploadCloudinaryModule } from './modules/upload-cloudinary/upload-cloudinary.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -28,8 +29,16 @@ import { UploadCloudinaryModule } from './modules/upload-cloudinary/upload-cloud
     ParsedCvModule,
     MatchResultsModule,
     UploadCloudinaryModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  // configure(consumer: MiddlewareConsumer) {
+  //   consumer.apply(LoggingMiddleware).forRoutes({
+  //     path: '/jobs',
+  //     method: RequestMethod.ALL,
+  //   });
+  // }
+}

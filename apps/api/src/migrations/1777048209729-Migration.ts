@@ -13,6 +13,10 @@ export class Migration1777048209729 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "jobs" ADD CONSTRAINT "FK_2d210533bd8823b36702a26dd43" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
+    await queryRunner.query(
+      `ALTER TABLE public.users
+ALTER COLUMN phone DROP NOT NULL;`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

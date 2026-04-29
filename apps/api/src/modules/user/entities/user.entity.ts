@@ -21,11 +21,11 @@ export class User {
   @Column({ name: 'full_name', nullable: false })
   fullName!: string;
 
-  @Column({ name: 'phone' })
-  phone!: string;
+  @Column({ name: 'phone', nullable: true })
+  phone?: string;
 
   @Column({ name: 'avatar', nullable: true })
-  avatar!: string;
+  avatar?: string;
 
   @Column({
     name: 'role',

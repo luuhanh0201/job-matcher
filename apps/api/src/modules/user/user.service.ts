@@ -1,31 +1,44 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from '@/modules/user/dto/create-user.dto';
-import { UpdateUserDto } from '@/modules/user/dto/update-user.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from './entities/user.entity';
+import { Repository } from 'typeorm';
+import bcrypt from 'bcryptjs';
 @Injectable()
 export class UserService {
-  create(createUserDto: CreateUserDto) {
-    return {
-      message: 'This action adds a new user',
-      data: createUserDto,
-    };
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
+  async create(userData: CreateUserDto): Promise<User> {
+    const passwordHash = await bcrypt.hash(userData.password, 10);
+
+    const user = this.userRepository.create(userData);
+    user.passwordHash = passwordHash;
+    return this.userRepository.save({
+      ...user,
+    });
   }
 
-  findAll() {
-    return `This action returns all user`;
+  findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { email } });
+  }
+  async validateUser(email: string, password: string): Promise<User | null> {
+    const user = await this.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('Sai email hoặc mật khẩu');
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Sai email hoặc mật khẩu');
+    }
+    return user;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return {
-      message: `This action updates a #${id} user`,
-      data: updateUserDto,
-    };
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async updateLastLoginAt(userId: string) {
+    return this.userRepository.update(userId, {
+      lastLoginAt: new Date(),
+    });
   }
 }

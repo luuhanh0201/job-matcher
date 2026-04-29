@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Req,
 } from '@nestjs/common';
 import { JobsService } from '@/modules/jobs/jobs.service';
 
@@ -23,7 +24,8 @@ export class JobsController {
   }
 
   @Get()
-  findAll() {
+  findAll(@Req() req: Request & { user?: string }) {
+    console.log(req.user);
     return this.jobsService.findAll();
   }
 
