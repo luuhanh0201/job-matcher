@@ -7,6 +7,8 @@ import { PassportModule } from '@nestjs/passport';
 import { LocalStrategy } from './passports/local.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './passports/jwt.strategy';
+import { UserSession } from './entities/user-session.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { JwtStrategy } from './passports/jwt.strategy';
         signOptions: { expiresIn: '1h' },
       }),
     }),
+    TypeOrmModule.forFeature([UserSession]),
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy],

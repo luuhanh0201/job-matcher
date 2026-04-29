@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from '@/modules/user/dto/create-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -36,6 +37,13 @@ export class UserService {
     return user;
   }
 
+  findById(userId: string): Promise<User | null> {
+    const user = this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('Người dùng không tồn tại');
+    }
+    return user;
+  }
   async updateLastLoginAt(userId: string) {
     return this.userRepository.update(userId, {
       lastLoginAt: new Date(),
