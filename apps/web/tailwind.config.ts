@@ -8,7 +8,17 @@ const config: Config = {
     './src/hooks/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      color:{
+          primary: "var(--primary-blue)",
+          primaryDark: "var(--blue-dark)",
+          purple: "var(--accent-purple)",
+          bg: "var(--gray-100)",
+          border: "var(--gray-200)",
+          muted: "var(--gray-500)",
+          text: "var(--gray-900)",
+      }
+    },
   },
   plugins: [],
 };
