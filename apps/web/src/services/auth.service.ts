@@ -22,11 +22,13 @@ export type LoginResponse = {
   refreshToken: string;
 };
 
+export type UserRole = "CANDIDATE" | "RECRUITER" | "ADMIN";
+
 export type AuthProfile = {
   id: string;
   email: string;
   fullName: string;
-  role: string;
+  role: UserRole;
 };
 
 type AuthRequestOptions = Omit<RequestInit, "headers"> & {

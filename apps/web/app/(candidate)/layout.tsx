@@ -1,18 +1,26 @@
 import type { Metadata } from 'next';
+import { CandidateHeader } from '@/components/layouts/candidate-header';
+import { CandidateSidebar } from '@/components/layouts/candidate-sidebar';
+import { AuthProvider } from '@/context/auth-context';
 
 export const metadata: Metadata = {
   title: 'Job Matcher',
 };
 
-export default function DashboardLayout({
+export default function CandidateLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background">
-      {/* TODO: Navbar / Sidebar component */}
-      <main className="container mx-auto px-4 py-6">{children}</main>
-    </div>
+    <AuthProvider>
+      <div className="min-h-screen bg-(--gray-100)">
+        <CandidateHeader />
+        <CandidateSidebar />
+        <main className="ml-60 pt-14">
+          <div className="p-4">{children}</div>
+        </main>
+      </div>
+    </AuthProvider>
   );
 }

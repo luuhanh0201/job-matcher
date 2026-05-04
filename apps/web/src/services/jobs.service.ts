@@ -1,11 +1,26 @@
 import { authFetchJson, protectedFetchJson } from "@/services/auth.service";
 
+export type EmploymentType = "FULL_TIME" | "PART_TIME" | "CONTRACT" | "INTERN" | "FREELANCE";
+export type SeniorityLevel = "INTERN" | "JUNIOR" | "MID" | "SENIOR" | "LEAD";
+export type JobStatus = "DRAFT" | "OPEN" | "CLOSED";
+
 export type Job = {
-  id: number;
+  id: string;
   title: string;
+  department: string;
+  employmentType: EmploymentType;
+  seniorityLevel: SeniorityLevel;
   company: string;
   location: string;
-  salary: number;
+  salaryMin: number;
+  salaryMax: number;
+  description: string;
+  requirements: string;
+  status: JobStatus;
+  publishedAt: string;
+  expiredAt: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type JobPayload = Record<string, unknown>;
