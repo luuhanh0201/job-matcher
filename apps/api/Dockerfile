@@ -20,4 +20,4 @@ WORKDIR /app/apps/api
 
 EXPOSE 3001
 
-CMD ["pnpm", "start:dev"]
+CMD ["node", "/app/node_modules/@nestjs/cli/bin/nest.js", "start", "--watch"]

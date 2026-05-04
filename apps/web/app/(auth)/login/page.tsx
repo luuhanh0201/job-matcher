@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { FcGoogle } from "react-icons/fc";
 import type { LucideIcon } from "lucide-react";
 import { BriefcaseBusiness, ShieldCheck, Sparkles } from "lucide-react";
@@ -21,7 +21,7 @@ const features: { icon: LucideIcon; text: string }[] = [
   { icon: Sparkles, text: "Nhận đề xuất CV và job phù hợp" },
 ];
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [errors, setErrors] = useState<LoginFieldErrors>({});
@@ -209,5 +209,12 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </main>
+  );
+}
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageContent />
+    </Suspense>
   );
 }
