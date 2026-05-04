@@ -28,11 +28,21 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// Module-level cache — survives client-side navigations
+let cachedUser: AuthProfile | null = null;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [state, setState] = useState<AuthState>({ status: "loading" });
+  const [state, setState] = useState<AuthState>(
+    cachedUser
+      ? { status: "authenticated", user: cachedUser }
+      : { status: "loading" },
+  );
 
   useEffect(() => {
+    // Already resolved from cache — no need to re-fetch
+    if (cachedUser) return;
+
     const accessToken =
       typeof window !== "undefined"
         ? localStorage.getItem("accessToken")
@@ -46,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getProfile()
       .then((user) => {
+        cachedUser = user;
         setState({ status: "authenticated", user });
       })
       .catch(() => {
@@ -57,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     await authLogout().catch(() => {});
+    cachedUser = null;
     setState({ status: "unauthenticated" });
     router.replace("/login");
   }, [router]);
