@@ -1,3 +1,4 @@
+import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,6 +12,7 @@ import { ParsedCvModule } from './modules/parsed-cv/parsed-cv.module';
 import { MatchResultsModule } from './modules/match-results/match-results.module';
 import { UploadCloudinaryModule } from './modules/upload-cloudinary/upload-cloudinary.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CvProcessingModule } from './cv-processing/cv-processing.module';
 
 @Module({
   imports: [
@@ -23,6 +25,19 @@ import { AuthModule } from './modules/auth/auth.module';
       inject: [ConfigService],
       useFactory: getDatabaseConfig,
     }),
+    BullModule.forRoot({
+      connection: {
+        username: 'default',
+        host:
+          process.env.REDIS_CLOUD_HOST || process.env.REDIS_HOST || 'localhost',
+        port: parseInt(
+          process.env.REDIS_CLOUD_PORT || process.env.REDIS_PORT || '15982',
+          10,
+        ),
+        password:
+          process.env.REDIS_CLOUD_PASSWORD || process.env.REDIS_PASSWORD,
+      },
+    }),
     JobsModule,
     UserModule,
     CvModule,
@@ -30,6 +45,7 @@ import { AuthModule } from './modules/auth/auth.module';
     MatchResultsModule,
     UploadCloudinaryModule,
     AuthModule,
+    CvProcessingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
