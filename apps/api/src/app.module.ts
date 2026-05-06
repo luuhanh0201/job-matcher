@@ -27,7 +27,7 @@ import { CvProcessingModule } from './cv-processing/cv-processing.module';
     }),
     BullModule.forRoot({
       connection: {
-        username: 'default',
+        username: process.env.REDIS_CLOUD_USERNAME || '',
         host:
           process.env.REDIS_CLOUD_HOST || process.env.REDIS_HOST || 'localhost',
         port: parseInt(
