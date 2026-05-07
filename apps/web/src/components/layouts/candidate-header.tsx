@@ -1,11 +1,12 @@
 "use client";
 
 import { Bell, Briefcase, Home, Search, ShoppingBag, Upload } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth, getInitials } from "@/context/auth-context";
-
+import Logo from "@/components/images/Logo.svg";
 export function CandidateHeader() {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -15,10 +16,7 @@ export function CandidateHeader() {
     <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center border-b border-(--gray-200) bg-white px-4 shadow-sm">
       {/* Logo */}
       <Link href="/jobs" className="flex shrink-0 items-center gap-2 mr-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-(--primary-blue) text-sm font-black text-white">
-          JM
-        </div>
-        <span className="hidden text-base font-black text-(--gray-900) sm:block">Job Matcher</span>
+        <Image src={Logo} alt="Logo" className="h-32 w-36" priority />
       </Link>
 
       {/* Search */}
