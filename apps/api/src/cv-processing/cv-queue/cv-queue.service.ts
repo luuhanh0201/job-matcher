@@ -10,7 +10,7 @@ export class CvQueueService {
     const client = await this.cvQueue.client;
     const pong = await client.ping();
     const job = await this.cvQueue.add('test', { hello: 'world' });
-    console.log('Job added:', job.id);
+    // console.log('Job added:', job.id);
 
     return {
       pong,
@@ -21,9 +21,9 @@ export class CvQueueService {
 
   async addCvProcessingJob(cvDocumentId: string) {
     const job = await this.cvQueue.add('process-cv', { cvDocumentId });
-    console.log(
-      `Added CV processing job for CV ID ${cvDocumentId} with job ID ${job.id}`,
-    );
+    // console.log(
+    //   `Added CV processing job for CV ID ${cvDocumentId} with job ID ${job.id}`,
+    // );
     return {
       jobId: job.id,
       status: 'queued',
