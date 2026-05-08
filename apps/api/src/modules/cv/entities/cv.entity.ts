@@ -4,7 +4,8 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
-  OneToOne,
+  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -22,9 +23,18 @@ export enum UploadStatus {
 export class Cv {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
-  @OneToOne(() => User)
+  @ManyToOne(() => User, {
+    onDelete: 'CASCADE',
+    nullable: false,
+  })
   @JoinColumn({ name: 'user_id' })
-  userId!: User;
+  user!: User;
+  @OneToMany(() => Cv, (cv) => cv.user)
+  cvs!: Cv[];
+  @Column({ name: 'user_id' })
+  userId!: string;
+  @Column({ name: 'public_id', unique: true, nullable: false })
+  publicId!: string;
   @Column({ name: 'file_name', nullable: false })
   fileName!: string;
   @Column({ name: 'file_type', type: 'enum', enum: FileType })

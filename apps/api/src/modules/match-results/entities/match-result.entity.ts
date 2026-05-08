@@ -1,5 +1,5 @@
 import { Job } from '@/modules/jobs/entities/job.entity';
-import { ParsedCv } from '@/modules/parsed-cv/entities/parsed-cv.entity';
+import { ParsedCv } from '@/modules/cv/entities/parsed-cv.entity';
 import {
   Column,
   CreateDateColumn,

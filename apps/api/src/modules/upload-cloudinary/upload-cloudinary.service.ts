@@ -9,7 +9,6 @@ import {
   type CloudinaryClient,
   type CloudinaryDestroyResponse,
 } from './upload-cloudinary.config';
-
 const UPLOAD_FOLDER = 'job-matcher/uploads';
 export interface UploadResult {
   public_id: string;
@@ -28,10 +27,7 @@ export class UploadCloudinaryService {
     private readonly cloudinaryClient: CloudinaryClient,
   ) {}
 
-  async uploadPdf(file: {
-    buffer: Buffer;
-    originalname: string;
-  }): Promise<UploadResult> {
+  async uploadPdf(file: Express.Multer.File): Promise<UploadResult> {
     try {
       const dataUri = `data:application/pdf;base64,${file.buffer.toString('base64')}`;
 

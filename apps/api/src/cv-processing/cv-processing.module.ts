@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { CvQueueService } from './cv-queue/cv-queue.service';
 import { CvWorkerService } from './cv-worker/cv-worker.service';
 import { CvController } from './cv-processing.controller';
+import { TextPreprocessorService } from './service/text-preprocessor.service';
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { CvController } from './cv-processing.controller';
     }),
   ],
   controllers: [CvController],
-  providers: [CvQueueService, CvWorkerService],
-  exports: [CvQueueService],
+  providers: [CvQueueService, CvWorkerService, TextPreprocessorService],
+  exports: [CvQueueService, TextPreprocessorService],
 })
 export class CvProcessingModule {}

@@ -39,7 +39,12 @@ export class PdfParserService {
       const textResult = await parser.getText();
       const infoResult = await parser.getInfo();
 
-      const cleanedText = textResult.text.replace(/\s+/g, ' ').trim();
+      // Preserve line breaks so section split can detect headings.
+      const cleanedText = textResult.text
+        .replace(/\r/g, '\n')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
 
       const isScanned = cleanedText.length < 100;
 

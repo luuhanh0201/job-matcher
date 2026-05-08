@@ -85,11 +85,7 @@ export class UploadCloudinaryController {
           errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
         }),
     )
-    file: {
-      buffer: Buffer;
-      originalname: string;
-      mimetype: string;
-    },
+    file: Express.Multer.File,
   ) {
     return this.uploadCloudinaryService.uploadPdf(file);
   }

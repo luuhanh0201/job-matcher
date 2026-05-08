@@ -8,7 +8,6 @@ import { getDatabaseConfig } from '@/config/database.config';
 import { JobsModule } from '@/modules/jobs/jobs.module';
 import { UserModule } from '@/modules/user/user.module';
 import { CvModule } from './modules/cv/cv.module';
-import { ParsedCvModule } from './modules/parsed-cv/parsed-cv.module';
 import { MatchResultsModule } from './modules/match-results/match-results.module';
 import { UploadCloudinaryModule } from './modules/upload-cloudinary/upload-cloudinary.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -41,7 +40,6 @@ import { CvProcessingModule } from './cv-processing/cv-processing.module';
     JobsModule,
     UserModule,
     CvModule,
-    ParsedCvModule,
     MatchResultsModule,
     UploadCloudinaryModule,
     AuthModule,

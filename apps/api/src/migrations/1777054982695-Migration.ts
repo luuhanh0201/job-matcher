@@ -19,6 +19,8 @@ export class Migration1777054982695 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "match_results" ADD CONSTRAINT "FK_a27ac41f40eec682477efa2fff1" FOREIGN KEY ("parsed_cv_id") REFERENCES "parsed_cv"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
+    await queryRunner.query(`ALTER TABLE parsed_cv
+DROP CONSTRAINT "FK_890b9f52f1e293efb48fab86ae5";`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

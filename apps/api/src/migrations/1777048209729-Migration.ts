@@ -5,6 +5,21 @@ export class Migration1777048209729 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
+      `CREATE TYPE "public"."users_role_enum" AS ENUM('CANDIDATE', 'RECRUITER', 'ADMIN')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."users_status_enum" AS ENUM('ACTIVE', 'INACTIVE', 'BANNED')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."jobs_employment_type_enum" AS ENUM('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'FREELANCE')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."jobs_seniority_level_enum" AS ENUM('INTERN', 'JUNIOR', 'MID', 'SENIOR', 'LEAD')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."jobs_status_enum" AS ENUM('DRAFT', 'OPEN', 'CLOSED')`,
+    );
+    await queryRunner.query(
       `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying NOT NULL, "password_hash" character varying NOT NULL, "full_name" character varying NOT NULL, "phone" character varying NOT NULL, "avatar" character varying, "role" "public"."users_role_enum" NOT NULL DEFAULT 'CANDIDATE', "status" "public"."users_status_enum" NOT NULL DEFAULT 'ACTIVE', "last_login_at" TIMESTAMP, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
@@ -25,5 +40,10 @@ ALTER COLUMN phone DROP NOT NULL;`,
     );
     await queryRunner.query(`DROP TABLE "jobs"`);
     await queryRunner.query(`DROP TABLE "users"`);
+    await queryRunner.query(`DROP TYPE "public"."jobs_status_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."jobs_seniority_level_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."jobs_employment_type_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."users_status_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."users_role_enum"`);
   }
 }
