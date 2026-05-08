@@ -1,4 +1,3 @@
-import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -23,19 +22,6 @@ import { CvProcessingModule } from './cv-processing/cv-processing.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: getDatabaseConfig,
-    }),
-    BullModule.forRoot({
-      connection: {
-        username: process.env.REDIS_CLOUD_USERNAME || '',
-        host:
-          process.env.REDIS_CLOUD_HOST || process.env.REDIS_HOST || 'localhost',
-        port: parseInt(
-          process.env.REDIS_CLOUD_PORT || process.env.REDIS_PORT || '15982',
-          10,
-        ),
-        password:
-          process.env.REDIS_CLOUD_PASSWORD || process.env.REDIS_PASSWORD,
-      },
     }),
     JobsModule,
     UserModule,

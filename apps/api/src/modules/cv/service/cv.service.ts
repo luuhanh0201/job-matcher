@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -7,11 +8,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Cv, FileType, UploadStatus } from '../entities/cv.entity';
 import { Repository } from 'typeorm';
 import { UploadCloudinaryService } from '@/modules/upload-cloudinary/upload-cloudinary.service';
-import { PdfParserService } from './pdf-parser.service';
 import { ParsedCv } from '../entities/parsed-cv.entity';
-import { TextPreprocessorService } from '@/cv-processing/service/text-preprocessor.service';
 
-type ParsedCvData = {
+type CvProcessingRequestStatusValue = 'pending' | 'not_found';
+
+type UploadCvResult = {
+  cv: Cv;
+  cvId: string;
+  status: CvProcessingRequestStatusValue;
+  message: string;
+};
+
+type SaveParsedCvInput = {
+  cvId: string;
   candidateName?: string;
   email?: string;
   phone?: string;
@@ -24,12 +33,13 @@ type ParsedCvData = {
   languages?: string;
 };
 
-type UploadCvResult = {
-  cv: Cv;
-  parsedData: ParsedCvData;
+type CvProcessingPort = {
+  addCvProcessingJob: (
+    cvDocumentId: string,
+  ) => Promise<{ cvId: string; status: CvProcessingRequestStatusValue }>;
 };
 
-type SaveParsedCvInput = ParsedCvData & { cvId: string };
+const CV_PROCESSING_SERVICE_TOKEN = 'CV_PROCESSING_SERVICE_TOKEN';
 
 @Injectable()
 export class CvService {
@@ -39,46 +49,14 @@ export class CvService {
     @InjectRepository(ParsedCv)
     private readonly parsedCvRepository: Repository<ParsedCv>,
     private readonly uploadCloudinaryService: UploadCloudinaryService,
-    private readonly pdfParserService: PdfParserService,
-    private readonly textPreprocessorService: TextPreprocessorService,
+    @Inject(CV_PROCESSING_SERVICE_TOKEN)
+    private readonly cvProcessingService: CvProcessingPort,
   ) {}
 
   async uploadCv(
     userId: string,
     file: Express.Multer.File,
   ): Promise<UploadCvResult> {
-    const pickSection = (
-      sections: Record<string, string>,
-      ...keys: string[]
-    ): string | undefined => {
-      for (const key of keys) {
-        const value = sections[key]?.trim();
-        if (value) return value;
-      }
-      return undefined;
-    };
-
-    const sanitizeSkills = (value?: string): string | undefined => {
-      if (!value) return undefined;
-      const stopPattern =
-        /^(work\s+experience|projects?|key\s+projects?)\b|^--\s*\d+\s+of\s+\d+\s*--$|(?:\b\d{1,2}\/\d{4}\b|\b\d{4}\b)\s*[-–]\s*(?:\b\d{1,2}\/\d{4}\b|\b\d{4}\b|present|now)/i;
-      const cleaned: string[] = [];
-      for (const line of value
-        .split('\n')
-        .map((l) => l.trim())
-        .filter(Boolean)) {
-        if (stopPattern.test(line)) break;
-        cleaned.push(line);
-      }
-      return cleaned.length > 0 ? cleaned.join('\n') : undefined;
-    };
-
-    const educationLikePattern =
-      /university|college|school|gpa|bachelor|master|đại\s+học|cao\s+đẳng|software\s+engineering|computer\s+science/i;
-    const workLikePattern =
-      /developer|engineer|intern|manager|project|built|developed|implemented|tech\s+stack|company|experience/i;
-
-    // Check if this file has already been uploaded for this user
     const existingCv = await this.cvRepository.findOne({
       where: {
         fileName: file.originalname,
@@ -117,55 +95,16 @@ export class CvService {
     }
 
     try {
-      const parsedPdf = await this.pdfParserService.parsePdf(file);
-      const preprocessed = this.textPreprocessorService.preprocess(
-        parsedPdf.text,
-      );
-      const { sections, basicInfo = {}, profile } = preprocessed;
-
-      const rawSkills = pickSection(sections, 'skills');
-      const normalizedSkills = sanitizeSkills(rawSkills);
-
-      const educationFromSection = pickSection(sections, 'education');
-      const education =
-        educationFromSection ??
-        this.textPreprocessorService.extractEducationHeuristic(
-          preprocessed.cleanedText,
-        );
-
-      const workExperienceFromSection = pickSection(
-        sections,
-        'experience',
-        'work_experience',
-        'projects',
-      );
-      const workExperience =
-        educationLikePattern.test(workExperienceFromSection ?? '') &&
-        !workLikePattern.test(workExperienceFromSection ?? '')
-          ? undefined
-          : workExperienceFromSection;
+      await this.cvProcessingService.addCvProcessingJob(savedCv.id);
 
       return {
         cv: savedCv,
-        parsedData: {
-          candidateName: profile.candidateName,
-          email: basicInfo.email,
-          phone: basicInfo.phone,
-          totalExperienceYears: profile.totalExperienceYears,
-          currentTitle: profile.currentTitle,
-          skills:
-            normalizedSkills ??
-            this.textPreprocessorService.extractSkillsHeuristic(
-              preprocessed.cleanedText,
-            ),
-          education,
-          workExperience,
-          certifications: pickSection(sections, 'certifications'),
-          languages: pickSection(sections, 'languages'),
-        },
+        cvId: savedCv.id,
+        status: 'pending',
+        message: 'CV đã được upload và đang chờ xử lý',
       };
     } catch (error) {
-      if (isNewUpload) {
+      if (isNewUpload && savedCv?.id) {
         await this.cvRepository.delete(savedCv.id);
         await this.uploadCloudinaryService.deleteFile(savedCv.publicId);
       }

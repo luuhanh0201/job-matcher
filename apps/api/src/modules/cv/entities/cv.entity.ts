@@ -48,6 +48,8 @@ export class Cv {
     default: UploadStatus.PENDING,
   })
   uploadStatus!: UploadStatus;
+  @Column({ name: 'processing_error', type: 'text', nullable: true })
+  processingError?: string | null;
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
   @UpdateDateColumn({ name: 'updated_at' })

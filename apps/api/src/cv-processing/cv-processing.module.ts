@@ -1,19 +1,27 @@
 // cv-processing.module.ts
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
-import { CvQueueService } from './cv-queue/cv-queue.service';
-import { CvWorkerService } from './cv-worker/cv-worker.service';
-import { CvController } from './cv-processing.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { CvProcessingController } from './cv-processing.controller';
+import { Cv } from '@/modules/cv/entities/cv.entity';
+import { ParsedCv } from '@/modules/cv/entities/parsed-cv.entity';
+import { PdfParserService } from '@/modules/cv/service/pdf-parser.service';
 import { TextPreprocessorService } from './service/text-preprocessor.service';
+import { CvProcessingService } from './service/cv-processing.service';
+
+export const CV_PROCESSING_SERVICE_TOKEN = 'CV_PROCESSING_SERVICE_TOKEN';
 
 @Module({
-  imports: [
-    BullModule.registerQueue({
-      name: 'cv-processing',
-    }),
+  imports: [TypeOrmModule.forFeature([Cv, ParsedCv])],
+  controllers: [CvProcessingController],
+  providers: [
+    CvProcessingService,
+    PdfParserService,
+    TextPreprocessorService,
+    {
+      provide: CV_PROCESSING_SERVICE_TOKEN,
+      useExisting: CvProcessingService,
+    },
   ],
-  controllers: [CvController],
-  providers: [CvQueueService, CvWorkerService, TextPreprocessorService],
-  exports: [CvQueueService, TextPreprocessorService],
+  exports: [CvProcessingService, CV_PROCESSING_SERVICE_TOKEN],
 })
 export class CvProcessingModule {}

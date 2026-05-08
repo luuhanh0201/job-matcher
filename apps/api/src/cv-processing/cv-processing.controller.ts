@@ -1,17 +1,20 @@
 import { Controller, Get, Param, Post } from '@nestjs/common';
-import { CvQueueService } from './cv-queue/cv-queue.service';
+import { CvProcessingService } from './service/cv-processing.service';
 
 @Controller('cv-processing')
-export class CvController {
-  constructor(private readonly cvQueueService: CvQueueService) {}
+export class CvProcessingController {
+  constructor(private readonly cvProcessingService: CvProcessingService) {}
 
-  @Post('test-redis')
-  async testRedis() {
-    return this.cvQueueService.testQueue();
+  @Post('test-processing')
+  testProcessing(): { status: 'ok'; mode: 'db-processing' } {
+    return {
+      status: 'ok',
+      mode: 'db-processing',
+    };
   }
 
-  @Get('jobs/:jobId/status')
-  async getJobStatus(@Param('jobId') jobId: string) {
-    return this.cvQueueService.getJobStatus(jobId);
+  @Get('cv/:cvId/status')
+  getCvStatus(@Param('cvId') cvId: string): Promise<Record<string, unknown>> {
+    return this.cvProcessingService.getCvStatus(cvId);
   }
 }

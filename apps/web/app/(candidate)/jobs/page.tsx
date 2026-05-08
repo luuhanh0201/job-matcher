@@ -33,7 +33,7 @@ export default function JobsPage() {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (entries[0]?.isIntersecting) {
           setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, allJobs.length));
         }
       },
