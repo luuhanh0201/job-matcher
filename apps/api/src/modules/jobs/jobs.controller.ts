@@ -25,7 +25,6 @@ export class JobsController {
 
   @Get()
   findAll(@Req() req: Request & { user?: string }) {
-    console.log(req.user);
     return this.jobsService.findAll();
   }
 

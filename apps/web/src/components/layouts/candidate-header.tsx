@@ -15,7 +15,7 @@ export function CandidateHeader() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center border-b border-(--gray-200) bg-white px-4 shadow-sm">
       {/* Logo */}
-      <Link href="/jobs" className="flex shrink-0 items-center gap-2 mr-4">
+      <Link href="/" className="flex shrink-0 items-center gap-2 mr-4">
         <Image src={Logo} alt="Logo" className="h-32 w-36" priority />
       </Link>
 
