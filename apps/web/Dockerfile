@@ -4,7 +4,6 @@ RUN corepack enable
 
 WORKDIR /app
 
-# Copy workspace config + all package.json files trước để cache layer install
 COPY .npmrc pnpm-workspace.yaml package.json pnpm-lock.yaml turbo.json ./
 COPY apps/web/package.json ./apps/web/
 COPY apps/api/package.json ./apps/api/
@@ -16,8 +15,10 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
+RUN pnpm --filter web build
+
 WORKDIR /app/apps/web
 
 EXPOSE 3000
 
-CMD ["node", "/app/node_modules/next/dist/bin/next", "dev", "--port", "3000"]
+CMD ["pnpm", "start"]
