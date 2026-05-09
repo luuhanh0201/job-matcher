@@ -5,9 +5,9 @@ import { PdfParserService } from './service/pdf-parser.service';
 import { UploadCloudinaryModule } from '../upload-cloudinary/upload-cloudinary.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Cv } from './entities/cv.entity';
-import { TextPreprocessorService } from '@/cv-processing/service/text-preprocessor.service';
 import { ParsedCv } from './entities/parsed-cv.entity';
-import { CvProcessingModule } from '@/cv-processing/cv-processing.module';
+import { CvProcessingModule } from './cv-processing/cv-processing.module';
+import { TextPreprocessorService } from './cv-processing/service/text-preprocessor.service';
 
 @Module({
   imports: [

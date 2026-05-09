@@ -10,7 +10,7 @@ import { CvModule } from './modules/cv/cv.module';
 import { MatchResultsModule } from './modules/match-results/match-results.module';
 import { UploadCloudinaryModule } from './modules/upload-cloudinary/upload-cloudinary.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { CvProcessingModule } from './cv-processing/cv-processing.module';
+import { CvProcessingModule } from './modules/cv/cv-processing/cv-processing.module';
 
 @Module({
   imports: [
