@@ -17,7 +17,7 @@ import { AiModule } from './modules/ai/ai.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+      envFilePath: process.env.NODE_ENV === 'production' ? '.env' : '.env.local',
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
