@@ -110,24 +110,6 @@ export function useAuth(): AuthContextValue {
 }
 
 export function getInitials(fullName: string): string {
-<<<<<<< HEAD
-  const parts = fullName
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (parts.length === 0) {
-    return "..";
-  }
-
-  if (parts.length === 1) {
-    return parts[0]?.slice(0, 2).toUpperCase() ?? "..";
-  }
-
-  const first = parts[0]?.[0] ?? "";
-  const last = parts[parts.length - 1]?.[0] ?? "";
-  return `${first}${last}`.toUpperCase() || "..";
-=======
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
   const first = parts[0] ?? "";
 
@@ -135,5 +117,4 @@ export function getInitials(fullName: string): string {
 
   const last = parts[parts.length - 1] ?? "";
   return `${first[0] ?? ""}${last[0] ?? ""}`.toUpperCase();
->>>>>>> 006a043 (update dockerfiles)
 }
