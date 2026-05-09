@@ -75,16 +75,16 @@ export default function HomePage() {
   return (
     <div className="flex flex-col gap-8">
       {/* Hero greeting */}
-      <div className="relative overflow-hidden rounded-2xl bg-(--primary-blue) px-8 py-8 text-white">
+      <div className="relative overflow-hidden rounded-2xl bg-(--primary-blue) px-5 py-6 text-white sm:px-8 sm:py-8">
         <div className="relative z-10">
           <p className="text-sm font-medium opacity-80">{getGreeting()},</p>
-          <h1 className="mt-1 text-2xl font-black">{firstName} 👋</h1>
+          <h1 className="mt-1 text-xl font-black sm:text-2xl">{firstName} 👋</h1>
           <p className="mt-2 max-w-md text-sm opacity-80">
             Hôm nay bạn muốn ứng tuyển vào đâu? Hàng trăm cơ hội việc làm đang chờ bạn.
           </p>
           <Link
             href="/jobs"
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-(--primary-blue) transition-opacity hover:opacity-90"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-(--primary-blue) transition-opacity hover:opacity-90 sm:px-5"
           >
             Khám phá việc làm
             <ChevronRight className="h-4 w-4" />
@@ -98,12 +98,12 @@ export default function HomePage() {
       {/* Quick actions */}
       <section>
         <h2 className="mb-4 text-base font-bold text-(--gray-900)">Thao tác nhanh</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {QUICK_ACTIONS.map(({ icon: Icon, label, desc, href, color }) => (
             <Link
               key={href}
               href={href}
-              className="group flex flex-col gap-3 rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm transition-all hover:border-(--primary-blue)/30 hover:shadow-md"
+              className="group flex flex-row items-center gap-3 rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm transition-all hover:border-(--primary-blue)/30 hover:shadow-md sm:flex-col sm:items-start"
             >
               <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${color}`}>
                 <Icon className="h-5 w-5" />
@@ -121,7 +121,7 @@ export default function HomePage() {
 
       {/* Featured jobs */}
       <section>
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <h2 className="text-base font-bold text-(--gray-900)">Việc làm nổi bật</h2>
           <Link
             href="/jobs"

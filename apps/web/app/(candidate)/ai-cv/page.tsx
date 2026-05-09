@@ -355,12 +355,12 @@ export default function AiCvPage() {
       <Card className="border border-(--gray-200) bg-white/90 shadow-none">
         <CardContent className="space-y-4 px-4 py-4 sm:px-6 sm:py-6">
           <div className="rounded-3xl border border-(--gray-200) bg-gradient-to-r from-(--blue-light) via-white to-(--blue-light)/60 p-4 sm:p-5">
-            <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+            <div className="mb-4 flex flex-col items-start justify-between gap-4 lg:flex-row">
               <div className="max-w-2xl space-y-2">
                 <span className="inline-flex items-center rounded-full bg-(--accent-purple)/10 px-3 py-1 text-xs font-bold tracking-wide text-(--accent-purple)">
                   <Sparkles className="mr-1 h-3.5 w-3.5" /> AI CV PHÂN TÍCH
                 </span>
-                <h1 className="text-3xl leading-tight font-black text-(--gray-900)">
+                <h1 className="text-2xl leading-tight font-black text-(--gray-900) sm:text-3xl">
                   Tìm công việc phù hợp hơn với{" "}
                   <span className="text-(--accent-purple)">Job Matcher AI</span>
                 </h1>
@@ -370,9 +370,9 @@ export default function AiCvPage() {
                 </p>
               </div>
 
-              <div className="grid h-24 w-24 place-items-center rounded-full border border-(--gray-200) bg-white shadow-sm">
+              <div className="grid h-20 w-20 place-items-center rounded-full border border-(--gray-200) bg-white shadow-sm sm:h-24 sm:w-24">
                 <div className="text-center">
-                  <p className="text-4xl leading-none font-black text-(--accent-green)">{score}%</p>
+                  <p className="text-3xl leading-none font-black text-(--accent-green) sm:text-4xl">{score}%</p>
                   <p className="mt-1 text-[11px] font-semibold text-(--gray-500)">Điểm phù hợp</p>
                 </div>
               </div>
@@ -398,9 +398,9 @@ export default function AiCvPage() {
                     openFilePicker();
                   }
                 }}
-                className="group flex min-h-[148px] w-full flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-dashed border-(--primary-blue)/30 bg-(--blue-light)/35 px-4 py-5 transition-all duration-200 hover:border-(--primary-blue)/60 hover:bg-(--blue-light)/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-blue)/40"
+                className="group flex min-h-[148px] w-full flex-col items-start justify-between gap-4 rounded-2xl border-2 border-dashed border-(--primary-blue)/30 bg-(--blue-light)/35 px-4 py-5 transition-all duration-200 hover:border-(--primary-blue)/60 hover:bg-(--blue-light)/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-blue)/40 sm:flex-row sm:items-center"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3 sm:items-center">
                   <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white shadow-sm transition-transform duration-200 group-hover:scale-[1.02]">
                     <FileText className="h-8 w-8 text-(--primary-blue)" />
                   </div>
@@ -416,7 +416,7 @@ export default function AiCvPage() {
                 </div>
 
                 <div
-                  className="flex h-full items-center justify-center"
+                  className="flex w-full justify-start sm:w-auto sm:justify-center"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Button
@@ -425,7 +425,7 @@ export default function AiCvPage() {
                       void handleUpload();
                     }}
                     disabled={uploadLoading || pollLoading}
-                    className="h-10 cursor-pointer rounded-full bg-gradient-to-r from-(--accent-purple) to-(--primary-blue) px-12 py-6 font-bold text-white  transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110  active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 text-[16px] "
+                    className="h-10 w-full cursor-pointer rounded-full bg-gradient-to-r from-(--accent-purple) to-(--primary-blue) px-6 py-6 text-[16px] font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:px-12"
                   >
                     {uploadLoading || pollLoading ? (
                       <>
@@ -634,10 +634,10 @@ export default function AiCvPage() {
           </div>
 
           <div className="grid gap-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <Label>Học vấn</Label>
-              <Button type="button" variant="outline" onClick={addEducationItem}>
-                Thêm 
+              <Button type="button" variant="outline" onClick={addEducationItem} className="w-full sm:w-auto">
+                Thêm
               </Button>
             </div>
             {educationItems.length === 0 ? (
@@ -670,7 +670,7 @@ export default function AiCvPage() {
                     />
                   </div>
                   <div>
-                    <Button type="button" variant="outline" onClick={() => removeEducationItem(index)}>
+                    <Button type="button" variant="outline" onClick={() => removeEducationItem(index)} className="w-full sm:w-auto">
                       Xóa
                     </Button>
                   </div>
@@ -680,10 +680,10 @@ export default function AiCvPage() {
           </div>
 
           <div className="grid gap-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <Label>Kinh nghiệm làm việc</Label>
-              <Button type="button" variant="outline" onClick={addWorkExperienceItem}>
-                Thêm 
+              <Button type="button" variant="outline" onClick={addWorkExperienceItem} className="w-full sm:w-auto">
+                Thêm
               </Button>
             </div>
             {workExperienceItems.length === 0 ? (
@@ -715,7 +715,7 @@ export default function AiCvPage() {
                     onChange={(e) => upsertWorkExperienceItem(index, "description", e.target.value)}
                   />
                   <div>
-                    <Button type="button" variant="outline" onClick={() => removeWorkExperienceItem(index)}>
+                    <Button type="button" variant="outline" onClick={() => removeWorkExperienceItem(index)} className="w-full sm:w-auto">
                       Xóa kinh nghiệm
                     </Button>
                   </div>
@@ -744,11 +744,11 @@ export default function AiCvPage() {
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button
               onClick={handleSave}
               disabled={!canSave || saveLoading}
-              className="cursor-pointer rounded-full bg-(--primary-blue) px-5 text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-(--blue-dark) active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+              className="w-full cursor-pointer rounded-full bg-(--primary-blue) px-5 text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-(--blue-dark) active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
             >
               {saveLoading ? (
                 <>
@@ -762,7 +762,7 @@ export default function AiCvPage() {
               variant="outline"
               onClick={() => setForm(DEFAULT_FORM)}
               disabled={saveLoading}
-              className="cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+              className="w-full cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
             >
               Đặt lại form
             </Button>

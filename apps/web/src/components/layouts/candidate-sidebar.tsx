@@ -3,6 +3,7 @@
 import {
   Briefcase,
   ChevronRight,
+  X,
   Home,
   LogOut,
   MessageCircle,
@@ -36,16 +37,36 @@ const navItems: NavItem[] = [
   { href: "/settings", icon: Settings, label: "Cài đặt" },
 ];
 
-export function CandidateSidebar() {
+type CandidateSidebarProps = {
+  mobileOpen: boolean;
+  onClose: () => void;
+};
+
+export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const initials = user ? getInitials(user.fullName) : "..";
 
   return (
-    <aside className="fixed left-0 top-14 flex h-[calc(100vh-3.5rem)] w-60 flex-col overflow-y-auto border-r border-(--gray-200) bg-white px-3 py-4">
+    <aside
+      className={`fixed left-0 top-14 z-50 flex h-[calc(100vh-3.5rem)] w-72 flex-col overflow-y-auto border-r border-(--gray-200) bg-white px-3 py-4 shadow-xl transition-transform duration-300 ease-out lg:w-60 ${
+        mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      }`}
+      aria-hidden={!mobileOpen}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Đóng menu"
+        className="mb-3 flex h-10 w-10 items-center justify-center self-end rounded-lg text-(--gray-500) transition-colors hover:bg-(--gray-100) lg:hidden"
+      >
+        <X className="h-5 w-5" />
+      </button>
+
       {/* User card */}
       <Link
         href="/profile"
+        onClick={onClose}
         className="mb-3 flex flex-col items-center gap-2 rounded-2xl border border-(--gray-200) px-4 py-5 transition-colors hover:bg-(--gray-100)"
       >
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-(--primary-blue) text-lg font-black text-white">
@@ -63,7 +84,7 @@ export function CandidateSidebar() {
       </Link>
 
       {/* Nav */}
-      <nav className="flex flex-col gap-0.5 flex-1">
+      <nav className="flex flex-1 flex-col gap-0.5">
         {navItems.map(({ href, icon: Icon, label, badge, highlight }) => {
           const isActive =
             href === "/jobs" ? pathname === "/jobs" || pathname.startsWith("/jobs/")
@@ -74,6 +95,7 @@ export function CandidateSidebar() {
               <Link
                 key={href}
                 href={href}
+                onClick={onClose}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
                   isActive
                     ? "bg-gradient-to-r from-(--primary-blue) to-(--accent-purple) text-white shadow-md"
@@ -91,6 +113,7 @@ export function CandidateSidebar() {
             <Link
               key={href}
               href={href}
+              onClick={onClose}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-(--blue-light) font-semibold text-(--primary-blue)"
@@ -113,7 +136,10 @@ export function CandidateSidebar() {
 
       {/* Logout */}
       <button
-        onClick={logout}
+        onClick={() => {
+          logout();
+          onClose();
+        }}
         className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
       >
         <LogOut className="h-4.5 w-4.5 shrink-0" />

@@ -55,8 +55,8 @@ export function JobCard({ job }: { job: Job }) {
   const color = getCompanyColor(job.company);
 
   return (
-    <div className="group rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm transition-all hover:border-(--primary-blue)/30 hover:shadow-md">
-      <div className="flex items-start gap-4">
+    <div className="group rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm transition-all hover:border-(--primary-blue)/30 hover:shadow-md sm:p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         {/* Company logo placeholder */}
         <div
           className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-black ${color}`}
@@ -65,9 +65,9 @@ export function JobCard({ job }: { job: Job }) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <h3 className="truncate text-base font-bold text-(--gray-900) group-hover:text-(--primary-blue)">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h3 className="line-clamp-2 text-base font-bold text-(--gray-900) group-hover:text-(--primary-blue)">
                 {job.title}
               </h3>
               <p className="mt-0.5 text-sm font-medium text-(--gray-500)">{job.company}</p>
@@ -80,7 +80,7 @@ export function JobCard({ job }: { job: Job }) {
           </div>
 
           {/* Meta row */}
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-(--gray-500)">
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-(--gray-500) sm:gap-x-4">
             <span className="flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5" />
               {job.location}
