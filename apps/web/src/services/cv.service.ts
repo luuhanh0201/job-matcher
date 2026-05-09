@@ -1,4 +1,5 @@
 import { protectedFetchJson } from "@/services/auth.service";
+import { getOrCreateDeviceId } from "@/lib/device-id";
 import type {
   CvPayload,
   CvProcessingStatus,
@@ -74,6 +75,9 @@ export async function uploadCvFile(file: File) {
     "/cv/upload",
     {
       method: "POST",
+      headers: {
+        "x-device-id": getOrCreateDeviceId(),
+      },
       body: formData,
     },
     "Không thể upload CV",

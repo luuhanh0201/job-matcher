@@ -1,4 +1,6 @@
 import {
+  HttpException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -7,8 +9,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Cv, FileType } from '../entities/cv.entity';
 import { Repository } from 'typeorm';
 import { UploadCloudinaryService } from '@/modules/upload-cloudinary/upload-cloudinary.service';
-import { ParsedCv } from '../entities/parsed-cv.entity';
 import { UploadStatus } from '@/enum/StatusUpload.enum';
+import { UserRole } from '@/enum/index.enum';
+
+const UPLOAD_COOLDOWN_MS = 5 * 60 * 1000;
 
 
 type UploadCvResult = {
@@ -17,8 +21,17 @@ type UploadCvResult = {
   status: UploadStatus;
   message: string;
 };
+
+type UploadIdentity = {
+  userId: string;
+  role: UserRole;
+  deviceId: string;
+};
+
 @Injectable()
 export class CvService {
+  private readonly deviceUploadAt = new Map<string, number>();
+
   constructor(
     @InjectRepository(Cv)
     private readonly cvRepository: Repository<Cv>,
@@ -26,13 +39,18 @@ export class CvService {
   ) { }
 
   async uploadCv(
-    userId: string,
+    identity: UploadIdentity,
     file: Express.Multer.File,
   ): Promise<UploadCvResult> {
+    if (identity.role !== UserRole.ADMIN) {
+      await this.enforceAccountCooldown(identity.userId);
+      this.enforceDeviceCooldown(identity.deviceId);
+    }
+
     const existingCv = await this.cvRepository.findOne({
       where: {
         fileName: file.originalname,
-        userId,
+        userId: identity.userId,
         uploadStatus: UploadStatus.COMPLETED,
       },
     });
@@ -52,7 +70,7 @@ export class CvService {
       uploadedPublicId = uploadResult.public_id;
 
       const cv = this.cvRepository.create({
-        userId,
+        userId: identity.userId,
         publicId: uploadResult.public_id,
         fileName: file.originalname,
         fileType: FileType.PDF,
@@ -61,7 +79,11 @@ export class CvService {
       });
 
       const savedCv = await this.cvRepository.save(cv);
- 
+
+      if (identity.role !== UserRole.ADMIN) {
+        this.deviceUploadAt.set(identity.deviceId, Date.now());
+      }
+
 
       return {
         cv: savedCv,
@@ -81,6 +103,42 @@ export class CvService {
       }
 
       throw new InternalServerErrorException('Không thể upload CV');
+    }
+  }
+
+  private async enforceAccountCooldown(userId: string) {
+    const latestUpload = await this.cvRepository.findOne({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!latestUpload) {
+      return;
+    }
+
+    const elapsed = Date.now() - new Date(latestUpload.createdAt).getTime();
+    if (elapsed < UPLOAD_COOLDOWN_MS) {
+      const waitSeconds = Math.ceil((UPLOAD_COOLDOWN_MS - elapsed) / 1000);
+      throw new HttpException(
+        `Bạn chỉ được upload lại sau ${waitSeconds} giây (giới hạn theo tài khoản).`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+  }
+
+  private enforceDeviceCooldown(deviceId: string) {
+    const latestUploadAt = this.deviceUploadAt.get(deviceId);
+    if (!latestUploadAt) {
+      return;
+    }
+
+    const elapsed = Date.now() - latestUploadAt;
+    if (elapsed < UPLOAD_COOLDOWN_MS) {
+      const waitSeconds = Math.ceil((UPLOAD_COOLDOWN_MS - elapsed) / 1000);
+      throw new HttpException(
+        `Thiết bị này chỉ được upload lại sau ${waitSeconds} giây.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
   }
 

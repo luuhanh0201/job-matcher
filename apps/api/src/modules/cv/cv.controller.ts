@@ -15,6 +15,7 @@ import { CvService } from './service/cv.service';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
 import { PdfParserService } from './service/pdf-parser.service';
+import { UserRole } from '@/enum/index.enum';
 
 const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024;
 
@@ -50,8 +51,21 @@ export class CvController {
     file: Express.Multer.File,
     @Req() req: Request,
   ) {
-    const user = req.user as { id: string; email: string };
-    const uploadResult = await this.cvService.uploadCv(user.id, file);
+    const user = req.user as { id: string; email: string; role: UserRole };
+    const headerDeviceId = req.headers['x-device-id'];
+    const deviceId =
+      typeof headerDeviceId === 'string' && headerDeviceId.trim().length > 0
+        ? headerDeviceId.trim()
+        : `${req.ip ?? 'unknown-ip'}:${req.headers['user-agent'] ?? 'unknown-agent'}`;
+
+    const uploadResult = await this.cvService.uploadCv(
+      {
+        userId: user.id,
+        role: user.role,
+        deviceId,
+      },
+      file,
+    );
     const parsedPdf = await this.pdfParserService.parsePdf(file);
 
     return {
