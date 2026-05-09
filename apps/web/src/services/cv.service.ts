@@ -1,68 +1,13 @@
 import { protectedFetchJson } from "@/services/auth.service";
-
-export enum CvProcessingRequestStatus {
-  PENDING = "pending",
-  NOT_FOUND = "not_found",
-}
-
-export enum CvProcessingState {
-  WAITING = "waiting",
-  ACTIVE = "active",
-  COMPLETED = "completed",
-  FAILED = "failed",
-  DELAYED = "delayed",
-  PAUSED = "paused",
-  WAITING_CHILDREN = "waiting-children",
-}
-
-export enum CvProcessingResultStatus {
-  COMPLETED = "completed",
-  FAILED = "failed",
-}
-
-export type CvRecord = {
-  id: number;
-  [key: string]: unknown;
-};
-
-export type CvPayload = Record<string, unknown>;
-
-export type ParsedCvForm = {
-  candidateName?: string;
-  email?: string;
-  phone?: string;
-  totalExperienceYears?: string;
-  currentTitle?: string;
-  skills?: string;
-  education?: string;
-  workExperience?: string;
-  certifications?: string;
-  languages?: string;
-};
-
-export type UploadCvResponse = {
-  cv: CvRecord;
-  cvId: string;
-  status: CvProcessingRequestStatus;
-  message: string;
-};
-
-export type CvProcessingStatus = {
-  id?: string;
-  name?: string;
-  state?: CvProcessingState;
-  progress?: number;
-  data?: { cvDocumentId?: string };
-  parsedData?: ParsedCvForm | null;
-  result?: {
-    cvDocumentId?: string;
-    status?: CvProcessingResultStatus;
-    parsedData?: ParsedCvForm;
-  };
-  failedReason?: string | null;
-  attemptsMade?: number;
-  status?: CvProcessingRequestStatus;
-};
+import { getOrCreateDeviceId } from "@/lib/device-id";
+import type {
+  CvPayload,
+  CvProcessingStatus,
+  CvRecord,
+  ExtractedCvData,
+  ParsedCvForm,
+  UploadCvResponse,
+} from "@/types/cv";
 
 export async function getCvList() {
   return protectedFetchJson<CvRecord[]>(
@@ -130,9 +75,26 @@ export async function uploadCvFile(file: File) {
     "/cv/upload",
     {
       method: "POST",
+      headers: {
+        "x-device-id": getOrCreateDeviceId(),
+      },
       body: formData,
     },
     "Không thể upload CV",
+  );
+}
+
+export async function extractCvFromText(cvText: string) {
+  return protectedFetchJson<ExtractedCvData>(
+    "/ai/extract-cv",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ cvText }),
+    },
+    "Không thể trích xuất dữ liệu từ CV",
   );
 }
 

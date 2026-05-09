@@ -40,7 +40,7 @@ export class PdfParserService {
       const infoResult = await parser.getInfo();
 
       // Preserve line breaks so section split can detect headings.
-      const cleanedText = textResult.text
+      const cleanedText = this.sanitizeExtractedText(textResult.text)
         .replace(/\r/g, '\n')
         .replace(/[ \t]+/g, ' ')
         .replace(/\n{3,}/g, '\n\n')
@@ -62,5 +62,17 @@ export class PdfParserService {
         await parser.destroy();
       }
     }
+  }
+
+  private sanitizeExtractedText(text: string): string {
+    return text
+      // Remove non-printable control chars except newline/tab.
+      .replace(/[\u0000-\u0008\u000B-\u001F\u007F-\u009F]/g, '')
+      // Remove zero-width characters and BOM that often appear in PDF extraction.
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      // Drop replacement characters produced by invalid encodings.
+      .replace(/\uFFFD/g, '')
+      // Remove special symbols while preserving common contact/text punctuation.
+      .replace(/[^\p{L}\p{N}\p{M}\s@._+\-:/,;()]/gu, ' ');
   }
 }

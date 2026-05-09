@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AuthSessionInterceptor } from "@/components/layouts/auth-session-interceptor";
+import Script from "next/script";
 
 // Dùng local font để tránh hang khi Docker không có kết nối internet
 const geistSans = localFont({
@@ -30,10 +31,27 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("font-sans", geistSans.variable)}>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <AuthSessionInterceptor />
-        {children}
-      </body>
-    </html>
+    <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <AuthSessionInterceptor />
+      {children}
+
+      <Script
+        async
+        src="https://www.googletagmanager.com/gtag/js?id=G-DBDRP10LWJ"
+      />
+
+      <Script id="google-analytics">
+        {`
+          window.dataLayer = window.dataLayer || [];
+
+          function gtag(){dataLayer.push(arguments);}
+
+          gtag('js', new Date());
+
+          gtag('config', 'G-DBDRP10LWJ');
+        `}
+      </Script>
+    </body>
+  </html>
   );
 }

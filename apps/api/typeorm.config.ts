@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import * as path from 'node:path';
 import { DataSource } from 'typeorm';
 
-const envFilePath = path.resolve(process.cwd(), '.env.development');
+const envFilePath = path.resolve(process.cwd(), '.env.local');
 if (typeof process.loadEnvFile === 'function') {
   process.loadEnvFile(envFilePath);
 }

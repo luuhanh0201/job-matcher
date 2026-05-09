@@ -1,160 +1,187 @@
 import {
-  Inject,
+  HttpException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Cv, FileType, UploadStatus } from '../entities/cv.entity';
+import { Cv, FileType } from '../entities/cv.entity';
 import { Repository } from 'typeorm';
 import { UploadCloudinaryService } from '@/modules/upload-cloudinary/upload-cloudinary.service';
-import { ParsedCv } from '../entities/parsed-cv.entity';
+import { UploadStatus } from '@/enum/StatusUpload.enum';
+import { UserRole } from '@/enum/index.enum';
 
-type CvProcessingRequestStatusValue = 'pending' | 'not_found';
+const UPLOAD_COOLDOWN_MS = 5 * 60 * 1000;
+
 
 type UploadCvResult = {
   cv: Cv;
   cvId: string;
-  status: CvProcessingRequestStatusValue;
+  status: UploadStatus;
   message: string;
 };
 
-type SaveParsedCvInput = {
-  cvId: string;
-  candidateName?: string;
-  email?: string;
-  phone?: string;
-  totalExperienceYears?: string;
-  currentTitle?: string;
-  skills?: string;
-  education?: string;
-  workExperience?: string;
-  certifications?: string;
-  languages?: string;
+type UploadIdentity = {
+  userId: string;
+  role: UserRole;
+  deviceId: string;
 };
-
-type CvProcessingPort = {
-  addCvProcessingJob: (
-    cvDocumentId: string,
-  ) => Promise<{ cvId: string; status: CvProcessingRequestStatusValue }>;
-};
-
-const CV_PROCESSING_SERVICE_TOKEN = 'CV_PROCESSING_SERVICE_TOKEN';
 
 @Injectable()
 export class CvService {
+  private readonly deviceUploadAt = new Map<string, number>();
+
   constructor(
     @InjectRepository(Cv)
     private readonly cvRepository: Repository<Cv>,
-    @InjectRepository(ParsedCv)
-    private readonly parsedCvRepository: Repository<ParsedCv>,
     private readonly uploadCloudinaryService: UploadCloudinaryService,
-    @Inject(CV_PROCESSING_SERVICE_TOKEN)
-    private readonly cvProcessingService: CvProcessingPort,
-  ) {}
+  ) { }
 
   async uploadCv(
-    userId: string,
+    identity: UploadIdentity,
     file: Express.Multer.File,
   ): Promise<UploadCvResult> {
+    if (identity.role !== UserRole.ADMIN) {
+      await this.enforceAccountCooldown(identity.userId);
+      this.enforceDeviceCooldown(identity.deviceId);
+    }
+
     const existingCv = await this.cvRepository.findOne({
       where: {
         fileName: file.originalname,
-        userId,
+        userId: identity.userId,
         uploadStatus: UploadStatus.COMPLETED,
       },
     });
 
-    let savedCv: Cv;
-    let isNewUpload = false;
-
     if (existingCv) {
-      savedCv = existingCv;
-    } else {
-      const uploaded = await this.uploadCloudinaryService.uploadPdf(file);
-      isNewUpload = true;
-
-      const documentCv = this.cvRepository.create({
-        publicId: uploaded.public_id,
-        fileName: file.originalname,
-        fileType: FileType.PDF,
-        fileUrl: uploaded.secure_url,
-        uploadStatus: UploadStatus.COMPLETED,
-        userId,
-      });
-
-      try {
-        savedCv = await this.cvRepository.save(documentCv);
-      } catch (error) {
-        await this.uploadCloudinaryService.deleteFile(uploaded.public_id);
-        throw new InternalServerErrorException(
-          'Failed to save CV document',
-          error as Error,
-        );
-      }
+      return {
+        cv: existingCv,
+        cvId: existingCv.id,
+        status: UploadStatus.COMPLETED,
+        message: 'CV đã tồn tại. Hệ thống sẽ cập nhật lại nội dung CV nếu có thay đổi.',
+      };
     }
+    let uploadedPublicId: string | null = null;
 
     try {
-      await this.cvProcessingService.addCvProcessingJob(savedCv.id);
+      const uploadResult = await this.uploadCloudinaryService.uploadPdf(file);
+      uploadedPublicId = uploadResult.public_id;
+
+      const cv = this.cvRepository.create({
+        userId: identity.userId,
+        publicId: uploadResult.public_id,
+        fileName: file.originalname,
+        fileType: FileType.PDF,
+        fileUrl: uploadResult.secure_url,
+        uploadStatus: UploadStatus.COMPLETED,
+      });
+
+      const savedCv = await this.cvRepository.save(cv);
+
+      if (identity.role !== UserRole.ADMIN) {
+        this.deviceUploadAt.set(identity.deviceId, Date.now());
+      }
+
 
       return {
         cv: savedCv,
         cvId: savedCv.id,
-        status: 'pending',
-        message: 'CV đã được upload và đang chờ xử lý',
+        status: UploadStatus.COMPLETED,
+        message: 'Upload CV thành công. Hệ thống đang xử lý nội dung CV.',
       };
     } catch (error) {
-      if (isNewUpload && savedCv?.id) {
-        await this.cvRepository.delete(savedCv.id);
-        await this.uploadCloudinaryService.deleteFile(savedCv.publicId);
+      if (uploadedPublicId) {
+        await this.uploadCloudinaryService
+          .deleteFile(uploadedPublicId)
+          .catch(() => undefined);
       }
-      throw new InternalServerErrorException(
-        'Failed to upload and parse CV',
-        error as Error,
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Không thể upload CV');
+    }
+  }
+
+  private async enforceAccountCooldown(userId: string) {
+    const latestUpload = await this.cvRepository.findOne({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!latestUpload) {
+      return;
+    }
+
+    const elapsed = Date.now() - new Date(latestUpload.createdAt).getTime();
+    if (elapsed < UPLOAD_COOLDOWN_MS) {
+      const waitSeconds = Math.ceil((UPLOAD_COOLDOWN_MS - elapsed) / 1000);
+      throw new HttpException(
+        `Bạn chỉ được upload lại sau ${waitSeconds} giây (giới hạn theo tài khoản).`,
+        HttpStatus.TOO_MANY_REQUESTS,
       );
     }
   }
 
-  async saveParsedCv(input: SaveParsedCvInput): Promise<ParsedCv> {
-    const cv = await this.cvRepository.findOneBy({ id: input.cvId });
-    if (!cv) {
-      throw new NotFoundException(`CV with id ${input.cvId} not found`);
+  private enforceDeviceCooldown(deviceId: string) {
+    const latestUploadAt = this.deviceUploadAt.get(deviceId);
+    if (!latestUploadAt) {
+      return;
     }
 
-    const existing = await this.parsedCvRepository.findOneBy({
-      cv: { id: cv.id },
-    });
-    if (existing) {
-      const updated = this.parsedCvRepository.merge(existing, {
-        candidateName: input.candidateName,
-        email: input.email,
-        phone: input.phone,
-        totalExperienceYears: input.totalExperienceYears,
-        currentTitle: input.currentTitle,
-        skills: input.skills,
-        education: input.education,
-        workExperience: input.workExperience,
-        certifications: input.certifications,
-        languages: input.languages,
-      });
-      return this.parsedCvRepository.save(updated);
+    const elapsed = Date.now() - latestUploadAt;
+    if (elapsed < UPLOAD_COOLDOWN_MS) {
+      const waitSeconds = Math.ceil((UPLOAD_COOLDOWN_MS - elapsed) / 1000);
+      throw new HttpException(
+        `Thiết bị này chỉ được upload lại sau ${waitSeconds} giây.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
-
-    const parsedCv = this.parsedCvRepository.create({
-      cv,
-      candidateName: input.candidateName,
-      email: input.email,
-      phone: input.phone,
-      totalExperienceYears: input.totalExperienceYears,
-      currentTitle: input.currentTitle,
-      skills: input.skills,
-      education: input.education,
-      workExperience: input.workExperience,
-      certifications: input.certifications,
-      languages: input.languages,
-    });
-    return this.parsedCvRepository.save(parsedCv);
   }
+
+  // async saveParsedCv(input: SaveParsedCvInput): Promise<ParsedCv> {
+  //   const cv = await this.cvRepository.findOneBy({ id: input.cvId });
+  //   if (!cv) {
+  //     throw new NotFoundException(`CV with id ${input.cvId} not found`);
+  //   }
+
+  //   const existing = await this.parsedCvRepository.findOneBy({
+  //     cv: { id: cv.id },
+  //   });
+  //   if (existing) {
+  //     const updated = this.parsedCvRepository.merge(existing, {
+  //       candidateName: input.candidateName,
+  //       email: input.email,
+  //       phone: input.phone,
+  //       totalExperienceYears: input.totalExperienceYears,
+  //       currentTitle: input.currentTitle,
+  //       skills: input.skills,
+  //       education: input.education,
+  //       workExperience: input.workExperience,
+  //       certifications: input.certifications,
+  //       languages: input.languages,
+  //     });
+  //     return this.parsedCvRepository.save(updated);
+  //   }
+
+  //   const parsedCv = this.parsedCvRepository.create({
+  //     cv,
+  //     candidateName: input.candidateName,
+  //     email: input.email,
+  //     phone: input.phone,
+  //     totalExperienceYears: input.totalExperienceYears,
+  //     currentTitle: input.currentTitle,
+  //     skills: input.skills,
+  //     education: input.education,
+  //     workExperience: input.workExperience,
+  //     certifications: input.certifications,
+  //     languages: input.languages,
+  //   });
+  //   return this.parsedCvRepository.save(parsedCv);
+  // }
 
   async findOne(publicId: string): Promise<Cv> {
     const cv = await this.cvRepository.findOneBy({ publicId });

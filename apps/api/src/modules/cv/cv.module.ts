@@ -6,17 +6,14 @@ import { UploadCloudinaryModule } from '../upload-cloudinary/upload-cloudinary.m
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Cv } from './entities/cv.entity';
 import { ParsedCv } from './entities/parsed-cv.entity';
-import { CvProcessingModule } from './cv-processing/cv-processing.module';
-import { TextPreprocessorService } from './cv-processing/service/text-preprocessor.service';
 
 @Module({
   imports: [
     UploadCloudinaryModule,
     TypeOrmModule.forFeature([Cv, ParsedCv]),
-    CvProcessingModule,
   ],
   controllers: [CvController],
-  providers: [CvService, PdfParserService, TextPreprocessorService],
-  exports: [CvService, PdfParserService, TextPreprocessorService],
+  providers: [CvService, PdfParserService],
+  exports: [CvService, PdfParserService],
 })
-export class CvModule {}
+export class CvModule { }

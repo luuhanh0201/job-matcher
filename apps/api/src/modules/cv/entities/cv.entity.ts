@@ -1,3 +1,4 @@
+import { UploadStatus } from '@/enum/StatusUpload.enum';
 import { User } from '@/modules/user/entities/user.entity';
 import {
   Column,
@@ -14,11 +15,7 @@ export enum FileType {
   DOCX = 'docx',
   TXT = 'txt',
 }
-export enum UploadStatus {
-  PENDING = 'PENDING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-}
+
 @Entity('cv_documents')
 export class Cv {
   @PrimaryGeneratedColumn('uuid')
