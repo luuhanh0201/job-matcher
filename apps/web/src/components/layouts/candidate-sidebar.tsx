@@ -64,24 +64,38 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
       </button>
 
       {/* User card */}
-      <Link
-        href="/profile"
-        onClick={onClose}
-        className="mb-3 flex flex-col items-center gap-2 rounded-2xl border border-(--gray-200) px-4 py-5 transition-colors hover:bg-(--gray-100)"
-      >
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-(--primary-blue) text-lg font-black text-white">
-          {initials}
+      {user ? (
+        <Link
+          href="/profile"
+          onClick={onClose}
+          className="mb-3 flex flex-col items-center gap-2 rounded-2xl border border-(--gray-200) px-4 py-5 transition-colors hover:bg-(--gray-100)"
+        >
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-(--primary-blue) text-lg font-black text-white">
+            {initials}
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-bold text-(--gray-900)">{user.fullName}</p>
+            <p className="text-xs text-(--gray-500)">{user.email}</p>
+            {user.role && (
+              <div className="mt-1.5 flex justify-center">
+                <RoleBadge role={user.role} />
+              </div>
+            )}
+          </div>
+        </Link>
+      ) : (
+        <div className="mb-3 rounded-2xl border border-(--gray-200) px-4 py-5 text-center">
+          <p className="text-sm font-semibold text-(--gray-900)">Bạn chưa đăng nhập</p>
+          <p className="mt-1 text-xs text-(--gray-500)">Đăng nhập ngay</p>
+          <Link
+            href="/login?redirect=%2F"
+            onClick={onClose}
+            className="mt-3 inline-flex items-center justify-center rounded-xl bg-(--primary-blue) px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-(--blue-dark)"
+          >
+            Đăng nhập
+          </Link>
         </div>
-        <div className="text-center">
-          <p className="text-sm font-bold text-(--gray-900)">{user?.fullName ?? "..."}</p>
-          <p className="text-xs text-(--gray-500)">{user?.email ?? ""}</p>
-          {user?.role && (
-            <div className="mt-1.5 flex justify-center">
-              <RoleBadge role={user.role} />
-            </div>
-          )}
-        </div>
-      </Link>
+      )}
 
       {/* Nav */}
       <nav className="flex flex-1 flex-col gap-0.5">
@@ -135,16 +149,18 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
       </nav>
 
       {/* Logout */}
-      <button
-        onClick={() => {
-          logout();
-          onClose();
-        }}
-        className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
-      >
-        <LogOut className="h-4.5 w-4.5 shrink-0" />
-        Đăng xuất
-      </button>
+      {user ? (
+        <button
+          onClick={() => {
+            logout();
+            onClose();
+          }}
+          className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
+        >
+          <LogOut className="h-4.5 w-4.5 shrink-0" />
+          Đăng xuất
+        </button>
+      ) : null}
     </aside>
   );
 }

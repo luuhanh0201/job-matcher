@@ -7,7 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   type AuthProfile,
   clearAuthTokens,
@@ -23,6 +23,7 @@ type AuthState =
 type AuthContextValue = {
   user: AuthProfile | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
   logout: () => Promise<void>;
 };
 
@@ -31,8 +32,13 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 // Module-level cache — survives client-side navigations
 let cachedUser: AuthProfile | null = null;
 
+function isPublicReadonlyPath(pathname: string | null) {
+  return pathname === "/";
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [state, setState] = useState<AuthState>(
     cachedUser
       ? { status: "authenticated", user: cachedUser }
@@ -43,6 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Already resolved from cache — no need to re-fetch
     if (cachedUser) return;
 
+    const canViewReadonly = isPublicReadonlyPath(pathname);
+
     const accessToken =
       typeof window !== "undefined"
         ? localStorage.getItem("accessToken")
@@ -50,7 +58,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!accessToken) {
       setState({ status: "unauthenticated" });
-      router.replace("/login");
+
+      if (!canViewReadonly) {
+        const redirectQuery = pathname ? `?redirect=${encodeURIComponent(pathname)}` : "";
+        router.replace(`/login${redirectQuery}`);
+      }
       return;
     }
 
@@ -62,9 +74,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {
         clearAuthTokens();
         setState({ status: "unauthenticated" });
-        router.replace("/login");
+
+        if (!canViewReadonly) {
+          const redirectQuery = pathname ? `?redirect=${encodeURIComponent(pathname)}` : "";
+          router.replace(`/login${redirectQuery}`);
+        }
       });
-  }, [router]);
+  }, [pathname, router]);
 
   const logout = useCallback(async () => {
     await authLogout().catch(() => {});
@@ -85,7 +101,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   if (state.status === "unauthenticated") {
-    return null;
+    if (isPublicReadonlyPath(pathname)) {
+      return (
+        <AuthContext.Provider
+          value={{
+            user: null,
+            isLoading: false,
+            isAuthenticated: false,
+            logout,
+          }}
+        >
+          {children}
+        </AuthContext.Provider>
+      );
+    }
+
+    // Still redirecting — keep spinner so there's no flash of blank
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-(--gray-100)">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-(--gray-200) border-t-(--primary-blue)" />
+          <p className="text-sm font-medium text-(--gray-500)">Đang chuyển hướng...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -93,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user: state.user,
         isLoading: false,
+        isAuthenticated: true,
         logout,
       }}
     >

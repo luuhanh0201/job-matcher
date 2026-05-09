@@ -80,21 +80,32 @@ export function CandidateHeader({ onMenuClick }: CandidateHeaderProps) {
       </nav>
 
       {/* Upload CV button */}
-      <Button
-        size="sm"
-        className="ml-1 hidden h-8 gap-1.5 rounded-full bg-(--accent-green) text-sm font-bold text-white hover:bg-(--accent-green)/90 sm:inline-flex"
-      >
-        <Upload className="h-3.5 w-3.5" />
-        Upload CV
-      </Button>
+      {user ? (
+        <Button
+          size="sm"
+          className="ml-1 hidden h-8 gap-1.5 rounded-full bg-(--accent-green) text-sm font-bold text-white hover:bg-(--accent-green)/90 sm:inline-flex"
+        >
+          <Upload className="h-3.5 w-3.5" />
+          Upload CV
+        </Button>
+      ) : null}
 
-      {/* Avatar */}
-      <button
-        title={user?.fullName}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--primary-blue) text-sm font-black text-white"
-      >
-        {initials}
-      </button>
+      {/* Avatar / Login */}
+      {user ? (
+        <button
+          title={user.fullName}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--primary-blue) text-sm font-black text-white"
+        >
+          {initials}
+        </button>
+      ) : (
+        <Link
+          href="/login?redirect=%2F"
+          className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-(--primary-blue) px-3 text-sm font-bold text-white hover:bg-(--blue-dark)"
+        >
+          Đăng nhập
+        </Link>
+      )}
     </header>
   );
 }
