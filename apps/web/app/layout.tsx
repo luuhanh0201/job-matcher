@@ -50,7 +50,13 @@ export default function RootLayout({
 
           gtag('config', 'G-DBDRP10LWJ');
         `}
+        
       </Script>
+      <Script
+       async
+       strategy="afterInteractive"
+       src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6435352664997924"
+     crossOrigin="anonymous"></Script>
     </body>
   </html>
   );
