@@ -1,10 +1,14 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { AiService } from './ai.service';
-import { ChatDto, MultiTurnChatDto } from './dto/chat.dto';
+import { ChatDto, ExtractCvDto, MultiTurnChatDto } from './dto/chat.dto';
+import { AiExtractorService } from './ai-extractor.service';
 
 @Controller('ai')
 export class AiController {
-    constructor(private readonly aiService: AiService) { }
+    constructor(
+        private readonly aiService: AiService,
+        private readonly aiExtractorService: AiExtractorService,
+    ) { }
 
     @Post('chat')
     async chat(@Body() dto: ChatDto) {
@@ -19,5 +23,10 @@ export class AiController {
     async multiTurn(@Body() dto: MultiTurnChatDto) {
         const reply = await this.aiService.multiTurnChat(dto.messages);
         return { reply };
+    }
+
+    @Post('extract-cv')
+    async extractCv(@Body() dto: ExtractCvDto) {
+        return this.aiExtractorService.extractCv(dto.cvText);
     }
 }

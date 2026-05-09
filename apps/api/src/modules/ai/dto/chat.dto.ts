@@ -14,3 +14,9 @@ export class MultiTurnChatDto {
     @IsArray()
     messages!: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
+
+export class ExtractCvDto {
+    @IsString()
+    @IsNotEmpty()
+    cvText!: string;
+}
