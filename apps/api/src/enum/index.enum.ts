@@ -31,7 +31,6 @@ export enum UserStatus {
   INACTIVE = 'INACTIVE',
   BANNED = 'BANNED',
 }
-
 export enum CvProcessingRequestStatus {
   PENDING = 'pending',
   NOT_FOUND = 'not_found',

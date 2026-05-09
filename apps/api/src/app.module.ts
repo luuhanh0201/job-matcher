@@ -10,7 +10,6 @@ import { CvModule } from './modules/cv/cv.module';
 import { MatchResultsModule } from './modules/match-results/match-results.module';
 import { UploadCloudinaryModule } from './modules/upload-cloudinary/upload-cloudinary.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { CvProcessingModule } from './modules/cv/cv-processing/cv-processing.module';
 import { AiModule } from './modules/ai/ai.module';
 
 @Module({
@@ -30,7 +29,6 @@ import { AiModule } from './modules/ai/ai.module';
     MatchResultsModule,
     UploadCloudinaryModule,
     AuthModule,
-    CvProcessingModule,
     AiModule,
   ],
   controllers: [AppController],
