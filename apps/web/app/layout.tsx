@@ -31,7 +31,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("font-sans", geistSans.variable)}>
-    <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <head>
+        <meta name="google-adsense-account" content="ca-pub-6435352664997924" />
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6435352664997924"
+          crossOrigin="anonymous"
+        />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
       <AuthSessionInterceptor />
       {children}
 
@@ -52,12 +61,10 @@ export default function RootLayout({
         `}
         
       </Script>
-      <Script
-       async
-       strategy="afterInteractive"
-       src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6435352664997924"
-     crossOrigin="anonymous"></Script>
+     
     </body>
   </html>
   );
 }
+
+
