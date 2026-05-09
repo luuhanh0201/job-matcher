@@ -77,7 +77,7 @@ async function requestAuth<TResponse>(
   fallbackErrorMessage: string,
 ): Promise<TResponse> {
   if (!API_URL) {
-    throw new Error("Thiếu NEXT_PUBLIC_API_URL");
+    throw new Error("Chưa thêm env");
   }
 
   const response = await fetch(`${API_URL}${path}`, {
@@ -150,7 +150,7 @@ async function refreshAccessToken() {
 
 export async function authFetch(path: string, options: AuthRequestOptions = {}) {
   if (!API_URL) {
-    throw new Error("Thiếu NEXT_PUBLIC_API_URL");
+    throw new Error("Chưa thêm env");
   }
 
   const { withAuth = false, headers, ...rest } = options;
