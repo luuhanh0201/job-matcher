@@ -13,13 +13,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  CvProcessingState,
-  CvProcessingStatus,
-  ParsedCvForm,
-  getCvProcessingStatus,
+  extractCvFromText,
   saveParsedCv,
   uploadCvFile,
 } from "@/services/cv.service";
+import { CvProcessingState } from "@/types/cv";
+import type { CvProcessingStatus, ExtractedCvData, ParsedCvForm } from "@/types/cv";
+import type { EducationItem, WorkExperienceItem } from "@/types/ai-cv";
 
 const DEFAULT_FORM: ParsedCvForm = {
   candidateName: "",
@@ -34,38 +34,6 @@ const DEFAULT_FORM: ParsedCvForm = {
   languages: "",
 };
 
-function pickParsedData(status: CvProcessingStatus): ParsedCvForm | null {
-  const topLevel = status.parsedData;
-  if (topLevel && typeof topLevel === "object") return topLevel;
-
-  const direct = status.result?.parsedData;
-  if (direct && typeof direct === "object") return direct;
-
-  const unknownResult = status.result as unknown as
-    | Record<string, unknown>
-    | undefined;
-  const nested = unknownResult?.data as Record<string, unknown> | undefined;
-  const nestedParsed = nested?.parsedData;
-  if (nestedParsed && typeof nestedParsed === "object") {
-    return nestedParsed as ParsedCvForm;
-  }
-
-  const candidateLike = unknownResult as ParsedCvForm | undefined;
-  if (
-    candidateLike &&
-    (candidateLike.candidateName ||
-      candidateLike.email ||
-      candidateLike.phone ||
-      candidateLike.skills ||
-      candidateLike.education ||
-      candidateLike.workExperience)
-  ) {
-    return candidateLike;
-  }
-
-  return null;
-}
-
 function extractSkillTags(skills?: string) {
   if (!skills) return [];
 
@@ -77,6 +45,99 @@ function extractSkillTags(skills?: string) {
     .filter((item) => item.length > 1);
 
   return Array.from(new Set(tags)).slice(0, 8);
+}
+
+function normalizeList(values: string[]) {
+  return values.join(", ");
+}
+
+function normalizeEducation(
+  education: ExtractedCvData["education"],
+) {
+  return education
+    .map((item) =>
+      [item.school, item.degree, item.major, item.time]
+        .filter(Boolean)
+        .join(" | "),
+    )
+    .filter(Boolean)
+    .join("\n");
+}
+
+function normalizeWorkExperience(
+  workExperience: ExtractedCvData["workExperience"],
+) {
+  return workExperience
+    .map((item) =>
+      [item.company, item.position, item.time, item.description]
+        .filter(Boolean)
+        .join(" | "),
+    )
+    .filter(Boolean)
+    .join("\n");
+}
+
+function parseEducationText(value?: string): EducationItem[] {
+  if (!value?.trim()) {
+    return [];
+  }
+
+  return value
+    .split("\n")
+    .map((line) => line.split("|").map((part) => part.trim()))
+    .map(([school = "", degree = "", major = "", time = ""]) => ({
+      school,
+      degree,
+      major,
+      time,
+    }))
+    .filter((item) => item.school || item.degree || item.major || item.time);
+}
+
+function parseWorkExperienceText(value?: string): WorkExperienceItem[] {
+  if (!value?.trim()) {
+    return [];
+  }
+
+  return value
+    .split("\n")
+    .map((line) => line.split("|").map((part) => part.trim()))
+    .map(([company = "", position = "", time = "", description = ""]) => ({
+      company,
+      position,
+      time,
+      description,
+    }))
+    .filter((item) => item.company || item.position || item.time || item.description);
+}
+
+function toEducationText(items: EducationItem[]) {
+  return items
+    .map((item) => [item.school, item.degree, item.major, item.time].map((part) => part.trim()).join(" | "))
+    .filter((line) => line.replace(/\|/g, "").trim().length > 0)
+    .join("\n");
+}
+
+function toWorkExperienceText(items: WorkExperienceItem[]) {
+  return items
+    .map((item) => [item.company, item.position, item.time, item.description].map((part) => part.trim()).join(" | "))
+    .filter((line) => line.replace(/\|/g, "").trim().length > 0)
+    .join("\n");
+}
+
+function toParsedCvForm(data: ExtractedCvData): ParsedCvForm {
+  return {
+    candidateName: data.candidateName,
+    currentTitle: data.currentTitle,
+    email: data.email,
+    phone: data.phone,
+    totalExperienceYears: data.totalExperienceYears,
+    skills: normalizeList(data.skills),
+    education: normalizeEducation(data.education),
+    workExperience: normalizeWorkExperience(data.workExperience),
+    certifications: normalizeList(data.certifications),
+    languages: normalizeList(data.languages),
+  };
 }
 
 function getStepState(
@@ -127,16 +188,21 @@ export default function AiCvPage() {
   const progress = Number(cvProcessingStatus?.progress ?? 0);
   const score = Math.min(98, Math.max(40, progress > 0 ? progress : 86));
   const skillTags = useMemo(() => extractSkillTags(form.skills), [form.skills]);
-  const hasParsedData = Boolean(
-    cvProcessingStatus ? pickParsedData(cvProcessingStatus) : null,
+  const hasParsedData = Boolean(form.candidateName || form.skills || form.workExperience);
+  const hasAiAnalysis = hasParsedData;
+  const hasSuggestedJobs = false;
+  const apiLoadingText = uploadLoading
+    ? "Đang tải CV..."
+    : pollLoading
+      ? "Đang trích xuất dữ liệu từ nội dung CV bằng AI..."
+      : saveLoading
+        ? "Đang lưu dữ liệu CV..."
+        : "";
+  const educationItems = useMemo(() => parseEducationText(form.education), [form.education]);
+  const workExperienceItems = useMemo(
+    () => parseWorkExperienceText(form.workExperience),
+    [form.workExperience],
   );
-  const resultData = cvProcessingStatus?.result as
-    | Record<string, unknown>
-    | undefined;
-  const hasAiAnalysis = Boolean(resultData?.aiAnalysis);
-  const hasSuggestedJobs = Array.isArray(resultData?.suggestedJobs)
-    ? resultData.suggestedJobs.length > 0
-    : false;
 
   const steps = [
     { id: 1, title: "Tải lên", subtitle: "CV đã tải lên" },
@@ -155,69 +221,58 @@ export default function AiCvPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const syncCvStatus = async (currentCvId: string) => {
-    const status = await getCvProcessingStatus(currentCvId);
-    const nextStatus =
-      status.state === "completed" ? { ...status, progress: 100 } : status;
-
-    setCvProcessingStatus(nextStatus);
-
-    const parsedData = pickParsedData(status);
-    if (parsedData) {
-      setForm((prev) => ({ ...prev, ...parsedData }));
-    }
-
-    if (status.state === "completed" && parsedData) {
-      setMessage("Phân tích CV hoàn tất. Bạn có thể chỉnh sửa dữ liệu và xác nhận lưu.");
-    }
-    if (status.state === "failed") {
-      setError(status.failedReason || "Xử lý CV thất bại.");
-    }
-
-    return {
-      status,
-      parsedData,
-    };
+  const upsertEducationItem = (
+    index: number,
+    key: keyof EducationItem,
+    value: string,
+  ) => {
+    const next = [...educationItems];
+    const current = next[index] ?? { school: "", degree: "", major: "", time: "" };
+    next[index] = { ...current, [key]: value };
+    setField("education", toEducationText(next));
   };
 
-  const pollCvUntilDone = async (currentCvId: string) => {
-    const maxAttempts = 40;
-    const delayMs = 1500;
-    let transientErrorCount = 0;
-    let completedWithoutDataAttempts = 0;
+  const addEducationItem = () => {
+    setField(
+      "education",
+      toEducationText([...educationItems, { school: "", degree: "", major: "", time: "" }]),
+    );
+  };
 
-    for (let i = 0; i < maxAttempts; i += 1) {
-      try {
-        const { status, parsedData } = await syncCvStatus(currentCvId);
-        transientErrorCount = 0;
+  const removeEducationItem = (index: number) => {
+    const next = educationItems.filter((_, itemIndex) => itemIndex !== index);
+    setField("education", toEducationText(next));
+  };
 
-        if (status.state === "failed") {
-          return;
-        }
+  const upsertWorkExperienceItem = (
+    index: number,
+    key: keyof WorkExperienceItem,
+    value: string,
+  ) => {
+    const next = [...workExperienceItems];
+    const current = next[index] ?? {
+      company: "",
+      position: "",
+      time: "",
+      description: "",
+    };
+    next[index] = { ...current, [key]: value };
+    setField("workExperience", toWorkExperienceText(next));
+  };
 
-        if (status.state === "completed" && parsedData) {
-          return;
-        }
+  const addWorkExperienceItem = () => {
+    setField(
+      "workExperience",
+      toWorkExperienceText([
+        ...workExperienceItems,
+        { company: "", position: "", time: "", description: "" },
+      ]),
+    );
+  };
 
-        if (status.state === "completed" && !parsedData) {
-          completedWithoutDataAttempts += 1;
-          setMessage("Đã hoàn tất xử lý, đang đồng bộ dữ liệu parse...");
-          if (completedWithoutDataAttempts >= 6) {
-            setError("Hoàn tất xử lý nhưng chưa nhận được dữ liệu parse. Vui lòng thử lại.");
-            return;
-          }
-        }
-      } catch {
-        transientErrorCount += 1;
-        if (transientErrorCount >= 3) {
-          setMessage("Kết nối trạng thái CV không ổn định, đang tự thử lại...");
-        }
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-    }
-
-    setMessage("CV đang được xử lý. Dữ liệu sẽ tự cập nhật khi parse xong.");
+  const removeWorkExperienceItem = (index: number) => {
+    const next = workExperienceItems.filter((_, itemIndex) => itemIndex !== index);
+    setField("workExperience", toWorkExperienceText(next));
   };
 
   const handleSelectFile = (event: ChangeEvent<HTMLInputElement>) => {
@@ -242,32 +297,33 @@ export default function AiCvPage() {
     setError("");
     setMessage("");
 
-    let currentCvId = "";
     try {
       const response = await uploadCvFile(file);
-      currentCvId = response.cvId ?? String(response.cv?.id ?? "");
+      const currentCvId = response.cvId ?? String(response.cv?.id ?? "");
+
+      if (!response.parsedText?.trim()) {
+        throw new Error("Không đọc được nội dung text từ CV");
+      }
+
       setCvId(currentCvId);
       setCvProcessingStatus({
-        state: CvProcessingState.WAITING,
-        progress: 10,
+        state: CvProcessingState.ACTIVE,
+        progress: 55,
       });
-      setMessage(response.message || "Upload thành công. CV đang được xử lý.");
+
+      setPollLoading(true);
+      const extracted = await extractCvFromText(response.parsedText);
+      setForm((prev) => ({ ...prev, ...toParsedCvForm(extracted) }));
+
+      setCvProcessingStatus({
+        state: CvProcessingState.COMPLETED,
+        progress: 100,
+      });
+      setMessage(response.message || "Upload và trích xuất CV thành công.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload CV thất bại.");
-      setUploadLoading(false);
-      return;
-    }
-
-    setUploadLoading(false);
-
-    if (!currentCvId) return;
-
-    setPollLoading(true);
-    try {
-      await pollCvUntilDone(currentCvId);
-    } catch {
-      setError("Không thể đồng bộ trạng thái xử lý CV. Vui lòng thử lại.");
     } finally {
+      setUploadLoading(false);
       setPollLoading(false);
     }
   };
@@ -371,15 +427,24 @@ export default function AiCvPage() {
                     disabled={uploadLoading || pollLoading}
                     className="h-10 cursor-pointer rounded-full bg-gradient-to-r from-(--accent-purple) to-(--primary-blue) px-12 py-6 font-bold text-white  transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110  active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 text-[16px] "
                   >
-                    {uploadLoading ? "Đang upload..." : "Phân tích CV"}
+                    {uploadLoading || pollLoading ? (
+                      <>
+                        <CircleDashed className="mr-1.5 h-4 w-4 animate-spin" />
+                        {uploadLoading ? "Đang upload..." : "Đang trích xuất..."}
+                      </>
+                    ) : (
+                      "Phân tích CV"
+                    )}
                   </Button>
                 </div>
               </div>
 
-              <p className="text-xs text-(--gray-500)">
-                {pollLoading ? "Đang tự động xử lý và cập nhật dữ liệu parse..." : null}
-                {pollLoading ? " " : ""}
-              </p>
+              {apiLoadingText ? (
+                <p className="flex items-center gap-2 text-xs font-medium text-(--gray-500)">
+                  <CircleDashed className="h-3.5 w-3.5 animate-spin" />
+                  <span>{apiLoadingText}</span>
+                </p>
+              ) : null}
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
@@ -507,12 +572,12 @@ export default function AiCvPage() {
         <CardHeader>
           <CardTitle className="text-(--gray-900)">Xác nhận dữ liệu parse</CardTitle>
           <CardDescription>
-            Parsing không thể đúng 100% cho mọi CV. Hãy chỉnh sửa trước khi xác nhận lưu.
+            Vui lòng kiểm tra và chỉnh sửa lại thông tin nếu có sai sót trước khi lưu vào hệ thống. Dữ liệu này sẽ được sử dụng để match với các công việc phù hợp nhất.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
           <div className="grid gap-2">
-            <Label htmlFor="candidateName">Candidate Name</Label>
+            <Label htmlFor="candidateName">Tên ứng viên</Label>
             <Input
               id="candidateName"
               value={form.candidateName ?? ""}
@@ -530,7 +595,7 @@ export default function AiCvPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone">Số điện thoại</Label>
               <Input
                 id="phone"
                 value={form.phone ?? ""}
@@ -541,7 +606,7 @@ export default function AiCvPage() {
 
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label htmlFor="currentTitle">Current Title</Label>
+              <Label htmlFor="currentTitle">Vị trí</Label>
               <Input
                 id="currentTitle"
                 value={form.currentTitle ?? ""}
@@ -549,7 +614,7 @@ export default function AiCvPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="totalExperienceYears">Total Experience Years</Label>
+              <Label htmlFor="totalExperienceYears">Tổng số năm kinh nghiệm</Label>
               <Input
                 id="totalExperienceYears"
                 value={form.totalExperienceYears ?? ""}
@@ -558,25 +623,126 @@ export default function AiCvPage() {
             </div>
           </div>
 
-          {(
-            [
-              ["skills", "Skills"],
-              ["education", "Education"],
-              ["workExperience", "Work Experience"],
-              ["certifications", "Certifications"],
-              ["languages", "Languages"],
-            ] as Array<[keyof ParsedCvForm, string]>
-          ).map(([key, label]) => (
-            <div key={key} className="grid gap-2">
-              <Label htmlFor={key}>{label}</Label>
-              <textarea
-                id={key}
-                className="min-h-22 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                value={form[key] ?? ""}
-                onChange={(e) => setField(key, e.target.value)}
-              />
+          <div className="grid gap-2">
+            <Label htmlFor="skills">Kỹ năng</Label>
+            <textarea
+              id="skills"
+              className="min-h-22 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              value={form.skills ?? ""}
+              onChange={(e) => setField("skills", e.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-3">
+            <div className="flex items-center justify-between">
+              <Label>Học vấn</Label>
+              <Button type="button" variant="outline" onClick={addEducationItem}>
+                Thêm 
+              </Button>
             </div>
-          ))}
+            {educationItems.length === 0 ? (
+              <p className="text-sm text-(--gray-500)">Chưa có dữ liệu học vấn.</p>
+            ) : (
+              educationItems.map((item, index) => (
+                <div key={`education-${index}`} className="grid gap-2 rounded-xl border border-(--gray-200) p-3">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Input
+                      placeholder="School"
+                      value={item.school}
+                      onChange={(e) => upsertEducationItem(index, "school", e.target.value)}
+                    />
+                    <Input
+                      placeholder="Degree"
+                      value={item.degree}
+                      onChange={(e) => upsertEducationItem(index, "degree", e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Input
+                      placeholder="Major"
+                      value={item.major}
+                      onChange={(e) => upsertEducationItem(index, "major", e.target.value)}
+                    />
+                    <Input
+                      placeholder="Time"
+                      value={item.time}
+                      onChange={(e) => upsertEducationItem(index, "time", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Button type="button" variant="outline" onClick={() => removeEducationItem(index)}>
+                      Xóa
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="grid gap-3">
+            <div className="flex items-center justify-between">
+              <Label>Kinh nghiệm làm việc</Label>
+              <Button type="button" variant="outline" onClick={addWorkExperienceItem}>
+                Thêm 
+              </Button>
+            </div>
+            {workExperienceItems.length === 0 ? (
+              <p className="text-sm text-(--gray-500)">Chưa có dữ liệu.</p>
+            ) : (
+              workExperienceItems.map((item, index) => (
+                <div key={`work-${index}`} className="grid gap-2 rounded-xl border border-(--gray-200) p-3">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Input
+                      placeholder="Company"
+                      value={item.company}
+                      onChange={(e) => upsertWorkExperienceItem(index, "company", e.target.value)}
+                    />
+                    <Input
+                      placeholder="Position"
+                      value={item.position}
+                      onChange={(e) => upsertWorkExperienceItem(index, "position", e.target.value)}
+                    />
+                  </div>
+                  <Input
+                    placeholder="Time"
+                    value={item.time}
+                    onChange={(e) => upsertWorkExperienceItem(index, "time", e.target.value)}
+                  />
+                  <textarea
+                    className="min-h-20 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    placeholder="Description"
+                    value={item.description}
+                    onChange={(e) => upsertWorkExperienceItem(index, "description", e.target.value)}
+                  />
+                  <div>
+                    <Button type="button" variant="outline" onClick={() => removeWorkExperienceItem(index)}>
+                      Xóa kinh nghiệm
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="certifications">Chứng chỉ</Label>
+            <textarea
+              id="certifications"
+              className="min-h-22 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              value={form.certifications ?? ""}
+              onChange={(e) => setField("certifications", e.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="languages">Ngôn ngữ</Label>
+            <textarea
+              id="languages"
+              className="min-h-22 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              value={form.languages ?? ""}
+              onChange={(e) => setField("languages", e.target.value)}
+            />
+          </div>
 
           <div className="flex flex-wrap gap-2">
             <Button
