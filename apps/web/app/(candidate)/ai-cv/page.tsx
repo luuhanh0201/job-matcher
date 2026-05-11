@@ -186,7 +186,6 @@ export default function AiCvPage() {
 
   const canSave = useMemo(() => Boolean(cvId.trim()), [cvId]);
   const progress = Number(cvProcessingStatus?.progress ?? 0);
-  const score = Math.min(98, Math.max(40, progress > 0 ? progress : 86));
   const skillTags = useMemo(() => extractSkillTags(form.skills), [form.skills]);
   const hasParsedData = Boolean(form.candidateName || form.skills || form.workExperience);
   const hasAiAnalysis = hasParsedData;
@@ -330,7 +329,7 @@ export default function AiCvPage() {
 
   const handleSave = async () => {
     if (!cvId) {
-      setError("Chưa có cvId để lưu dữ liệu.");
+      setError("Không tìm thấy Cv của bạn, vui lòng tải lại trang và thử lại.");
       return;
     }
 
@@ -358,7 +357,7 @@ export default function AiCvPage() {
             <div className="mb-4 flex flex-col items-start justify-between gap-4 lg:flex-row">
               <div className="max-w-2xl space-y-2">
                 <span className="inline-flex items-center rounded-full bg-(--accent-purple)/10 px-3 py-1 text-xs font-bold tracking-wide text-(--accent-purple)">
-                  <Sparkles className="mr-1 h-3.5 w-3.5" /> AI CV PHÂN TÍCH
+                  <Sparkles className="mr-1 h-3.5 w-3.5" /> AI CV Analyzer
                 </span>
                 <h1 className="text-2xl leading-tight font-black text-(--gray-900) sm:text-3xl">
                   Tìm công việc phù hợp hơn với{" "}
@@ -370,12 +369,7 @@ export default function AiCvPage() {
                 </p>
               </div>
 
-              <div className="grid h-20 w-20 place-items-center rounded-full border border-(--gray-200) bg-white shadow-sm sm:h-24 sm:w-24">
-                <div className="text-center">
-                  <p className="text-3xl leading-none font-black text-(--accent-green) sm:text-4xl">{score}%</p>
-                  <p className="mt-1 text-[11px] font-semibold text-(--gray-500)">Điểm phù hợp</p>
-                </div>
-              </div>
+            
             </div>
 
             <div className="space-y-4 rounded-2xl border border-dashed border-(--primary-blue)/35 bg-white px-4 py-4 sm:px-5">
@@ -462,23 +456,21 @@ export default function AiCvPage() {
                 return (
                   <div
                     key={step.id}
-                    className={`rounded-2xl border px-3 py-3 transition-colors ${
-                      isDone
-                        ? "border-(--accent-green)/40 bg-(--accent-green)/10"
-                        : isActive
-                          ? "border-(--accent-purple)/40 bg-(--accent-purple)/10"
-                          : "border-(--gray-200) bg-white"
-                    }`}
+                    className={`rounded-2xl border px-3 py-3 transition-colors ${isDone
+                      ? "border-(--accent-green)/40 bg-(--accent-green)/10"
+                      : isActive
+                        ? "border-(--accent-purple)/40 bg-(--accent-purple)/10"
+                        : "border-(--gray-200) bg-white"
+                      }`}
                   >
                     <div className="mb-1 flex items-center gap-2">
                       <span
-                        className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${
-                          isDone
-                            ? "bg-(--accent-green) text-white"
-                            : isActive
-                              ? "bg-(--accent-purple) text-white"
-                              : "bg-(--gray-200) text-(--gray-500)"
-                        }`}
+                        className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${isDone
+                          ? "bg-(--accent-green) text-white"
+                          : isActive
+                            ? "bg-(--accent-purple) text-white"
+                            : "bg-(--gray-200) text-(--gray-500)"
+                          }`}
                       >
                         {isDone ? <Check className="h-3.5 w-3.5" /> : step.id}
                       </span>
@@ -570,9 +562,9 @@ export default function AiCvPage() {
 
       <Card className="border border-(--gray-200) bg-white/95">
         <CardHeader>
-          <CardTitle className="text-(--gray-900)">Xác nhận dữ liệu parse</CardTitle>
+          <CardTitle className="text-(--gray-900)">Xác nhận lại thông tin</CardTitle>
           <CardDescription>
-            Vui lòng kiểm tra và chỉnh sửa lại thông tin nếu có sai sót trước khi lưu vào hệ thống. Dữ liệu này sẽ được sử dụng để match với các công việc phù hợp nhất.
+            Vui lòng kiểm tra và chỉnh sửa lại thông tin nếu có sai sót.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
@@ -714,11 +706,7 @@ export default function AiCvPage() {
                     value={item.description}
                     onChange={(e) => upsertWorkExperienceItem(index, "description", e.target.value)}
                   />
-                  <div>
-                    <Button type="button" variant="outline" onClick={() => removeWorkExperienceItem(index)} className="w-full sm:w-auto">
-                      Xóa kinh nghiệm
-                    </Button>
-                  </div>
+
                 </div>
               ))
             )}
