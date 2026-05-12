@@ -81,7 +81,14 @@ export class AiExtractorService {
 
     private loadSystemPrompt(): string {
         try {
-            const promptPath = join(process.cwd(), 'promt-AI-extractor.md');
+            const promptPath = join(
+                process.cwd(),
+                'src',
+                'modules',
+                'ai',
+                'prompts',
+                'Prompt-AI-extractor.md',
+            );
             return readFileSync(promptPath, 'utf8').trim();
         } catch (error) {
             this.logger.warn(

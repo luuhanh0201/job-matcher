@@ -1,13 +1,16 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { ChatDto, ExtractCvDto, MultiTurnChatDto } from './dto/chat.dto';
 import { AiExtractorService } from './ai-extractor.service';
+import { AiAnalyzerService } from './ai-analyzer.service';
+import { AnalyzeCvDto } from './dto/analyze-cv.dto';
 
 @Controller('ai')
 export class AiController {
     constructor(
         private readonly aiService: AiService,
         private readonly aiExtractorService: AiExtractorService,
+        private readonly aiAnalyzerService: AiAnalyzerService,
     ) { }
 
     @Post('chat')
@@ -28,5 +31,17 @@ export class AiController {
     @Post('extract-cv')
     async extractCv(@Body() dto: ExtractCvDto) {
         return this.aiExtractorService.extractCv(dto.cvText);
+    }
+
+    @Post('analyze-cv')
+    async analyzeCv(@Body() dto: AnalyzeCvDto) {
+        return this.aiAnalyzerService.analyzeCv(dto);
+    }
+
+    @Get('analyzer-prompt')
+    async getAnalyzerPrompt() {
+        return {
+            systemPrompt: await this.aiAnalyzerService.getSystemPrompt(),
+        };
     }
 }
