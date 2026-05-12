@@ -7,10 +7,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cv, FileType } from '../entities/cv.entity';
+import { ParsedCv } from '../entities/parsed-cv.entity';
 import { Repository } from 'typeorm';
 import { UploadCloudinaryService } from '@/modules/upload-cloudinary/upload-cloudinary.service';
 import { UploadStatus } from '@/enum/StatusUpload.enum';
 import { UserRole } from '@/enum/index.enum';
+import { SaveParsedCvDto } from '../dto/save-parsed-cv.dto';
 
 const UPLOAD_COOLDOWN_MS = 5 * 60 * 1000;
 
@@ -35,6 +37,8 @@ export class CvService {
   constructor(
     @InjectRepository(Cv)
     private readonly cvRepository: Repository<Cv>,
+    @InjectRepository(ParsedCv)
+    private readonly parsedCvRepository: Repository<ParsedCv>,
     private readonly uploadCloudinaryService: UploadCloudinaryService,
   ) { }
 
@@ -142,46 +146,47 @@ export class CvService {
     }
   }
 
-  // async saveParsedCv(input: SaveParsedCvInput): Promise<ParsedCv> {
-  //   const cv = await this.cvRepository.findOneBy({ id: input.cvId });
-  //   if (!cv) {
-  //     throw new NotFoundException(`CV with id ${input.cvId} not found`);
-  //   }
+  async saveParsedCv(input: SaveParsedCvDto): Promise<ParsedCv> {
+    const cv = await this.cvRepository.findOneBy({ id: input.cvId });
+    if (!cv) {
+      throw new NotFoundException(`CV with id ${input.cvId} not found`);
+    }
 
-  //   const existing = await this.parsedCvRepository.findOneBy({
-  //     cv: { id: cv.id },
-  //   });
-  //   if (existing) {
-  //     const updated = this.parsedCvRepository.merge(existing, {
-  //       candidateName: input.candidateName,
-  //       email: input.email,
-  //       phone: input.phone,
-  //       totalExperienceYears: input.totalExperienceYears,
-  //       currentTitle: input.currentTitle,
-  //       skills: input.skills,
-  //       education: input.education,
-  //       workExperience: input.workExperience,
-  //       certifications: input.certifications,
-  //       languages: input.languages,
-  //     });
-  //     return this.parsedCvRepository.save(updated);
-  //   }
+    const existing = await this.parsedCvRepository.findOneBy({
+      cv: { id: cv.id },
+    });
 
-  //   const parsedCv = this.parsedCvRepository.create({
-  //     cv,
-  //     candidateName: input.candidateName,
-  //     email: input.email,
-  //     phone: input.phone,
-  //     totalExperienceYears: input.totalExperienceYears,
-  //     currentTitle: input.currentTitle,
-  //     skills: input.skills,
-  //     education: input.education,
-  //     workExperience: input.workExperience,
-  //     certifications: input.certifications,
-  //     languages: input.languages,
-  //   });
-  //   return this.parsedCvRepository.save(parsedCv);
-  // }
+    if (existing) {
+      const updated = this.parsedCvRepository.merge(existing, {
+        candidateName: input.candidateName,
+        email: input.email,
+        phone: input.phone,
+        totalExperienceYears: input.totalExperienceYears,
+        currentTitle: input.currentTitle,
+        skills: input.skills,
+        education: input.education,
+        workExperience: input.workExperience,
+        certifications: input.certifications,
+        languages: input.languages,
+      });
+      return this.parsedCvRepository.save(updated);
+    }
+
+    const parsedCv = this.parsedCvRepository.create({
+      cv,
+      candidateName: input.candidateName,
+      email: input.email,
+      phone: input.phone,
+      totalExperienceYears: input.totalExperienceYears,
+      currentTitle: input.currentTitle,
+      skills: input.skills,
+      education: input.education,
+      workExperience: input.workExperience,
+      certifications: input.certifications,
+      languages: input.languages,
+    });
+    return this.parsedCvRepository.save(parsedCv);
+  }
 
   async findOne(publicId: string): Promise<Cv> {
     const cv = await this.cvRepository.findOneBy({ publicId });

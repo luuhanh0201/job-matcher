@@ -1,5 +1,5 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { ValidationError, validate } from 'class-validator';
 import type { Cache } from 'cache-manager';
@@ -15,6 +15,13 @@ const FALLBACK_PROMPT =
 
 const MAX_RETRIES = 5;
 const ANALYZE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const ANALYZE_COOLDOWN_MS = 5 * 60 * 1000;
+
+type AnalyzeIdentity = {
+    userId: string;
+    deviceId: string;
+};
+
 @Injectable()
 export class AiAnalyzerService {
     private readonly logger = new Logger(AiAnalyzerService.name);
@@ -47,11 +54,14 @@ export class AiAnalyzerService {
         return this.loadSystemPrompt();
     }
 
-    async analyzeCv(payload: AnalyzeCvDto): Promise<AnalyzerCvResultDto> {
+    async analyzeCv(payload: AnalyzeCvDto, identity: AnalyzeIdentity): Promise<AnalyzerCvResultDto> {
+        await this.enforceAnalyzeCooldown(identity);
+
         const cacheKey = this.buildCacheKey(payload);
         const cached = await this.getCachedResult(cacheKey);
         if (cached) {
             this.logger.debug(`Cache hit cho analyzer key ${cacheKey}`);
+            await this.markAnalyzeSuccess(identity);
             return cached;
         }
 
@@ -68,6 +78,7 @@ export class AiAnalyzerService {
                 const parsed = this.parseJsonResponse(rawResponse);
                 const validated = await this.validateAnalyzerResult(parsed);
                 await this.setCachedResult(cacheKey, validated);
+                await this.markAnalyzeSuccess(identity);
                 return validated;
             } catch (error) {
                 lastError = error;
@@ -84,6 +95,80 @@ export class AiAnalyzerService {
         throw new InternalServerErrorException(
             'Không thể phân tích CV. Vui lòng thử lại sau.',
         );
+    }
+
+    private buildAccountCooldownKey(userId: string): string {
+        return `ai:analyze-cooldown:account:${userId}`;
+    }
+
+    private buildDeviceCooldownKey(deviceId: string): string {
+        return `ai:analyze-cooldown:device:${deviceId}`;
+    }
+
+    private async enforceAnalyzeCooldown(identity: AnalyzeIdentity): Promise<void> {
+        const [accountAt, deviceAt] = await Promise.all([
+            this.getCooldownTimestamp(this.buildAccountCooldownKey(identity.userId)),
+            this.getCooldownTimestamp(this.buildDeviceCooldownKey(identity.deviceId)),
+        ]);
+
+        const accountWaitSeconds = this.getWaitSeconds(accountAt);
+        if (accountWaitSeconds > 0) {
+            throw new HttpException(
+                `Bạn chỉ được phân tích CV lại sau ${accountWaitSeconds} giây (giới hạn theo tài khoản).`,
+                HttpStatus.TOO_MANY_REQUESTS,
+            );
+        }
+
+        const deviceWaitSeconds = this.getWaitSeconds(deviceAt);
+        if (deviceWaitSeconds > 0) {
+            throw new HttpException(
+                `Thiết bị này chỉ được phân tích CV lại sau ${deviceWaitSeconds} giây.`,
+                HttpStatus.TOO_MANY_REQUESTS,
+            );
+        }
+    }
+
+    private async markAnalyzeSuccess(identity: AnalyzeIdentity): Promise<void> {
+        const now = Date.now();
+        await Promise.all([
+            this.setCooldownTimestamp(this.buildAccountCooldownKey(identity.userId), now),
+            this.setCooldownTimestamp(this.buildDeviceCooldownKey(identity.deviceId), now),
+        ]);
+    }
+
+    private getWaitSeconds(timestamp: number | null): number {
+        if (!timestamp) {
+            return 0;
+        }
+
+        const elapsed = Date.now() - timestamp;
+        if (elapsed >= ANALYZE_COOLDOWN_MS) {
+            return 0;
+        }
+
+        return Math.ceil((ANALYZE_COOLDOWN_MS - elapsed) / 1000);
+    }
+
+    private async getCooldownTimestamp(key: string): Promise<number | null> {
+        try {
+            const value = await this.cacheManager.get<number>(key);
+            return typeof value === 'number' ? value : null;
+        } catch (error) {
+            this.logger.warn(
+                `Không thể đọc cooldown analyzer: ${error instanceof Error ? error.message : 'lỗi không xác định'}`,
+            );
+            return null;
+        }
+    }
+
+    private async setCooldownTimestamp(key: string, timestamp: number): Promise<void> {
+        try {
+            await this.cacheManager.set(key, timestamp, ANALYZE_COOLDOWN_MS);
+        } catch (error) {
+            this.logger.warn(
+                `Không thể ghi cooldown analyzer: ${error instanceof Error ? error.message : 'lỗi không xác định'}`,
+            );
+        }
     }
 
     private buildUserMessage(payload: AnalyzeCvDto): string {

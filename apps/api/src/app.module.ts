@@ -12,7 +12,6 @@ import { UploadCloudinaryModule } from './modules/upload-cloudinary/upload-cloud
 import { AuthModule } from './modules/auth/auth.module';
 import { AiModule } from './modules/ai/ai.module';
 import { ActiveLogModule } from './modules/active-log/active-log.module';
-import { AiAnalyzerService } from './modules/ai/ai-analyzer.service';
 
 @Module({
   imports: [
@@ -35,7 +34,7 @@ import { AiAnalyzerService } from './modules/ai/ai-analyzer.service';
     ActiveLogModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AiAnalyzerService],
+  providers: [AppService],
 })
 export class AppModule {
   // configure(consumer: MiddlewareConsumer) {

@@ -16,6 +16,7 @@ import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
 import { PdfParserService } from './service/pdf-parser.service';
 import { UserRole } from '@/enum/index.enum';
+import { SaveParsedCvDto } from './dto/save-parsed-cv.dto';
 
 const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024;
 
@@ -74,20 +75,8 @@ export class CvController {
     };
   }
 
-  // @Post('save-parsed-cv')
-  // async saveParsedCv(@Body() body: Record<string, string>) {
-  //   return this.cvService.saveParsedCv({
-  //     cvId: body['cvId'] ?? '',
-  //     candidateName: body['candidateName'],
-  //     email: body['email'],
-  //     phone: body['phone'],
-  //     totalExperienceYears: body['totalExperienceYears'],
-  //     currentTitle: body['currentTitle'],
-  //     skills: body['skills'],
-  //     education: body['education'],
-  //     workExperience: body['workExperience'],
-  //     certifications: body['certifications'],
-  //     languages: body['languages'],
-  //   });
-  // }
+  @Post('save-parsed-cv')
+  async saveParsedCv(@Body() dto: SaveParsedCvDto) {
+    return this.cvService.saveParsedCv(dto);
+  }
 }

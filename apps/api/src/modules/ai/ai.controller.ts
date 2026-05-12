@@ -1,9 +1,12 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import type { Request } from 'express';
 import { AiService } from './ai.service';
 import { ChatDto, ExtractCvDto, MultiTurnChatDto } from './dto/chat.dto';
 import { AiExtractorService } from './ai-extractor.service';
 import { AiAnalyzerService } from './ai-analyzer.service';
 import { AnalyzeCvDto } from './dto/analyze-cv.dto';
+import { UserRole } from '@/enum/index.enum';
 
 @Controller('ai')
 export class AiController {
@@ -34,8 +37,19 @@ export class AiController {
     }
 
     @Post('analyze-cv')
-    async analyzeCv(@Body() dto: AnalyzeCvDto) {
-        return this.aiAnalyzerService.analyzeCv(dto);
+    @UseGuards(AuthGuard('jwt'))
+    async analyzeCv(@Body() dto: AnalyzeCvDto, @Req() req: Request) {
+        const user = req.user as { id: string; email: string; role: UserRole };
+        const headerDeviceId = req.headers['x-device-id'];
+        const deviceId =
+            typeof headerDeviceId === 'string' && headerDeviceId.trim().length > 0
+                ? headerDeviceId.trim()
+                : `${req.ip ?? 'unknown-ip'}:${req.headers['user-agent'] ?? 'unknown-agent'}`;
+
+        return this.aiAnalyzerService.analyzeCv(dto, {
+            userId: user.id,
+            deviceId,
+        });
     }
 
     @Get('analyzer-prompt')
