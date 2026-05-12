@@ -11,6 +11,8 @@ import { MatchResultsModule } from './modules/match-results/match-results.module
 import { UploadCloudinaryModule } from './modules/upload-cloudinary/upload-cloudinary.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AiModule } from './modules/ai/ai.module';
+import { ActiveLogModule } from './modules/active-log/active-log.module';
+import { AiAnalyzerService } from './modules/ai/ai-analyzer.service';
 
 @Module({
   imports: [
@@ -30,9 +32,10 @@ import { AiModule } from './modules/ai/ai.module';
     UploadCloudinaryModule,
     AuthModule,
     AiModule,
+    ActiveLogModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AiAnalyzerService],
 })
 export class AppModule {
   // configure(consumer: MiddlewareConsumer) {

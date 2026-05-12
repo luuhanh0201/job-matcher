@@ -1,7 +1,10 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import { ValidationError, validate } from 'class-validator';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { AiService } from './ai.service';
+import { ExtractedCvDto } from '@/modules/cv/dto/extracted-cv.dto';
 
 type ExtractedEducation = {
     school: string;
@@ -59,7 +62,8 @@ export class AiExtractorService {
                 );
 
                 const parsed = this.parseJsonResponse(rawResponse);
-                return this.normalizeParsedData(parsed);
+                const normalized = this.normalizeParsedData(parsed);
+                return await this.validateExtractedCvData(normalized);
             } catch (error) {
                 lastError = error;
                 this.logger.warn(
@@ -71,7 +75,7 @@ export class AiExtractorService {
 
         this.logger.error('Trích xuất CV thất bại sau số lần thử tối đa', lastError as Error);
         throw new InternalServerErrorException(
-            `Không thể trích xuất CV sau ${MAX_RETRIES} lần thử. Vui lòng kiểm tra lại nội dung CV hoặc thử lại sau.`,
+            `Không thể trích xuất CV. Vui lòng kiểm tra lại nội dung CV hoặc thử lại sau.`,
         );
     }
 
@@ -129,6 +133,36 @@ export class AiExtractorService {
             certifications: this.asStringArray(data['certifications']),
             languages: this.asStringArray(data['languages']),
         };
+    }
+
+    private async validateExtractedCvData(
+        payload: ExtractedCvData,
+    ): Promise<ExtractedCvData> {
+        const dto = plainToInstance(ExtractedCvDto, payload);
+        const errors = await validate(dto, {
+            whitelist: true,
+            forbidNonWhitelisted: true,
+        });
+
+        if (errors.length > 0) {
+            throw new Error(
+                `Dữ liệu CV sau khi trích xuất không hợp lệ: ${this.formatValidationErrors(errors)}`,
+            );
+        }
+
+        return dto as ExtractedCvData;
+    }
+
+    private formatValidationErrors(errors: ValidationError[]): string {
+        return errors
+            .flatMap((error) => {
+                const current = Object.values(error.constraints ?? {});
+                const nested = (error.children ?? []).flatMap((child) =>
+                    Object.values(child.constraints ?? {}),
+                );
+                return [...current, ...nested];
+            })
+            .join('; ');
     }
 
     private normalizeEducation(input: unknown): ExtractedEducation[] {
