@@ -1,7 +1,10 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { ValidationError, validate } from 'class-validator';
+import type { Cache } from 'cache-manager';
 import { readFileSync } from 'fs';
+import { createHash } from 'crypto';
 import { join } from 'path';
 import { AiService } from './ai.service';
 import { AnalyzerCvResultDto } from './dto/analyzer-cv-result.dto';
@@ -11,11 +14,15 @@ const FALLBACK_PROMPT =
     'Bạn là AI Analyzer chuyên phân tích và đánh giá CV/resume ứng viên, Nhiệm vụ Đọc nội dung CV được cung cấp và trả về **DUY NHẤT** một JSON hợp lệ, Không thêm markdown, không giải thích, không văn bản thừa ngoài JSON';
 
 const MAX_RETRIES = 5;
+const ANALYZE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 @Injectable()
 export class AiAnalyzerService {
     private readonly logger = new Logger(AiAnalyzerService.name);
 
-    constructor(private readonly aiService: AiService) { }
+    constructor(
+        private readonly aiService: AiService,
+        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    ) { }
 
     private loadSystemPrompt(): string {
         try {
@@ -41,6 +48,13 @@ export class AiAnalyzerService {
     }
 
     async analyzeCv(payload: AnalyzeCvDto): Promise<AnalyzerCvResultDto> {
+        const cacheKey = this.buildCacheKey(payload);
+        const cached = await this.getCachedResult(cacheKey);
+        if (cached) {
+            this.logger.debug(`Cache hit cho analyzer key ${cacheKey}`);
+            return cached;
+        }
+
         const systemPrompt = await this.getSystemPrompt();
         const userMessage = this.buildUserMessage(payload);
         let lastError: unknown;
@@ -52,7 +66,9 @@ export class AiAnalyzerService {
                     userMessage,
                 );
                 const parsed = this.parseJsonResponse(rawResponse);
-                return await this.validateAnalyzerResult(parsed);
+                const validated = await this.validateAnalyzerResult(parsed);
+                await this.setCachedResult(cacheKey, validated);
+                return validated;
             } catch (error) {
                 lastError = error;
                 this.logger.warn(
@@ -72,6 +88,52 @@ export class AiAnalyzerService {
 
     private buildUserMessage(payload: AnalyzeCvDto): string {
         return `Input CV JSON:\n${JSON.stringify(payload, null, 2)}`;
+    }
+
+    private buildCacheKey(payload: AnalyzeCvDto): string {
+        const canonicalPayload = this.stableStringify(payload);
+        const digest = createHash('sha256').update(canonicalPayload).digest('hex');
+        return `ai:analyze-cv:${digest}`;
+    }
+
+    private stableStringify(value: unknown): string {
+        if (Array.isArray(value)) {
+            return `[${value.map((item) => this.stableStringify(item)).join(',')}]`;
+        }
+
+        if (value && typeof value === 'object') {
+            const obj = value as Record<string, unknown>;
+            const keys = Object.keys(obj).sort((a, b) => a.localeCompare(b));
+            return `{${keys
+                .map((key) => `${JSON.stringify(key)}:${this.stableStringify(obj[key])}`)
+                .join(',')}}`;
+        }
+
+        return JSON.stringify(value);
+    }
+
+    private async getCachedResult(key: string): Promise<AnalyzerCvResultDto | null> {
+        try {
+            return (await this.cacheManager.get<AnalyzerCvResultDto>(key)) ?? null;
+        } catch (error) {
+            this.logger.warn(
+                `Không thể đọc cache analyzer: ${error instanceof Error ? error.message : 'lỗi không xác định'}`,
+            );
+            return null;
+        }
+    }
+
+    private async setCachedResult(
+        key: string,
+        value: AnalyzerCvResultDto,
+    ): Promise<void> {
+        try {
+            await this.cacheManager.set(key, value, ANALYZE_CACHE_TTL_MS);
+        } catch (error) {
+            this.logger.warn(
+                `Không thể ghi cache analyzer: ${error instanceof Error ? error.message : 'lỗi không xác định'}`,
+            );
+        }
     }
 
     private parseJsonResponse(rawResponse: string): unknown {
