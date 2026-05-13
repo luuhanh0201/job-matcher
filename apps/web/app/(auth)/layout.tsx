@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Job Matcher – Xác thực',
+  title: 'Job Matcher',
 };
 
 export default function AuthLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode;  
 }) {
   return (
     <div className=" flex items-center justify-center bg-background">
