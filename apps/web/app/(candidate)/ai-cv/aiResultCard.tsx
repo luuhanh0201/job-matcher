@@ -1,6 +1,7 @@
+import { Button } from "@/components/ui/button";
 import { ParsedCvForm } from "@/types/cv";
 
-function AiResultCard({ form }: { form: ParsedCvForm }) {
+function AiResultCard({ form, hasParsedData }: { form: ParsedCvForm, hasParsedData: boolean }) {
 
     const summaryText =
         form.currentTitle || form.skills || form.workExperience
@@ -12,22 +13,8 @@ function AiResultCard({ form }: { form: ParsedCvForm }) {
             <p className="text-sm text-(--gray-500)">{summaryText}</p>
 
             <div className="mt-3 flex flex-wrap gap-2">
-                {form.skills ? (
-                    <span className="rounded-full bg-(--accent-green)/15 px-3 py-1 text-xs font-bold text-(--accent-green)">
-                        Đã trích xuất kỹ năng
-                    </span>
-                ) : null}
-                {form.workExperience ? (
-                    <span className="rounded-full bg-(--accent-green)/15 px-3 py-1 text-xs font-bold text-(--accent-green)">
-                        Có kinh nghiệm
-                    </span>
-                ) : null}
-                {!form.totalExperienceYears ? (
-                    <span className="rounded-full bg-(--accent-orange)/15 px-3 py-1 text-xs font-bold text-(--accent-orange)">
-                        Thiếu tổng số năm kinh nghiệm
-                    </span>
-                ) : null}
-            </div>
+              {hasParsedData ? <Button>Phân tích CV</Button> : null}
+            </div>  
         </div>
     );
 }

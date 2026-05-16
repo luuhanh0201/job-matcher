@@ -361,7 +361,7 @@ function FormConfirmCvComponent({ cvId, form, setForm }: FormConfirmCvComponentP
                         disabled={saveLoading}
                         className="w-full cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
                     >
-                        Đặt lại form
+                        Huỷ
                     </Button>
                 </div>
 

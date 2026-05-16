@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Check, CircleDashed, FileText, Sparkles, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -109,6 +109,62 @@ export default function AiCvPage() {
   const [cvId, setCvId] = useState("");
   const [cvProcessingStatus, setCvProcessingStatus] = useState<CvProcessingStatus | null>(null);
   const [form, setForm] = useState<ParsedCvForm>(DEFAULT_FORM);
+  useEffect(() => {
+    setForm({
+      "candidateName": "Ngô Đức Duy",
+      "currentTitle": "Frontend Developer",
+      "email": "nducduyfpoly.vn@gmail.com",
+      "phone": "0974179187",
+      "totalExperienceYears": "2",
+      "skills": [
+        "HTML5",
+        "CSS3",
+        "Tailwind CSS",
+        "JavaScript",
+        "TypeScript",
+        "React.js",
+        "Next.js",
+        "Responsive Web Design",
+        "REST API Integration",
+        "Redux Toolkit",
+        "React Query",
+        "shadcn/ui",
+        "Node.js",
+        "NestJS",
+        "Express.js",
+        "PHP",
+        "MVC Architecture",
+        "RESTful API Design",
+        "JWT",
+        "Socket.IO",
+        "PostgreSQL",
+        "MySQL",
+        "MongoDB",
+        "Git",
+        "GitHub",
+        "Postman",
+        "Figma"
+      ],
+      "education": [
+        {
+          "school": "FPT Polytechnic",
+          "degree": "",
+          "major": "Information Technology Web Development",
+          "time": "08/2023 - 06/2025"
+        }
+      ],
+      "workExperience": [
+        {
+          "company": "FPT Polytechnic",
+          "position": "Web Developer (Frontend)",
+          "time": "2023 - 2025",
+          "description": "Participated in Web Development study groups at FPT Polytechnic. Practiced modern web technologies (React, Vue, Node.js)"
+        }
+      ],
+      "certifications": [],
+      "languages": []
+    });
+  }, [])
   const [uploadLoading, setUploadLoading] = useState(false);
   const [pollLoading, setPollLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -128,8 +184,8 @@ export default function AiCvPage() {
   const steps = [
     { id: 1, title: "Tải lên", subtitle: "CV đã tải lên" },
     { id: 2, title: "Đọc PDF", subtitle: "Đọc nội dung" },
-    { id: 3, title: "Trích xuất", subtitle: "Trích xuất kỹ năng" },
-    { id: 4, title: "Phân tích", subtitle: "AI đánh giá (chưa tích hợp)" },
+    { id: 3, title: "Trích xuất", subtitle: "Trích xuất thông tin Cv" },
+    { id: 4, title: "Phân tích", subtitle: "AI đánh giá" },
     { id: 5, title: "Gợi ý việc", subtitle: "Gợi ý việc làm (chưa tích hợp)" },
   ];
 
@@ -258,7 +314,7 @@ export default function AiCvPage() {
                       void handleUpload();
                     }}
                     disabled={uploadLoading || pollLoading}
-                    className="h-10 w-full cursor-pointer rounded-full bg-linear-to-r from-(--accent-purple) to-(--primary-blue) px-6 py-6 text-[16px] font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:px-12"
+                    className="h-10 w-full rounded-full bg-linear-to-r from-(--accent-purple) to-(--primary-blue) px-6 py-6 text-[16px] font-bold text-white disabled:cursor-not-allowed transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 active:scale-[0.98]  disabled:opacity-70 sm:w-auto sm:px-12"
                   >
                     {uploadLoading || pollLoading ? (
                       <>
@@ -266,7 +322,7 @@ export default function AiCvPage() {
                         {uploadLoading ? "Đang upload..." : "Đang trích xuất..."}
                       </>
                     ) : (
-                      "Phân tích CV"
+                      "Tải CV lên"
                     )}
                   </Button>
                 </div>
@@ -324,7 +380,7 @@ export default function AiCvPage() {
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
               <ResumeProfile form={form} />
 
-              <AiResultCard form={form} />
+              <AiResultCard form={form} hasParsedData={hasParsedData} />
 
             </div>
 
@@ -343,7 +399,9 @@ export default function AiCvPage() {
         </CardContent>
       </Card>
 
-      <FormConfirmCvComponent cvId={cvId} form={form} setForm={setForm} />
+      {hasParsedData ? (
+        <FormConfirmCvComponent cvId={cvId} form={form} setForm={setForm} />
+      ) : null}
     </div>
   );
 }
