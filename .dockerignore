@@ -4,4 +4,6 @@ dist
 build
 .next
 coverage
-.env
+**/.env.local
+**/.env.development
+**/.env.*
