@@ -64,7 +64,7 @@ export class CvService {
         cv: existingCv,
         cvId: existingCv.id,
         status: UploadStatus.COMPLETED,
-        message: 'CV đã tồn tại. Hệ thống sẽ cập nhật lại nội dung CV nếu có thay đổi.',
+        message: 'Tải lên CV thành công.',
       };
     }
     let uploadedPublicId: string | null = null;
