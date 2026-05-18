@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Check, CircleDashed, FileText, Sparkles, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,62 +15,10 @@ import {
 } from "@/services/cv.service";
 import { CvProcessingState } from "@/types/cv";
 import type { AnalyzerResult, CvProcessingStatus, ExtractedCvData, ParsedCvForm } from "@/types/cv";
+import { toParsedCvForm } from "@/utils/cv.utils";
 import FormConfirmCvComponent, { DEFAULT_FORM } from "./formConfirmCv";
 import AiResultCard from "./aiResultCard";
 import ResumeProfile from "./resumeProfile";
-
-
-
-
-
-function normalizeList(values: string[]) {
-  return values.join(", ");
-}
-
-function normalizeEducation(
-  education: ExtractedCvData["education"],
-) {
-  return education
-    .map((item) =>
-      [item.school, item.degree, item.major, item.time]
-        .filter(Boolean)
-        .join(" | "),
-    )
-    .filter(Boolean)
-    .join("\n");
-}
-
-function normalizeWorkExperience(
-  workExperience: ExtractedCvData["workExperience"],
-) {
-  return workExperience
-    .map((item) =>
-      [item.company, item.position, item.time, item.description]
-        .filter(Boolean)
-        .join(" | "),
-    )
-    .filter(Boolean)
-    .join("\n");
-}
-
-
-
-
-
-function toParsedCvForm(data: ExtractedCvData): ParsedCvForm {
-  return {
-    candidateName: data.candidateName,
-    currentTitle: data.currentTitle,
-    email: data.email,
-    phone: data.phone,
-    totalExperienceYears: data.totalExperienceYears,
-    skills: normalizeList(data.skills),
-    education: normalizeEducation(data.education),
-    workExperience: normalizeWorkExperience(data.workExperience),
-    certifications: normalizeList(data.certifications),
-    languages: normalizeList(data.languages),
-  };
-}
 
 function getStepState(
   step: number,
@@ -106,6 +54,7 @@ function getStepState(
 
 export default function AiCvPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formConfirmRef = useRef<HTMLDivElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [cvId, setCvId] = useState("");
   const [cvProcessingStatus, setCvProcessingStatus] = useState<CvProcessingStatus | null>(null);
@@ -120,9 +69,19 @@ export default function AiCvPage() {
   const [error, setError] = useState("");
 
   const progress = Number(cvProcessingStatus?.progress ?? 0);
-  const hasParsedData = Boolean(form.candidateName || form.skills || form.workExperience);
+  const hasCvProcessing = Boolean(cvId && cvProcessingStatus);
+  const hasParsedData = Boolean(extractedData && (form.candidateName || form.skills || form.workExperience));
   const hasAiAnalysis = Boolean(analyzerResult);
   const hasSuggestedJobs = false;
+
+  useEffect(() => {
+    if (hasParsedData && !hasAiAnalysis && formConfirmRef.current) {
+      setTimeout(() => {
+        formConfirmRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 200);
+    }
+  }, [hasParsedData, hasAiAnalysis]);
+
   const apiLoadingText = uploadLoading
     ? "Đang tải CV..."
     : pollLoading
@@ -142,6 +101,14 @@ export default function AiCvPage() {
 
   const handleSelectFile = (event: ChangeEvent<HTMLInputElement>) => {
     setFile(event.target.files?.[0] ?? null);
+    // Reset all state when selecting a new file
+    setCvId("");
+    setCvProcessingStatus(null);
+    setForm(DEFAULT_FORM);
+    setExtractedData(null);
+    setAnalyzerResult(null);
+    setMessage("");
+    setError("");
   };
 
   const openFilePicker = () => {
@@ -161,6 +128,9 @@ export default function AiCvPage() {
     setUploadLoading(true);
     setError("");
     setMessage("");
+    // Reset processing state at the start
+    setCvProcessingStatus(null);
+    setExtractedData(null);
 
     try {
       const response = await uploadCvFile(file);
@@ -317,7 +287,7 @@ export default function AiCvPage() {
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
               {steps.map((step) => {
                 const state = getStepState(step.id, {
-                  hasCvProcessing: Boolean(cvId),
+                  hasCvProcessing,
                   progress,
                   hasParsedData,
                   hasAiAnalysis,
@@ -378,7 +348,9 @@ export default function AiCvPage() {
       </Card>
 
       {hasParsedData && !hasAiAnalysis ? (
-        <FormConfirmCvComponent cvId={cvId} form={form} setForm={setForm} />
+        <div ref={formConfirmRef}>
+          <FormConfirmCvComponent cvId={cvId} form={form} setForm={setForm} />
+        </div>
       ) : null}
     </div>
   );

@@ -30,7 +30,7 @@ function LoginPageContent() {
 
   const registered = searchParams.get("registered") === "1";
   const sessionExpired = searchParams.get("sessionExpired") === "1";
-  const redirectAfterLogin = searchParams.get("redirect") || "/jobs";
+  const redirectAfterLogin = searchParams.get("redirect") || "/";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
