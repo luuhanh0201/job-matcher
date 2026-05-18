@@ -6,7 +6,7 @@ const nextConfig = {
             {
                 source: '/api/:path*',
                 // eslint-disable-next-line no-undef
-                destination: (process.env.BASE_API_BE_URL || 'http://localhost:3001/api') + '/:path*'
+                destination: (process.env.BASE_API_BE_URL || 'http://api:3001/api') + '/:path*'
             }
         ]
     }

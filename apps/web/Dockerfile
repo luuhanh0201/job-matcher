@@ -17,6 +17,8 @@ COPY . .
 
 RUN pnpm --filter web build
 
+ENV NODE_ENV=production
+
 WORKDIR /app/apps/web
 
 EXPOSE 3000

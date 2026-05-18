@@ -17,6 +17,8 @@ COPY . .
 
 RUN pnpm --filter api build
 
+ENV NODE_ENV=production
+
 WORKDIR /app/apps/api
 
 EXPOSE 3001

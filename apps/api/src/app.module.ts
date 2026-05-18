@@ -12,14 +12,13 @@ import { UploadCloudinaryModule } from './modules/upload-cloudinary/upload-cloud
 import { AuthModule } from './modules/auth/auth.module';
 import { AiModule } from './modules/ai/ai.module';
 import { ActiveLogModule } from './modules/active-log/active-log.module';
+import { envFilePath } from 'typeorm.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath:
-        process.env.ENV_FILE ||
-        (process.env.NODE_ENV === 'production' ? '.env' : '.env.local'),
+      envFilePath: envFilePath,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
