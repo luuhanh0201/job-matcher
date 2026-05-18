@@ -18,7 +18,8 @@ import { ActiveLogModule } from './modules/active-log/active-log.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath:
-        process.env.NODE_ENV === 'production' ? '.env' : '.env.local',
+        process.env.ENV_FILE ||
+        (process.env.NODE_ENV === 'production' ? '.env' : '.env.local'),
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
