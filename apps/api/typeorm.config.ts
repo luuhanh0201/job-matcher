@@ -2,7 +2,11 @@ import 'reflect-metadata';
 import * as path from 'node:path';
 import { DataSource } from 'typeorm';
 
-const envFilePath = path.resolve(process.cwd(), '.env.local');
+const envFilePath = path.resolve(
+  process.cwd(),
+  process.env.NODE_ENV === 'production' ? '.env' : '.env.local',
+);
+
 if (typeof process.loadEnvFile === 'function') {
   process.loadEnvFile(envFilePath);
 }
@@ -16,7 +20,7 @@ export default new DataSource({
   username: process.env.DB_USERNAME ?? process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE ?? process.env.DB_NAME,
-  synchronize: false,
+  synchronize: String(process.env.DB_SYNCHRONIZE ?? 'false') === 'true',
   logging: process.env.NODE_ENV === 'development',
   ssl: isSslEnabled ? { rejectUnauthorized: false } : false,
   entities: ['src/**/*.entity.ts', 'dist/**/*.entity.js'],
