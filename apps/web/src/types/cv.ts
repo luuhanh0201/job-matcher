@@ -36,6 +36,7 @@ export type ParsedCvForm = {
     workExperience?: string;
     certifications?: string;
     languages?: string;
+    fileUrl?: string;
 };
 
 export type ExtractedCvData = {
@@ -67,6 +68,7 @@ export type UploadCvResponse = {
     status: "PENDING" | "COMPLETED" | "FAILED";
     message: string;
     parsedText: string;
+    fileUrl?: string;
 };
 
 export type CvProcessingStatus = {

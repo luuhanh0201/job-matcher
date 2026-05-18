@@ -159,7 +159,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
               <div>
                 <h2 className="text-base font-black text-(--gray-900)">Bạn đang ở chế độ xem</h2>
                 <p className="mt-1 text-sm text-(--gray-500)">
-                  Bạn có thể xem nội dung. Khi tương tác hệ thống sẽ yêu cầu đăng nhập.
+                  Vui lòng đăng nhập để trải nghiệm đầy đủ tính năng của Job Matcher
                 </p>
               </div>
               <button
@@ -183,7 +183,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
 
       {isReadonlyHome && showInteractionNotice ? (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/35 p-4 backdrop-blur-[2px]"
+          className="fixed inset-0 z-70 flex items-center justify-center bg-black/35 p-4 backdrop-blur-[2px]"
           data-readonly-allow="true"
         >
           <div className="w-full max-w-xl rounded-2xl border border-(--accent-orange)/30 bg-white px-5 py-5 text-(--gray-900) shadow-2xl sm:px-6 sm:py-6">
@@ -213,7 +213,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
       ) : null}
 
       <main className="pt-14 lg:pl-60">
-        <div className="mx-auto w-full max-w-7xl p-3 sm:p-4 lg:p-6">{children}</div>
+        <div className="mx-auto w-full max-w-400 p-3 sm:p-4 lg:p-6">{children}</div>
       </main>
     </div>
   );

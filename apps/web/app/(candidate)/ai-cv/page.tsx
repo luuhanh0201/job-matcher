@@ -179,7 +179,11 @@ export default function AiCvPage() {
       setPollLoading(true);
       const extracted = await extractCvFromText(response.parsedText);
       setExtractedData(extracted);
-      setForm((prev) => ({ ...prev, ...toParsedCvForm(extracted) }));
+      setForm((prev) => ({
+        ...prev,
+        ...toParsedCvForm(extracted),
+        fileUrl: response.fileUrl ?? (response.cv as Record<string, unknown>)?.fileUrl as string | undefined,
+      }));
 
       setCvProcessingStatus({
         state: CvProcessingState.COMPLETED,
