@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   Briefcase,
+  ChevronDown,
   ChevronRight,
   X,
   Home,
@@ -18,22 +21,44 @@ import { usePathname } from "next/navigation";
 import { useAuth, getInitials } from "@/context/auth-context";
 import { RoleBadge } from "@/components/common/role-badge";
 
-type NavItem = {
+type SubItem = {
   href: string;
+  label: string;
+};
+
+type NavItem = {
+  href?: string;
   icon: React.ElementType;
   label: string;
   badge?: number;
   highlight?: boolean;
+  children?: SubItem[];
 };
 
 const navItems: NavItem[] = [
   { href: "/", icon: Home, label: "Trang chủ" },
-  { href: "/profile", icon: User, label: "Hồ sơ cá nhân" },
-  { href: "/friends", icon: Users, label: "Bạn bè", badge: 2 },
+  {
+    icon: User,
+    label: "Hồ sơ cá nhân",
+    children: [
+      { href: "/profile/me", label: "Thông tin cá nhân" },
+      { href: "/profile/job-matches", label: "Công việc phù hợp" },
+      { href: "/profile/security", label: "Bảo mật" },
+    ],
+  },
+  // { href: "/friends", icon: Users, label: "Bạn bè", badge: 2 },
+  { icon: Briefcase, label: "Việc làm",
+    children: [
+      { href: "/jobs/it", label: "IT-Phần mềm" },
+      { href: "/jobs/sales", label: "Kinh doanh - bán hàng" },
+      { href: "/jobs/hospitality", label: "Nhà hàng - khách sạn" },
+      { href: "/jobs/education", label: "Giáo dục - đào tạo" },
+      { href: "/jobs/general", label: "Việc làm phổ thông" },
+    ]
+  },
   { href: "/messages", icon: MessageCircle, label: "Tin nhắn", badge: 2 },
-  { href: "/jobs", icon: Briefcase, label: "Việc làm" },
   { href: "/ai-cv", icon: Sparkles, label: "AI CV Analyzer", highlight: true },
-  { href: "/invest", icon: TrendingUp, label: "Đầu tư" },
+  // { href: "/invest", icon: TrendingUp, label: "Đầu tư" },
   { href: "/settings", icon: Settings, label: "Cài đặt" },
 ];
 
@@ -99,26 +124,45 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
 
       {/* Nav */}
       <nav className="flex flex-1 flex-col gap-0.5">
-        {navItems.map(({ href, icon: Icon, label, badge, highlight }) => {
-          const isActive =
-            href === "/jobs" ? pathname === "/jobs" || pathname.startsWith("/jobs/")
-              : pathname === href || pathname.startsWith(href + "/");
+        {navItems.map((item) => {
+          const { icon: Icon, label, badge, highlight, children, href } = item;
+
+          const isActive = href
+            ? href === "/jobs"
+              ? pathname === "/jobs" || pathname.startsWith("/jobs/")
+              : pathname === href || pathname.startsWith(href + "/")
+            : children?.some((c) => pathname === c.href || pathname.startsWith(c.href + "/"));
+
+          // Items with children (dropdown)
+          if (children) {
+            return (
+              <DropdownItem
+                key={label}
+                item={item}
+                isActive={!!isActive}
+                pathname={pathname}
+                onClose={onClose}
+              />
+            );
+          }
 
           if (highlight) {
             return (
               <Link
                 key={href}
-                href={href}
+                href={href!}
                 onClick={onClose}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
+                className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold leading-none transition-all ${
                   isActive
                     ? "bg-gradient-to-r from-(--primary-blue) to-(--accent-purple) text-white shadow-md"
                     : "bg-gradient-to-r from-(--primary-blue)/10 to-(--accent-purple)/10 text-(--accent-purple) hover:from-(--primary-blue)/20 hover:to-(--accent-purple)/20"
                 }`}
               >
-                <Icon className="h-4.5 w-4.5 shrink-0" />
-                <span className="flex-1">{label}</span>
-                <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+                <div className="flex items-center gap-3 min-w-0">
+                  <Icon className="h-4.5 w-4.5 shrink-0" />
+                  <span className="truncate">{label}</span>
+                </div>
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" />
               </Link>
             );
           }
@@ -126,20 +170,22 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
           return (
             <Link
               key={href}
-              href={href}
+              href={href!}
               onClick={onClose}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium leading-none transition-colors ${
                 isActive
                   ? "bg-(--blue-light) font-semibold text-(--primary-blue)"
                   : "text-(--gray-900) hover:bg-(--gray-100)"
               }`}
             >
-              <Icon
-                className={`h-4.5 w-4.5 shrink-0 ${isActive ? "text-(--primary-blue)" : "text-(--gray-500)"}`}
-              />
-              <span className="flex-1">{label}</span>
+              <div className="flex items-center gap-3 min-w-0">
+                <Icon
+                  className={`h-4.5 w-4.5 shrink-0 ${isActive ? "text-(--primary-blue)" : "text-(--gray-500)"}`}
+                />
+                <span className="truncate">{label}</span>
+              </div>
               {badge ? (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-(--accent-orange) px-1 text-[11px] font-bold text-white">
+                <span className="shrink-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-(--accent-orange) px-1 text-[11px] font-bold text-white">
                   {badge}
                 </span>
               ) : null}
@@ -162,5 +208,66 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
         </button>
       ) : null}
     </aside>
+  );
+}
+
+function DropdownItem({
+  item,
+  isActive,
+  pathname,
+  onClose,
+}: {
+  item: NavItem;
+  isActive: boolean;
+  pathname: string;
+  onClose: () => void;
+}) {
+  const [open, setOpen] = useState(isActive);
+  const Icon = item.icon;
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium leading-none transition-colors ${
+          isActive
+            ? "bg-(--blue-light) font-semibold text-(--primary-blue)"
+            : "text-(--gray-900) hover:bg-(--gray-100)"
+        }`}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <Icon
+            className={`h-4.5 w-4.5 shrink-0 ${isActive ? "text-(--primary-blue)" : "text-(--gray-500)"}`}
+          />
+          <span className="truncate">{item.label}</span>
+        </div>
+        <ChevronDown
+          className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+      {open && item.children && (
+        <div className="ml-8 mt-0.5 flex flex-col gap-0.5">
+          {item.children.map((child) => {
+            const childActive = pathname === child.href || pathname.startsWith(child.href + "/");
+            return (
+              <Link
+                key={child.href}
+                href={child.href}
+                onClick={onClose}
+                className={`rounded-lg px-3 py-2 text-sm leading-none transition-colors ${
+                  childActive
+                    ? "bg-(--blue-light) font-semibold text-(--primary-blue)"
+                    : "text-(--gray-600) hover:bg-(--gray-100)"
+                }`}
+              >
+                {child.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
