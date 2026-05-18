@@ -47,12 +47,18 @@ function FormConfirmCvComponent({ cvId, form, setForm }: FormConfirmCvComponentP
         setField("education", toEducationText(next));
     };
 
-    function parseEducationText(value?: string): EducationItem[] {
-        if (!value?.trim()) {
+    function parseEducationText(value?: string | string[]): EducationItem[] {
+        if (!value) {
             return [];
         }
 
-        return value
+        const raw = Array.isArray(value) ? value.join("\n") : value;
+
+        if (!raw.trim()) {
+            return [];
+        }
+
+        return raw
             .split("\n")
             .map((line) => line.split("|").map((part) => part.trim()))
             .map(([school = "", degree = "", major = "", time = ""]) => ({
@@ -64,12 +70,18 @@ function FormConfirmCvComponent({ cvId, form, setForm }: FormConfirmCvComponentP
             .filter((item) => item.school || item.degree || item.major || item.time);
     }
 
-    function parseWorkExperienceText(value?: string): WorkExperienceItem[] {
-        if (!value?.trim()) {
+    function parseWorkExperienceText(value?: string | string[]): WorkExperienceItem[] {
+        if (!value) {
             return [];
         }
 
-        return value
+        const raw = Array.isArray(value) ? value.join("\n") : value;
+
+        if (!raw.trim()) {
+            return [];
+        }
+
+        return raw
             .split("\n")
             .map((line) => line.split("|").map((part) => part.trim()))
             .map(([company = "", position = "", time = "", description = ""]) => ({

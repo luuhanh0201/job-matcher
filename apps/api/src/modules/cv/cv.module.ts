@@ -8,12 +8,9 @@ import { Cv } from './entities/cv.entity';
 import { ParsedCv } from './entities/parsed-cv.entity';
 
 @Module({
-  imports: [
-    UploadCloudinaryModule,
-    TypeOrmModule.forFeature([Cv, ParsedCv]),
-  ],
+  imports: [UploadCloudinaryModule, TypeOrmModule.forFeature([Cv, ParsedCv])],
   controllers: [CvController],
   providers: [CvService, PdfParserService],
   exports: [CvService, PdfParserService],
 })
-export class CvModule { }
+export class CvModule {}

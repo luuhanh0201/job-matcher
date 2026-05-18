@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { MatchPassword } from '@/common/validator/match-password.validator';
 import { IsEmail, IsNotEmpty, Validate } from 'class-validator';
 

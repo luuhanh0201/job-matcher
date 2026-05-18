@@ -85,3 +85,17 @@ export type CvProcessingStatus = {
     attemptsMade?: number;
     status?: CvProcessingRequestStatus;
 };
+
+export type RecommendedRole = {
+    role: string;
+    level: "Intern" | "Fresher" | "Junior" | "Middle" | "Senior";
+    reason: string;
+};
+
+export type AnalyzerResult = {
+    summary: string;
+    strengths: string[];
+    weaknesses: string[];
+    recommended_roles: RecommendedRole[];
+    overall_score: number;
+};

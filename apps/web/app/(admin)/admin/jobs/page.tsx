@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { Search, Plus, Edit, Trash2 } from "lucide-react";
 
 const jobs = [
     { id: 1, title: "Senior Developer", company: "Tech Corp", posted: "2 ngày trước", applications: 24, status: "Active" },

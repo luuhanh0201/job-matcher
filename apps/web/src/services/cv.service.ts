@@ -1,6 +1,7 @@
 import { protectedFetchJson } from "@/services/auth.service";
 import { getOrCreateDeviceId } from "@/lib/device-id";
 import type {
+  AnalyzerResult,
   CvPayload,
   CvProcessingStatus,
   CvRecord,
@@ -119,5 +120,20 @@ export async function saveParsedCv(payload: ParsedCvForm & { cvId: string }) {
       body: JSON.stringify(payload),
     },
     "Không thể lưu dữ liệu CV đã chỉnh sửa",
+  );
+}
+
+export async function analyzeCv(cvData: ExtractedCvData) {
+  return protectedFetchJson<AnalyzerResult>(
+    "/ai/analyze-cv",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-device-id": getOrCreateDeviceId(),
+      },
+      body: JSON.stringify(cvData),
+    },
+    "Không thể phân tích CV",
   );
 }

@@ -1,4 +1,8 @@
-import { EmploymentType, JobStatus, SeniorityLevel } from '@/enum/index.enum';
+import {
+  EmploymentType,
+  JobStatus,
+  SeniorityLevel,
+} from '@/common/enum/index.enum';
 import { User } from '@/modules/user/entities/user.entity';
 import {
   Column,

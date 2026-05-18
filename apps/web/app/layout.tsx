@@ -33,7 +33,6 @@ export default function RootLayout({
     <html lang="en" className={cn("font-sans", geistSans.variable)}>
       <head>
         <meta name="google-adsense-account" content="ca-pub-6435352664997924" />
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6435352664997924"

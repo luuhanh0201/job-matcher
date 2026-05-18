@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { BarChart3, TrendingUp, Users, Briefcase, Eye, Heart } from "lucide-react";
+import { Eye, Heart, Users, Briefcase } from "lucide-react";
 
 export default function AnalyticsPage() {
     const metrics = [

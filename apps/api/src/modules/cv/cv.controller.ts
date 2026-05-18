@@ -15,7 +15,7 @@ import { CvService } from './service/cv.service';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
 import { PdfParserService } from './service/pdf-parser.service';
-import { UserRole } from '@/enum/index.enum';
+import { UserRole } from '@/common/enum/index.enum';
 import { SaveParsedCvDto } from './dto/save-parsed-cv.dto';
 
 const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024;

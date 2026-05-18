@@ -2,10 +2,18 @@ import { ParsedCvForm } from "@/types/cv";
 import { useMemo } from "react";
 
 function ResumeProfile({ form }: { form: ParsedCvForm }) {
-    function extractSkillTags(skills?: string) {
+    function extractSkillTags(skills?: string | string[]) {
         if (!skills) return [];
 
-        const tags = skills
+        let raw = "";
+
+        if (Array.isArray(skills)) {
+            raw = skills.join(",");
+        } else {
+            raw = skills;
+        }
+
+        const tags = raw
             .replace(/\n/g, ",")
             .split(",")
             .map((item) => item.trim())
@@ -14,8 +22,11 @@ function ResumeProfile({ form }: { form: ParsedCvForm }) {
 
         return Array.from(new Set(tags)).slice(0, 8);
     }
-    const skillTags = useMemo(() => extractSkillTags(form.skills), [form.skills]);
 
+    const skillTags = useMemo(
+        () => extractSkillTags(form.skills),
+        [form.skills]
+    );
     return (
         <div className="rounded-2xl border border-(--gray-200) bg-white p-4">
             <p className="mb-3 text-lg font-bold text-(--gray-900)">Hồ sơ CV</p>

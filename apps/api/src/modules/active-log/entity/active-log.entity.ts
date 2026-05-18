@@ -1,4 +1,4 @@
-import { UserRole } from '@/enum/index.enum';
+import { UserRole } from '@/common/enum/index.enum';
 import { User } from '@/modules/user/entities/user.entity';
 import {
   Entity,
@@ -8,8 +8,6 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-
-
 
 export enum LogStatus {
   SUCCESS = 'success',
@@ -32,11 +30,10 @@ export class ActiveLog {
   @Column({ type: 'uuid', name: 'actor_id' })
   actorId!: string;
 
-  @ManyToOne(() => User,{
+  @ManyToOne(() => User, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-
   @JoinColumn({ name: 'actor_id' })
   actor!: User;
 

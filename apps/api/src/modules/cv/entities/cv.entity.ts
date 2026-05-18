@@ -1,4 +1,4 @@
-import { UploadStatus } from '@/enum/StatusUpload.enum';
+import { UploadStatus } from '@/common/enum/StatusUpload.enum';
 import { User } from '@/modules/user/entities/user.entity';
 import {
   Column,

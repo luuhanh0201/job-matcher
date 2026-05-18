@@ -3,7 +3,7 @@ import { UserService } from './../../user/user.service';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { UserStatus } from '@/enum/index.enum';
+import { UserStatus } from '@/common/enum/index.enum';
 type JwtPayload = {
   sub: string;
   email: string;
@@ -36,7 +36,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Người dùng không tồn tại');
     }
     if (findUser.status !== UserStatus.ACTIVE) {
-      throw new UnauthorizedException('Tài khoản đã bị vô hiệu hoá hoặc bị cấm');
+      throw new UnauthorizedException(
+        'Tài khoản đã bị vô hiệu hoá hoặc bị cấm',
+      );
     }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash: _pw, ...user } = findUser;

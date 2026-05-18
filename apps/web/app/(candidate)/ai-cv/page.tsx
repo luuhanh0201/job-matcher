@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import { Check, CircleDashed, FileText, Sparkles, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,11 +9,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  analyzeCv,
   extractCvFromText,
   uploadCvFile,
 } from "@/services/cv.service";
 import { CvProcessingState } from "@/types/cv";
-import type { CvProcessingStatus, ExtractedCvData, ParsedCvForm } from "@/types/cv";
+import type { AnalyzerResult, CvProcessingStatus, ExtractedCvData, ParsedCvForm } from "@/types/cv";
 import FormConfirmCvComponent, { DEFAULT_FORM } from "./formConfirmCv";
 import AiResultCard from "./aiResultCard";
 import ResumeProfile from "./resumeProfile";
@@ -109,62 +110,10 @@ export default function AiCvPage() {
   const [cvId, setCvId] = useState("");
   const [cvProcessingStatus, setCvProcessingStatus] = useState<CvProcessingStatus | null>(null);
   const [form, setForm] = useState<ParsedCvForm>(DEFAULT_FORM);
-  useEffect(() => {
-    setForm({
-      "candidateName": "Ngô Đức Duy",
-      "currentTitle": "Frontend Developer",
-      "email": "nducduyfpoly.vn@gmail.com",
-      "phone": "0974179187",
-      "totalExperienceYears": "2",
-      "skills": [
-        "HTML5",
-        "CSS3",
-        "Tailwind CSS",
-        "JavaScript",
-        "TypeScript",
-        "React.js",
-        "Next.js",
-        "Responsive Web Design",
-        "REST API Integration",
-        "Redux Toolkit",
-        "React Query",
-        "shadcn/ui",
-        "Node.js",
-        "NestJS",
-        "Express.js",
-        "PHP",
-        "MVC Architecture",
-        "RESTful API Design",
-        "JWT",
-        "Socket.IO",
-        "PostgreSQL",
-        "MySQL",
-        "MongoDB",
-        "Git",
-        "GitHub",
-        "Postman",
-        "Figma"
-      ],
-      "education": [
-        {
-          "school": "FPT Polytechnic",
-          "degree": "",
-          "major": "Information Technology Web Development",
-          "time": "08/2023 - 06/2025"
-        }
-      ],
-      "workExperience": [
-        {
-          "company": "FPT Polytechnic",
-          "position": "Web Developer (Frontend)",
-          "time": "2023 - 2025",
-          "description": "Participated in Web Development study groups at FPT Polytechnic. Practiced modern web technologies (React, Vue, Node.js)"
-        }
-      ],
-      "certifications": [],
-      "languages": []
-    });
-  }, [])
+  const [extractedData, setExtractedData] = useState<ExtractedCvData | null>(null);
+  const [analyzerResult, setAnalyzerResult] = useState<AnalyzerResult | null>(null);
+  const [analyzeLoading, setAnalyzeLoading] = useState(false);
+
   const [uploadLoading, setUploadLoading] = useState(false);
   const [pollLoading, setPollLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -172,13 +121,15 @@ export default function AiCvPage() {
 
   const progress = Number(cvProcessingStatus?.progress ?? 0);
   const hasParsedData = Boolean(form.candidateName || form.skills || form.workExperience);
-  const hasAiAnalysis = hasParsedData;
+  const hasAiAnalysis = Boolean(analyzerResult);
   const hasSuggestedJobs = false;
   const apiLoadingText = uploadLoading
     ? "Đang tải CV..."
     : pollLoading
       ? "Đang trích xuất dữ liệu từ nội dung CV bằng AI..."
-      : "";
+      : analyzeLoading
+        ? "Đang phân tích CV bằng AI..."
+        : "";
 
 
   const steps = [
@@ -227,6 +178,7 @@ export default function AiCvPage() {
 
       setPollLoading(true);
       const extracted = await extractCvFromText(response.parsedText);
+      setExtractedData(extracted);
       setForm((prev) => ({ ...prev, ...toParsedCvForm(extracted) }));
 
       setCvProcessingStatus({
@@ -239,6 +191,28 @@ export default function AiCvPage() {
     } finally {
       setUploadLoading(false);
       setPollLoading(false);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (!extractedData) {
+      setError("Vui lòng upload và trích xuất CV trước khi phân tích.");
+      return;
+    }
+
+    setAnalyzeLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const result = await analyzeCv(extractedData);
+      setAnalyzerResult(result);
+      setMessage("Phân tích CV thành công.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể phân tích CV.");
+    } finally {
+      setAnalyzeLoading(false);
     }
   };
 
@@ -380,7 +354,7 @@ export default function AiCvPage() {
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
               <ResumeProfile form={form} />
 
-              <AiResultCard form={form} hasParsedData={hasParsedData} />
+              <AiResultCard form={form} hasParsedData={hasParsedData} analyzerResult={analyzerResult} onAnalyze={handleAnalyze} loading={analyzeLoading} />
 
             </div>
 
@@ -399,7 +373,7 @@ export default function AiCvPage() {
         </CardContent>
       </Card>
 
-      {hasParsedData ? (
+      {hasParsedData && !hasAiAnalysis ? (
         <FormConfirmCvComponent cvId={cvId} form={form} setForm={setForm} />
       ) : null}
     </div>

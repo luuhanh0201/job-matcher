@@ -16,4 +16,4 @@ import { AiAnalyzerService } from './ai-analyzer.service';
   exports: [AiService, AiExtractorService, AiAnalyzerService],
   controllers: [AiController],
 })
-export class AiModule { }
+export class AiModule {}

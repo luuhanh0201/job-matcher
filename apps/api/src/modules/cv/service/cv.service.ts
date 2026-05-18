@@ -10,8 +10,8 @@ import { Cv, FileType } from '../entities/cv.entity';
 import { ParsedCv } from '../entities/parsed-cv.entity';
 import { Repository } from 'typeorm';
 import { UploadCloudinaryService } from '@/modules/upload-cloudinary/upload-cloudinary.service';
-import { UploadStatus } from '@/enum/StatusUpload.enum';
-import { UserRole } from '@/enum/index.enum';
+import { UploadStatus } from '@/common/enum/StatusUpload.enum';
+import { UserRole } from '@/common/enum/index.enum';
 import { SaveParsedCvDto } from '../dto/save-parsed-cv.dto';
 
 const UPLOAD_COOLDOWN_MS = 5 * 60 * 1000;

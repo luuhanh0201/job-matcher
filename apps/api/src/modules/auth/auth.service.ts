@@ -13,7 +13,7 @@ import { CreateUserDto } from '../user/dto/create-user.dto';
 import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import { UserSession } from './entities/user-session.entity';
-import { UserStatus } from '@/enum/index.enum';
+import { UserStatus } from '@/common/enum/index.enum';
 
 type JwtPayload = {
   sub: string;
