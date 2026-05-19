@@ -6,6 +6,7 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import bcrypt from 'bcryptjs';
 import { CreateUserGoogleDto } from './dto/create-user-google.dto';
+import { CreateUserFacebookDto } from './dto/create-user-facebook.dto';
 @Injectable()
 export class UserService {
   constructor(
@@ -27,7 +28,12 @@ export class UserService {
       ...user,
     });
   }
-
+  async createFacebookUser(profile: CreateUserFacebookDto): Promise<User> {
+    const user = this.userRepository.create(profile);
+    return this.userRepository.save({
+      ...user,
+    });
+  }
   findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
   }
@@ -35,6 +41,11 @@ export class UserService {
     const user = await this.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException('Sai email hoặc mật khẩu');
+    }
+    if (!user.passwordHash) {
+      throw new UnauthorizedException(
+        'Tài khoản này đăng ký qua mạng xã hội, vui lòng đăng nhập bằng Google hoặc Facebook',
+      );
     }
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
@@ -51,6 +62,7 @@ export class UserService {
     }
     return user;
   }
+
   async updateLastLoginAt(userId: string) {
     return this.userRepository.update(userId, {
       lastLoginAt: new Date(),
@@ -59,7 +71,9 @@ export class UserService {
   async findByGoogleId(googleId: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { googleId } });
   }
-
+  async findByFacebookId(facebookId: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { facebookId } });
+  }
   async linkGoogleAccount(userId: string, googleId: string): Promise<User> {
     const existingUser = await this.findByGoogleId(googleId);
     if (existingUser && existingUser.id !== userId) {
@@ -77,5 +91,4 @@ export class UserService {
     }
     return updatedUser;
   }
-
 }

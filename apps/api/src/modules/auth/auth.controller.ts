@@ -13,12 +13,14 @@ import { JwtAuthGuard } from './Guards/jwt-auth.guard';
 import { LocalAuthGuard } from './Guards/local-auth.guard';
 import { AuthService } from './auth.service';
 import { AuthGoogleService } from './auth-google.service';
+import { AuthFacebookService } from './auth-facebook.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly googleAuthService: AuthGoogleService,
+    private readonly facebookAuthService: AuthFacebookService,
   ) {}
 
   @Post('register')
@@ -98,5 +100,20 @@ export class AuthController {
         .headers?.['user-agent'],
     };
     return this.googleAuthService.loginWithGoogle(googleToken, meta);
+  }
+  @Post('login-facebook')
+  async loginWithFacebook(
+    @Request() req: Request & { user: User },
+    @Body('facebookToken') facebookToken: string,
+  ) {
+    if (!facebookToken) {
+      throw new BadRequestException('Facebook token không được cung cấp');
+    }
+    const meta = {
+      ipAddress: (req as unknown as { ip: string }).ip,
+      userAgent: (req as unknown as { headers: Record<string, string> })
+        .headers?.['user-agent'],
+    };
+    return this.facebookAuthService.loginWithFacebook(facebookToken, meta);
   }
 }

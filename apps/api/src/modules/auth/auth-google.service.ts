@@ -3,9 +3,7 @@ import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CreateUserDto } from '../user/dto/create-user.dto';
 import { CreateUserGoogleDto } from '../user/dto/create-user-google.dto';
-import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class AuthGoogleService {
@@ -57,7 +55,10 @@ export class AuthGoogleService {
     return this.authService.login(user, meta);
   }
 
-  async loginWithGoogle(token: string, meta: { ipAddress?: string; userAgent?: string }) {
+  async loginWithGoogle(
+    token: string,
+    meta: { ipAddress?: string; userAgent?: string },
+  ) {
     const payload = await this.validateGoogleToken(token);
 
     if (!payload?.email) {

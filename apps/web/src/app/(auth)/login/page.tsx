@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -11,9 +11,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login, saveAuthTokens } from "@/services/auth.service";
-import { loginWithGoogle } from "@/services/auth-google.service";
 import { loginSchema } from "@/schemas/auth.schema";
-
+import { loginWithGoogle } from "@/services/auth-google.service";
+import { FacebookLoginResponse } from "@/types/facebook-login-response.type";
+import { loginWithFacebook } from "@/services/auth-facebook.service";
+import FacebookLogin from "@greatsumini/react-facebook-login";
 type LoginFieldErrors = Partial<Record<"email" | "password", string>>;
 
 const features: { icon: LucideIcon; text: string }[] = [
@@ -53,10 +55,31 @@ function LoginPageContent() {
     }
   };
 
+  const handleFacebookSuccess = async (facebookLoginResponse: FacebookLoginResponse) => {
+    if (!facebookLoginResponse.accessToken) {
+      setServerError("Facebook login không trả về access token");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setServerError("");
+
+    try {
+      const tokens = await loginWithFacebook(facebookLoginResponse.accessToken);
+      saveAuthTokens(tokens);
+      router.push(redirectAfterLogin);
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : "Đăng nhập bằng Facebook thất bại");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const handleGoogleError = () => {
     setServerError("Đăng nhập bằng Google bị huỷ hoặc lỗi");
   };
-
+  const handleFacebookError = () => {
+    setServerError("Đăng nhập bằng Facebook bị huỷ hoặc lỗi");
+  };
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -212,7 +235,7 @@ function LoginPageContent() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex items-center justify-center rounded-2xl border border-(--gray-200) font-bold">
+              <Button className="flex items-center justify-center rounded-2xl border border-(--gray-200) font-bold">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
@@ -220,12 +243,15 @@ function LoginPageContent() {
                   text="signin_with"
                   width={100}
                 />
-              </div>
-              <Button type="button" variant="outline" className="h-12 rounded-2xl border-(--gray-200) font-bold">
-                <span className="mr-2 flex h-4 w-4 items-center justify-center rounded-sm bg-[#0A66C2] text-[10px] font-black text-white">
-                  in
-                </span>
-                LinkedIn
+              </Button>
+              <Button className="flex items-center justify-center rounded-2xl border border-(--gray-200) font-bold">
+                <FacebookLogin
+                  appId={process.env.NEXT_PUBLIC_FACEBOOK_APP_ID!}
+                  onSuccess={handleFacebookSuccess}
+                  onFail={handleFacebookError}
+                  scope="email,public_profile"
+                  fields="name,email"
+                />
               </Button>
             </div>
 
