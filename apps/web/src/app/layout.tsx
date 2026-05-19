@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AuthSessionInterceptor } from "@/components/layouts/auth-session-interceptor";
 import Script from "next/script";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // Dùng local font để tránh hang khi Docker không có kết nối internet
 const geistSans = localFont({
@@ -40,27 +41,28 @@ export default function RootLayout({
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-      <AuthSessionInterceptor />
-      {children}
+      <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
+        <AuthSessionInterceptor />
+        {children}
 
-      <Script
-        async
-        src="https://www.googletagmanager.com/gtag/js?id=G-DBDRP10LWJ"
-      />
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-DBDRP10LWJ"
+        />
 
-      <Script id="google-analytics">
-        {`
-          window.dataLayer = window.dataLayer || [];
+        <Script id="google-analytics">
+          {`
+            window.dataLayer = window.dataLayer || [];
 
-          function gtag(){dataLayer.push(arguments);}
+            function gtag(){dataLayer.push(arguments);}
 
-          gtag('js', new Date());
+            gtag('js', new Date());
 
-          gtag('config', 'G-DBDRP10LWJ');
-        `}
-        
-      </Script>
-     
+            gtag('config', 'G-DBDRP10LWJ');
+          `}
+
+        </Script>
+      </GoogleOAuthProvider>
     </body>
   </html>
   );

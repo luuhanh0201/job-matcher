@@ -50,6 +50,13 @@ export class User {
   })
   lastLoginAt!: Date | null;
 
+  @Column({ name: 'google_id', nullable: true })
+  googleId?: string;
+  @Column({ name: 'facebook_id', nullable: true })
+  facebookId?: string;
+  @Column({ name: 'provider', type: 'varchar', nullable: true })
+  provider?: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

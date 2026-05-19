@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
-import { FcGoogle } from "react-icons/fc";
+import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import type { LucideIcon } from "lucide-react";
 import { BriefcaseBusiness, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { loginSchema } from "@/schemas/auth.schema";
 import { login, saveAuthTokens } from "@/services/auth.service";
+import { loginWithGoogle } from "@/services/auth-google.service";
+import { loginSchema } from "@/schemas/auth.schema";
 
 type LoginFieldErrors = Partial<Record<"email" | "password", string>>;
 
@@ -31,6 +32,30 @@ function LoginPageContent() {
   const registered = searchParams.get("registered") === "1";
   const sessionExpired = searchParams.get("sessionExpired") === "1";
   const redirectAfterLogin = searchParams.get("redirect") || "/";
+
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) {
+      setServerError("Google login không trả về token");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setServerError("");
+
+    try {
+      const tokens = await loginWithGoogle(credentialResponse.credential);
+      saveAuthTokens(tokens);
+      router.push(redirectAfterLogin);
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : "Đăng nhập bằng Google thất bại");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setServerError("Đăng nhập bằng Google bị huỷ hoặc lỗi");
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -187,10 +212,15 @@ function LoginPageContent() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Button type="button" variant="outline" className="h-12 rounded-2xl border-(--gray-200) font-bold">
-                <FcGoogle className="mr-2 h-4 w-4" />
-                Google
-              </Button>
+              <div className="flex items-center justify-center rounded-2xl border border-(--gray-200) font-bold">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  useOneTap={false}
+                  text="signin_with"
+                  width={100}
+                />
+              </div>
               <Button type="button" variant="outline" className="h-12 rounded-2xl border-(--gray-200) font-bold">
                 <span className="mr-2 flex h-4 w-4 items-center justify-center rounded-sm bg-[#0A66C2] text-[10px] font-black text-white">
                   in

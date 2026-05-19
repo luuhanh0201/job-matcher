@@ -1,35 +1,14 @@
+import { LoginPayload } from "@/types/login-payload.type";
+import { LoginResponse } from "@/types/login-response.type";
+import { RegisterPayload } from "@/types/register-payload.type";
+import { AuthProfile } from "../types/auth-profile.type";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
 export const AUTH_SESSION_EXPIRED_EVENT = "auth:session-expired";
 
 let refreshRequest: Promise<LoginResponse | null> | null = null;
-
-export type LoginPayload = {
-  email: string;
-  password: string;
-};
-
-export type RegisterPayload = {
-  fullName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
-
-export type LoginResponse = {
-  accessToken: string;
-  refreshToken: string;
-};
-
-export type UserRole = "CANDIDATE" | "RECRUITER" | "ADMIN";
-
-export type AuthProfile = {
-  id: string;
-  email: string;
-  fullName: string;
-  role: UserRole;
-};
 
 type AuthRequestOptions = Omit<RequestInit, "headers"> & {
   headers?: HeadersInit;

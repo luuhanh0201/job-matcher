@@ -14,14 +14,7 @@ import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import { UserSession } from './entities/user-session.entity';
 import { UserStatus } from '@/common/enum/index.enum';
-
-type JwtPayload = {
-  sub: string;
-  email: string;
-  role: string;
-  fullName: string;
-  type?: 'access' | 'refresh';
-};
+import { JwtPayload } from '@/common/type/JwtPayload.type';
 
 @Injectable()
 export class AuthService {
@@ -41,7 +34,7 @@ export class AuthService {
       );
     }
 
-    const user = await this.userService.create(createUserDto);
+    const user = await this.userService.createUserLocal(createUserDto);
     return {
       message: 'Đăng ký thành công',
       data: {
@@ -88,7 +81,7 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  private async saveSession(
+  async saveSession(
     userId: string,
     refreshToken: string,
     meta?: { ipAddress?: string; userAgent?: string },

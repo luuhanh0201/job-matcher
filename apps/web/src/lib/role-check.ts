@@ -1,4 +1,4 @@
-import type { UserRole } from "@/services/auth.service";
+import { UserRole } from "@/types/user-role.type";
 
 export function hasRole(userRole: UserRole | undefined, requiredRole: UserRole): boolean {
     if (!userRole) {

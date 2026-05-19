@@ -12,10 +12,14 @@ import { User } from '../user/entities/user.entity';
 import { JwtAuthGuard } from './Guards/jwt-auth.guard';
 import { LocalAuthGuard } from './Guards/local-auth.guard';
 import { AuthService } from './auth.service';
+import { AuthGoogleService } from './auth-google.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly googleAuthService: AuthGoogleService,
+  ) {}
 
   @Post('register')
   register(@Body() createUserDto: CreateUserDto) {
@@ -57,5 +61,42 @@ export class AuthController {
       throw new BadRequestException('Refresh token không được cung cấp');
     }
     return this.authService.logout(req.user.id, refreshToken);
+  }
+
+  @Post('link-google')
+  @UseGuards(JwtAuthGuard)
+  async linkGoogleAccount(
+    @Request() req: Request & { user: User },
+    @Body('googleToken') googleToken: string,
+  ) {
+    if (!googleToken) {
+      throw new BadRequestException('Google token không được cung cấp');
+    }
+    const meta = {
+      ipAddress: (req as unknown as { ip: string }).ip,
+      userAgent: (req as unknown as { headers: Record<string, string> })
+        .headers?.['user-agent'],
+    };
+    return this.googleAuthService.linkGoogleAccount(
+      req.user.id,
+      googleToken,
+      meta,
+    );
+  }
+
+  @Post('login-google')
+  async loginWithGoogle(
+    @Request() req: Request & { user: User },
+    @Body('googleToken') googleToken: string,
+  ) {
+    if (!googleToken) {
+      throw new BadRequestException('Google token không được cung cấp');
+    }
+    const meta = {
+      ipAddress: (req as unknown as { ip: string }).ip,
+      userAgent: (req as unknown as { headers: Record<string, string> })
+        .headers?.['user-agent'],
+    };
+    return this.googleAuthService.loginWithGoogle(googleToken, meta);
   }
 }

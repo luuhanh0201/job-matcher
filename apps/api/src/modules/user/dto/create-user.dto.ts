@@ -1,5 +1,5 @@
 import { MatchPassword } from '@/common/validator/match-password.validator';
-import { IsEmail, IsNotEmpty, Validate } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, Validate } from 'class-validator';
 
 export class CreateUserDto {
   @IsNotEmpty({ message: 'Email là bắt buộc' })
@@ -15,4 +15,13 @@ export class CreateUserDto {
 
   @IsNotEmpty({ message: 'Họ và tên là bắt buộc' })
   fullName!: string;
+
+  @IsString({ message: 'Google ID phải là một chuỗi' })
+  googleId?: string;
+
+  @IsString({ message: 'Facebook ID phải là một chuỗi' })
+  facebookId?: string;
+
+  @IsString({ message: 'Vai trò phải là một chuỗi' })
+  provider?: string;
 }

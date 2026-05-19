@@ -1,4 +1,5 @@
-import { protectedFetchJson, type AuthProfile } from "@/services/auth.service";
+import { protectedFetchJson } from "@/services/auth.service";
+import { AuthProfile } from "@/types/auth-profile.type";
 
 export type UserPayload = Record<string, unknown>;
 

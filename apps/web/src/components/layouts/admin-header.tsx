@@ -4,9 +4,9 @@ import { LogOut, Settings } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import type { AuthProfile } from "@/services/auth.service";
 import { useAuth } from "@/context/auth-context";
 import { getInitials } from "@/context/auth-context";
+import { AuthProfile } from "@/types/auth-profile.type";
 
 type AdminHeaderProps = {
     user: AuthProfile;

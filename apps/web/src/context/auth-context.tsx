@@ -9,11 +9,11 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  type AuthProfile,
   clearAuthTokens,
   getProfile,
   logout as authLogout,
 } from "@/services/auth.service";
+import { AuthProfile } from "@/types/auth-profile.type";
 
 type AuthState =
   | { status: "loading" }

@@ -5,17 +5,24 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import bcrypt from 'bcryptjs';
+import { CreateUserGoogleDto } from './dto/create-user-google.dto';
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
-  async create(userData: CreateUserDto): Promise<User> {
+  async createUserLocal(userData: CreateUserDto): Promise<User> {
     const passwordHash = await bcrypt.hash(userData.password, 10);
 
     const user = this.userRepository.create(userData);
     user.passwordHash = passwordHash;
+    return this.userRepository.save({
+      ...user,
+    });
+  }
+  async createGoogleUser(userData: CreateUserGoogleDto): Promise<User> {
+    const user = this.userRepository.create(userData);
     return this.userRepository.save({
       ...user,
     });
@@ -49,4 +56,26 @@ export class UserService {
       lastLoginAt: new Date(),
     });
   }
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { googleId } });
+  }
+
+  async linkGoogleAccount(userId: string, googleId: string): Promise<User> {
+    const existingUser = await this.findByGoogleId(googleId);
+    if (existingUser && existingUser.id !== userId) {
+      throw new UnauthorizedException(
+        'Tài khoản Google đã được liên kết với một người dùng khác',
+      );
+    }
+    await this.userRepository.update(userId, {
+      googleId,
+      provider: 'google',
+    });
+    const updatedUser = await this.findById(userId);
+    if (!updatedUser) {
+      throw new UnauthorizedException('Người dùng không tồn tại');
+    }
+    return updatedUser;
+  }
+
 }

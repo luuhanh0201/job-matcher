@@ -1,4 +1,4 @@
-import type { UserRole } from "@/services/auth.service";
+import { UserRole } from "@/types/user-role.type";
 
 const ROLE_CONFIG: Record<
   UserRole,
