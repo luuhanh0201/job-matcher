@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth, getInitials } from "@/context/auth-context";
-import Logo from "@/components/images/Logo.svg";
+import Logo from "@/public/images/Logo.svg";
 
 type CandidateHeaderProps = {
   onMenuClick: () => void;
