@@ -46,7 +46,7 @@ function FormConfirmCvComponent({ cvId, form, setForm }: FormConfirmCvComponentP
         next[index] = { ...current, [key]: value };
         setField("education", toEducationText(next));
     };
-
+console.log(form)
     function parseEducationText(value?: string | string[]): EducationItem[] {
         if (!value) {
             return [];
@@ -109,7 +109,7 @@ function FormConfirmCvComponent({ cvId, form, setForm }: FormConfirmCvComponentP
 
         try {
             await saveParsedCv({ cvId, ...form });
-            setMessage("Lưu dữ liệu CV đã chỉnh sửa thành công.");
+            setMessage("Cv của bạn đã được lưu.");
             window.scrollTo({ top: 0, behavior: "smooth" });
         } catch (err) {
             setError(

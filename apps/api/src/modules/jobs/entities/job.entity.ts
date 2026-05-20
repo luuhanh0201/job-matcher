@@ -19,7 +19,7 @@ export class Job {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @OneToOne(() => User)
+  @OneToOne(() => User, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'created_by' })
   createdBy!: User;
   @Column({ nullable: false })

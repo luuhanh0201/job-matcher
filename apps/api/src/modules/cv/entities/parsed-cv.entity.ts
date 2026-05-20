@@ -12,7 +12,7 @@ import {
 export class ParsedCv {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
-  @OneToOne(() => Cv)
+  @OneToOne(() => Cv, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'cv_id' })
   cv!: Cv;
   @Column({ name: 'candidate_name', nullable: true })

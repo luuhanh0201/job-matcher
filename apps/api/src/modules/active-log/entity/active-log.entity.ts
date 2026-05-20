@@ -33,6 +33,7 @@ export class ActiveLog {
   @ManyToOne(() => User, {
     nullable: true,
     onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn({ name: 'actor_id' })
   actor!: User;

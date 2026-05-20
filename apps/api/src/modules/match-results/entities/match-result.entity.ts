@@ -13,10 +13,10 @@ import {
 export class MatchResult {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
-  @ManyToOne(() => Job)
+  @ManyToOne(() => Job, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'job_id' })
   job!: Job;
-  @ManyToOne(() => ParsedCv)
+  @ManyToOne(() => ParsedCv, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'parsed_cv_id' })
   parsedCv!: ParsedCv;
   @Column({ name: 'overall_score', type: 'float' })

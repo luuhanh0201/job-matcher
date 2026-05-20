@@ -22,11 +22,12 @@ export class Cv {
   id!: string;
   @ManyToOne(() => User, {
     onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
     nullable: false,
   })
   @JoinColumn({ name: 'user_id' })
   user!: User;
-  @OneToMany(() => Cv, (cv) => cv.user)
+  @OneToMany(() => Cv, (cv) => cv.user, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   cvs!: Cv[];
   @Column({ name: 'user_id' })
   userId!: string;

@@ -110,7 +110,6 @@ export default function AiCvPage() {
     setMessage("");
     setError("");
   };
-
   const openFilePicker = () => {
     if (fileInputRef.current) {
       // Ensure selecting the same file again still triggers onChange.
@@ -151,8 +150,7 @@ export default function AiCvPage() {
       setExtractedData(extracted);
       setForm((prev) => ({
         ...prev,
-        ...toParsedCvForm(extracted),
-        fileUrl: response.fileUrl ?? (response.cv as Record<string, unknown>)?.fileUrl as string | undefined,
+        ...toParsedCvForm(extracted)
       }));
 
       setCvProcessingStatus({
