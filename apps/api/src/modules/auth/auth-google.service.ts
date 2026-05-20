@@ -20,21 +20,25 @@ export class AuthGoogleService {
     });
   }
 
-  async validateGoogleToken(token: string) {
-    try {
-      const ticket = await this.googleClient.verifyIdToken({
-        idToken: token,
-        audience: this.configService.get<string>('GOOGLE_CLIENT_ID'),
-      });
-      const payload = ticket.getPayload();
-      if (!payload) {
-        throw new Error('Google token không hợp lệ');
-      }
-      return payload;
-    } catch (error) {
-      console.log(error);
-      throw new Error('Xác thực Google token thất bại');
+  async validateGoogleToken(accessToken: string) {
+    const response = await fetch(
+      'https://www.googleapis.com/oauth2/v3/userinfo',
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new UnauthorizedException('Google token không hợp lệ');
     }
+
+    return response.json() as Promise<{
+      sub: string;
+      email: string;
+      name: string;
+    }>;
   }
   async linkGoogleAccount(
     userId: string,
@@ -56,10 +60,10 @@ export class AuthGoogleService {
   }
 
   async loginWithGoogle(
-    token: string,
+    accessToken: string,
     meta: { ipAddress?: string; userAgent?: string },
   ) {
-    const payload = await this.validateGoogleToken(token);
+    const payload = await this.validateGoogleToken(accessToken);
 
     if (!payload?.email) {
       throw new Error('Google token không chứa email');

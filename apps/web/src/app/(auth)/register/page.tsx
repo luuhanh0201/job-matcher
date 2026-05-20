@@ -198,25 +198,7 @@ export default function RegisterPage() {
               </Button>
             </form>
 
-            <div className="my-8 flex items-center gap-3">
-              <div className="h-px flex-1 bg-(--gray-200)" />
-              <span className="text-sm text-(--gray-500)">hoặc đăng ký bằng</span>
-              <div className="h-px flex-1 bg-(--gray-200)" />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Button type="button" variant="outline" className="h-12 rounded-2xl border-(--gray-200) font-bold">
-                <FcGoogle className="mr-2 h-4 w-4" />
-                Google
-              </Button>
-              <Button type="button" variant="outline" className="h-12 rounded-2xl border-(--gray-200) font-bold">
-                <span className="mr-2 flex h-4 w-4 items-center justify-center rounded-sm bg-[#0A66C2] text-[10px] font-black text-white">
-                  in
-                </span>
-                LinkedIn
-              </Button>
-            </div>
-
+           
             <p className="mt-6 text-center text-sm text-(--gray-500)">
               Đã có tài khoản?{" "}
               <Link href="/login" className="font-bold text-(--primary-blue) hover:text-(--blue-dark)">

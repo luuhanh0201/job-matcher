@@ -44,7 +44,7 @@ export class UserService {
     }
     if (!user.passwordHash) {
       throw new UnauthorizedException(
-        'Tài khoản này đăng ký qua mạng xã hội, vui lòng đăng nhập bằng Google hoặc Facebook',
+        'Tài khoản này đăng ký qua google hoặc facebook, vui lòng đăng nhập lại',
       );
     }
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
