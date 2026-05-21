@@ -11,12 +11,14 @@ import { UserSession } from './entities/user-session.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthGoogleService } from './auth-google.service';
 import { AuthFacebookService } from './auth-facebook.service';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
     UserModule,
     PassportModule,
     ConfigModule,
+    MailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -28,7 +30,13 @@ import { AuthFacebookService } from './auth-facebook.service';
     TypeOrmModule.forFeature([UserSession]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthGoogleService, AuthFacebookService, LocalStrategy, JwtStrategy],
+  providers: [
+    AuthService,
+    AuthGoogleService,
+    AuthFacebookService,
+    LocalStrategy,
+    JwtStrategy,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

@@ -1,9 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { FcGoogle } from "react-icons/fc";
 import type { LucideIcon } from "lucide-react";
 import { BriefcaseBusiness, FileText, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,10 +20,10 @@ const features: { icon: LucideIcon; text: string }[] = [
 ];
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [errors, setErrors] = useState<RegisterFieldErrors>({});
   const [serverError, setServerError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -54,11 +52,13 @@ export default function RegisterPage() {
 
     setErrors({});
     setServerError("");
+    setSuccessMessage("");
     setIsSubmitting(true);
 
     try {
-      await register(payload.data);
-      router.push("/login?registered=1");
+      const response = await register(payload.data);
+      setSuccessMessage(response.message);
+      // Don't redirect immediately, let user see the success message
     } catch (error) {
       setServerError(error instanceof Error ? error.message : "Đăng ký thất bại");
     } finally {
@@ -127,6 +127,23 @@ export default function RegisterPage() {
                 </p>
               ) : null}
 
+              {successMessage ? (
+                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 space-y-2">
+                  <p className="text-sm font-medium text-green-600">
+                    {successMessage}
+                  </p>
+                  <p className="text-xs text-green-600">
+                    Vui lòng kiểm tra hộp thư đến (hoặc thư rác) để xác minh email của bạn.
+                  </p>
+                  <Link
+                    href="/login"
+                    className="inline-block text-sm font-bold text-green-700 hover:text-green-800 underline"
+                  >
+                    Đi đến trang đăng nhập
+                  </Link>
+                </div>
+              ) : null}
+
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="font-bold">
                   Họ và tên
@@ -192,7 +209,7 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 className="h-14 w-full rounded-2xl bg-linear-to-r from-(--primary-blue) to-(--accent-purple) text-base font-black text-white shadow-xl shadow-blue-200/70 hover:opacity-95"
-                disabled={isSubmitting}
+                disabled={isSubmitting || Boolean(successMessage)}
               >
                 {isSubmitting ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
               </Button>

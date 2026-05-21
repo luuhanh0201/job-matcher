@@ -15,6 +15,7 @@ import { UserService } from '../user/user.service';
 import { UserSession } from './entities/user-session.entity';
 import { UserStatus } from '@/common/enum/index.enum';
 import { JwtPayload } from '@/common/type/JwtPayload.type';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -24,9 +25,11 @@ export class AuthService {
     private readonly configService: ConfigService,
     @InjectRepository(UserSession)
     private readonly userSessionRepository: Repository<UserSession>,
+    private readonly mailService: MailService,
   ) {}
 
   async register(createUserDto: CreateUserDto) {
+    console.log('Registering user with email:', createUserDto.email);
     const existing = await this.userService.findByEmail(createUserDto.email);
     if (existing) {
       throw new ConflictException(
@@ -34,14 +37,22 @@ export class AuthService {
       );
     }
 
-    const user = await this.userService.createUserLocal(createUserDto);
+    const verifyToken = randomUUID();
+
+    const user = await this.userService.createUserLocal({
+      ...createUserDto,
+      verifyToken,
+    });
+    await this.mailService.sendVerificationEmail(user.email, verifyToken);
     return {
-      message: 'Đăng ký thành công',
+      message:
+        'Đăng ký thành công, vui lòng kiểm tra email để xác minh tài khoản',
       data: {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
         role: user.role,
+        isVerify: user.isVerify,
         status: user.status,
         createdAt: user.createdAt,
       },
@@ -175,5 +186,49 @@ export class AuthService {
     }
 
     return { message: 'Đăng xuất thành công' };
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.userService.findByVerifyToken(token);
+    if (!user) {
+      throw new UnauthorizedException('Token xác minh không hợp lệ');
+    }
+
+    if (user.isVerify) {
+      return {
+        message: 'Email đã được xác minh trước đó',
+        data: { isVerify: true },
+      };
+    }
+
+    await this.userService.updateVerifyStatus(user.id, true);
+
+    return {
+      message: 'Xác minh email thành công',
+      data: { isVerify: true },
+    };
+  }
+
+  async resendVerificationEmail(email: string) {
+    const user = await this.userService.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('Email không tồn tại');
+    }
+
+    if (user.isVerify) {
+      return {
+        message: 'Email đã được xác minh',
+        data: { isVerify: true },
+      };
+    }
+
+    const verifyToken = randomUUID();
+    await this.userService.updateVerifyToken(user.id, verifyToken);
+    await this.mailService.sendVerificationEmail(user.email, verifyToken);
+
+    return {
+      message: 'Email xác minh đã được gửi lại',
+      data: { email: user.email },
+    };
   }
 }

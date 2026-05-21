@@ -91,4 +91,21 @@ export class UserService {
     }
     return updatedUser;
   }
+
+  async findByVerifyToken(token: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { verifyToken: token } });
+  }
+
+  async updateVerifyStatus(userId: string, isVerify: boolean): Promise<void> {
+    await this.userRepository.update(userId, {
+      isVerify,
+      verifyToken: undefined,
+    });
+  }
+
+  async updateVerifyToken(userId: string, verifyToken: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      verifyToken,
+    });
+  }
 }

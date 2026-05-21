@@ -13,6 +13,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AiModule } from './modules/ai/ai.module';
 import { ActiveLogModule } from './modules/active-log/active-log.module';
 import { envFilePath } from 'typeorm.config';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { envFilePath } from 'typeorm.config';
     AuthModule,
     AiModule,
     ActiveLogModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

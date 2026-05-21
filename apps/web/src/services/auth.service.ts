@@ -254,3 +254,19 @@ export function saveAuthTokens(tokens: LoginResponse) {
   localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
   localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
 }
+
+export async function verifyEmail(token: string) {
+  return requestAuth<{ message: string; data: { isVerify: boolean } }>(
+    "/auth/verify-email",
+    { token },
+    "Xác minh email thất bại",
+  );
+}
+
+export async function resendVerificationEmail(email: string) {
+  return requestAuth<{ message: string; data: { email: string } }>(
+    "/auth/resend-verification",
+    { email },
+    "Gửi lại email xác minh thất bại",
+  );
+}

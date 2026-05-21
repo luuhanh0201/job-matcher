@@ -16,7 +16,6 @@ import { SaveParsedCvDto } from '../dto/save-parsed-cv.dto';
 
 const UPLOAD_COOLDOWN_MS = 5 * 60 * 1000;
 
-
 type UploadCvResult = {
   cv: Cv;
   cvId: string;
@@ -40,7 +39,7 @@ export class CvService {
     @InjectRepository(ParsedCv)
     private readonly parsedCvRepository: Repository<ParsedCv>,
     private readonly uploadCloudinaryService: UploadCloudinaryService,
-  ) { }
+  ) {}
 
   async uploadCv(
     identity: UploadIdentity,
@@ -87,7 +86,6 @@ export class CvService {
       if (identity.role !== UserRole.ADMIN) {
         this.deviceUploadAt.set(identity.deviceId, Date.now());
       }
-
 
       return {
         cv: savedCv,

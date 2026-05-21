@@ -116,4 +116,20 @@ export class AuthController {
     };
     return this.facebookAuthService.loginWithFacebook(facebookToken, meta);
   }
+
+  @Post('verify-email')
+  async verifyEmail(@Body('token') token: string) {
+    if (!token) {
+      throw new BadRequestException('Token không được cung cấp');
+    }
+    return this.authService.verifyEmail(token);
+  }
+
+  @Post('resend-verification')
+  async resendVerification(@Body('email') email: string) {
+    if (!email) {
+      throw new BadRequestException('Email không được cung cấp');
+    }
+    return this.authService.resendVerificationEmail(email);
+  }
 }
