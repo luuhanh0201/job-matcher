@@ -1,31 +1,92 @@
 services:
-  web:
-    container_name: next-web
-    build:
-      context: .
-      dockerfile: ./apps/web/Dockerfile
-    ports:
-      - "3000:3000"
-    env_file:
-      - ./apps/web/.env
-    depends_on:
-      api:
-        condition: service_healthy
-    restart: unless-stopped
-
   api:
-    container_name: nest-api
+    container_name: job-matcher-api
     build:
       context: .
       dockerfile: ./apps/api/Dockerfile
+      target: runner
     ports:
       - "3001:3001"
     env_file:
       - ./apps/api/.env
+    volumes:
+      - ./apps/api/.env:/app/apps/api/.env:ro
+    environment:
+      - NODE_ENV=production
     healthcheck:
-      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api" ]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
+    networks:
+      - app-network
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  web:
+    container_name: job-matcher-web
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+      target: runner
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./apps/web/.env
+    volumes:
+      - ./apps/web/.env:/app/apps/web/.env:ro
+    environment:
+      - NODE_ENV=production
+      - HOSTNAME=0.0.0.0
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/apps/web/.next/cache
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+networks:
+  app-network:
+    driver: bridge

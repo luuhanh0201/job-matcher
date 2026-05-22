@@ -1,7 +1,8 @@
-
+/* global process */
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    images: {
+  output: 'standalone',
+  images: {
     remotePatterns: [
       {
         protocol: 'https',
@@ -10,16 +11,14 @@ const nextConfig = {
       },
     ],
   },
-    async rewrites() {
-        
-        return [
-           {
-                source: '/api/:path*',
-                // eslint-disable-next-line no-undef
-                destination: (process.env.BASE_API_BE_URL || 'http://api:3001/api') + '/:path*'
-            }
-        ]
-    }
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: (process.env.BASE_API_BE_URL || 'http://api:3001/api') + '/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

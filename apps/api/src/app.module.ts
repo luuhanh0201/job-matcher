@@ -14,6 +14,7 @@ import { AiModule } from './modules/ai/ai.module';
 import { ActiveLogModule } from './modules/active-log/active-log.module';
 import { envFilePath } from 'typeorm.config';
 import { MailModule } from './modules/mail/mail.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
@@ -36,7 +37,7 @@ import { MailModule } from './modules/mail/mail.module';
     ActiveLogModule,
     MailModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {
