@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CandidateHeader } from "@/components/layouts/candidate-header";
-import { CandidateSidebar } from "@/components/layouts/candidate-sidebar";
+import { CandidateHeader } from "@/components/layouts/client-header";
+import { CandidateSidebar } from "@/components/layouts/client-sidebar";
 import { useAuth } from "@/context/auth-context";
 
 export function CandidateShell({ children }: { children: React.ReactNode }) {
@@ -153,7 +153,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
       />
 
       {isReadonlyHome && showReadonlyNotice ? (
-        <div className="fixed bottom-4 right-4 z-[60] w-[min(92vw,420px)]" data-readonly-allow="true">
+        <div className="fixed bottom-4 right-4 z-60 w-[min(92vw,420px)]" data-readonly-allow="true">
           <div className="rounded-2xl border border-(--gray-200) bg-white/95 p-4 shadow-xl backdrop-blur-sm">
             <div className="flex items-start justify-between gap-3">
               <div>

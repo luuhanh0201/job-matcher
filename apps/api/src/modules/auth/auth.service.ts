@@ -65,6 +65,11 @@ export class AuthService {
         'Tài khoản đã bị vô hiệu hoá hoặc bị cấm',
       );
     }
+    if (!user.isVerify && !user.provider) {
+      throw new UnauthorizedException(
+        'Tài khoản chưa được xác minh, vui lòng kiểm tra email',
+      );
+    }
 
     const basePayload = {
       sub: user.id,

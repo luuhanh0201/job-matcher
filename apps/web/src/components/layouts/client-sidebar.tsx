@@ -3,64 +3,20 @@
 import { useState } from "react";
 
 import {
-  Briefcase,
   ChevronDown,
   ChevronRight,
   X,
-  Home,
   LogOut,
-  MessageCircle,
-  Settings,
-  Sparkles,
-  TrendingUp,
-  User,
-  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth, getInitials } from "@/context/auth-context";
 import { RoleBadge } from "@/components/common/role-badge";
-
-type SubItem = {
-  href: string;
-  label: string;
-};
-
-type NavItem = {
-  href?: string;
-  icon: React.ElementType;
-  label: string;
-  badge?: number;
-  highlight?: boolean;
-  children?: SubItem[];
-};
-
-const navItems: NavItem[] = [
-  { href: "/", icon: Home, label: "Trang chủ" },
-  {
-    icon: User,
-    label: "Hồ sơ cá nhân",
-    children: [
-      { href: "/profile/me", label: "Thông tin cá nhân" },
-      { href: "/profile/job-matches", label: "Công việc phù hợp" },
-      { href: "/profile/security", label: "Bảo mật" },
-    ],
-  },
-  // { href: "/friends", icon: Users, label: "Bạn bè", badge: 2 },
-  { icon: Briefcase, label: "Việc làm",
-    children: [
-      { href: "/jobs/it", label: "IT-Phần mềm" },
-      { href: "/jobs/sales", label: "Kinh doanh - bán hàng" },
-      { href: "/jobs/hospitality", label: "Nhà hàng - khách sạn" },
-      { href: "/jobs/education", label: "Giáo dục - đào tạo" },
-      { href: "/jobs/general", label: "Việc làm phổ thông" },
-    ]
-  },
-  { href: "/messages", icon: MessageCircle, label: "Tin nhắn", badge: 2 },
-  { href: "/ai-cv", icon: Sparkles, label: "AI CV Analyzer", highlight: true },
-  // { href: "/invest", icon: TrendingUp, label: "Đầu tư" },
-  { href: "/settings", icon: Settings, label: "Cài đặt" },
-];
+import {
+  getClientNavItems,
+  getClientProfileHref,
+  NavItem,
+} from "@/components/layouts/client-sidebar.config";
 
 type CandidateSidebarProps = {
   mobileOpen: boolean;
@@ -71,6 +27,8 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const initials = user ? getInitials(user.fullName) : "..";
+  const navItems = getClientNavItems(user?.role);
+  const profileHref = getClientProfileHref(user?.role);
 
   return (
     <aside
@@ -91,7 +49,7 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
       {/* User card */}
       {user ? (
         <Link
-          href="/profile"
+          href={profileHref}
           onClick={onClose}
           className="mb-3 flex flex-col items-center gap-2 rounded-2xl border border-(--gray-200) px-4 py-5 transition-colors hover:bg-(--gray-100)"
         >
@@ -100,7 +58,7 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
           </div>
           <div className="text-center">
             <p className="text-sm font-bold text-(--gray-900)">{user.fullName}</p>
-            <p className="text-xs text-(--gray-500)">{user.email}</p>
+            <p className="text-xs text-(--gray-500)">{user?.provider ? "" : user.email}</p>
             {user.role && (
               <div className="mt-1.5 flex justify-center">
                 <RoleBadge role={user.role} />
@@ -154,8 +112,8 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
                 onClick={onClose}
                 className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold leading-none transition-all ${
                   isActive
-                    ? "bg-gradient-to-r from-(--primary-blue) to-(--accent-purple) text-white shadow-md"
-                    : "bg-gradient-to-r from-(--primary-blue)/10 to-(--accent-purple)/10 text-(--accent-purple) hover:from-(--primary-blue)/20 hover:to-(--accent-purple)/20"
+                    ? "bg-linear-to-r from-(--primary-blue) to-(--accent-purple) text-white shadow-md"
+                    : "bg-linear-to-r from-(--primary-blue)/10 to-(--accent-purple)/10 text-(--accent-purple) hover:from-(--primary-blue)/20 hover:to-(--accent-purple)/20"
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
