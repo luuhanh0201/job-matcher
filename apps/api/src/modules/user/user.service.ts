@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import bcrypt from 'bcryptjs';
 import { CreateUserGoogleDto } from './dto/create-user-google.dto';
 import { CreateUserFacebookDto } from './dto/create-user-facebook.dto';
+import { UserRole } from '@/common/enum/index.enum';
 @Injectable()
 export class UserService {
   constructor(
@@ -107,5 +108,18 @@ export class UserService {
     await this.userRepository.update(userId, {
       verifyToken,
     });
+  }
+
+  async registerRecruiter(userId: string) {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('Người dùng không tồn tại');
+    }
+    if (user.role === UserRole.RECRUITER) {
+      throw new UnauthorizedException('Ban đã là nhà tuyển dụng.');
+    }
+    user.role = UserRole.RECRUITER;
+    await this.userRepository.save(user);
+    return user;
   }
 }
