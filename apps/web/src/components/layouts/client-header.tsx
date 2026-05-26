@@ -3,16 +3,33 @@
 import { Bell, ChevronDown, Menu, MessageCircle, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth, getInitials } from "@/context/auth-context";
 import Logo from "@/public/images/Logo.svg";
+import { Button } from "../ui/button";
 
 type CandidateHeaderProps = {
   onMenuClick: () => void;
 };
 
 export function CandidateHeader({ onMenuClick }: CandidateHeaderProps) {
+  const router = useRouter();
   const { user } = useAuth();
   const initials = user ? getInitials(user.fullName) : "..";
+
+  const handleApplyRecruiter = () => {
+    if (!user) {
+      router.push("/login?redirect=%2Fprofile%2Frecruiter%2Fapply");
+      return;
+    }
+
+    if (user.role === "RECRUITER") {
+      router.push("/recruiter");
+      return;
+    }
+
+    router.push("/profile/recruiter/apply");
+  };
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center gap-2 border-b border-(--gray-200) bg-white px-3 shadow-sm sm:px-4">
@@ -85,32 +102,30 @@ export function CandidateHeader({ onMenuClick }: CandidateHeaderProps) {
           </Link>
         )}
 
-        <Link
-          href="/admin/jobs"
-          className="hidden items-center gap-2 rounded-xl bg-(--gray-100) px-3 py-1.5 transition-colors hover:bg-(--gray-200) lg:flex"
-        >
-          <div className="text-left leading-tight">
-            {user?.role === "CANDIDATE" ? (
-              <>
-                <p className="text-[11px] text-(--gray-500)">
-                  Bạn đang tìm cơ hội mới?
-                </p>
-                <p className="text-[12px] font-extrabold text-(--gray-900)">
-                  Khám phá việc làm <span aria-hidden>↗</span>
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-[11px] text-(--gray-500)">
-                  Bạn là nhà tuyển dụng?
-                </p>
-                <p className="text-[12px] font-extrabold text-(--gray-900)">
-                  Đăng tuyển ngay <span aria-hidden>»</span>
-                </p>
-              </>
-            )}
-          </div>
-        </Link>
+        {user ? (
+          <Button
+            className="hidden items-center gap-2 bg-(--gray-100) px-3 py-5.5 transition-colors hover:bg-(--gray-200) lg:flex"
+            onClick={handleApplyRecruiter}
+          >
+            <div className="text-left leading-tight">
+              {user.role === "RECRUITER" ? (
+                <>
+                  <p className="text-[11px] text-(--gray-500)">Không gian tuyển dụng</p>
+                  <p className="text-[12px] font-extrabold text-(--gray-900)">
+                    Vào dashboard <span aria-hidden>»</span>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[11px] text-(--gray-500)">Bạn là nhà tuyển dụng?</p>
+                  <p className="text-[12px] font-extrabold text-(--gray-900)">
+                    Đăng ký ngay <span aria-hidden>»</span>
+                  </p>
+                </>
+              )}
+            </div>
+          </Button>
+        ) : null}
       </div>
     </header>
   );

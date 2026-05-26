@@ -10,6 +10,7 @@ import { User } from '../user/entities/user.entity';
 import { UserRole } from '@/common/enum/index.enum';
 import { CreateRecruiterProfileDto } from './dto/recruiters-profile.repository';
 import { RecruiterResponseDto } from './dto/recruiter-response.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class RecruitersService {
@@ -17,13 +18,14 @@ export class RecruitersService {
     @InjectRepository(RecruiterEntity)
     private readonly recruiterRepository: Repository<RecruiterEntity>,
     private readonly dataSource: DataSource,
+    private readonly mailService: MailService,
   ) {}
 
   async createRecruiterProfile(
     id: string,
     createRecruiterProfileDto: CreateRecruiterProfileDto,
   ) {
-    return this.dataSource.transaction(async (manager) => {
+    const result = await this.dataSource.transaction(async (manager) => {
       const userRepository = manager.getRepository(User);
       const recruiterRepository = manager.getRepository(RecruiterEntity);
 
@@ -44,12 +46,25 @@ export class RecruitersService {
         await userRepository.save(user);
       }
 
-      return recruiterRepository.save({
+      const profile = await recruiterRepository.save({
         userId: id,
         contactPhone: createRecruiterProfileDto.contactPhone,
         contactEmail: createRecruiterProfileDto.contactEmail ?? user.email,
       });
+
+      return {
+        profile,
+        notifyEmail: profile.contactEmail ?? user.email,
+        userName: user.fullName,
+      };
     });
+
+    await this.mailService.sendRecruiterRegistrationSuccessEmail(
+      result.notifyEmail,
+      result.userName,
+    );
+
+    return result.profile;
   }
 
   async getRecruiterProfile(userId: string): Promise<RecruiterResponseDto> {

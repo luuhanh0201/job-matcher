@@ -40,6 +40,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 # Copy built application
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/src/modules/mail/templates ./apps/api/dist/src/modules/mail/templates
 COPY --from=builder /app/apps/api/package.json ./apps/api/
 
 # Copy workspace files for pnpm

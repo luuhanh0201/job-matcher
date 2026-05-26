@@ -57,7 +57,7 @@ const recruiterNavItems: NavItem[] = [
       { href: "/recruiter/post-job", label: "Đăng tin tuyển dụng" },
       { href: "/recruiter/manage-jobs", label: "Quản lý tin tuyển dụng" },
       { href: "/recruiter/applications", label: "Quản lý ứng viên" },
-      { href: "/recruiter/candidates", label: "Lịch hẹn phỏng vấn" },
+      { href: "/recruiter/interviews", label: "Lịch hẹn phỏng vấn" },
     ],
   },
   {

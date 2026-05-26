@@ -25,6 +25,7 @@ type AuthContextValue = {
   isLoading: boolean;
   isAuthenticated: boolean;
   logout: () => Promise<void>;
+  refreshProfile: () => Promise<AuthProfile>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -89,6 +90,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.replace("/login");
   }, [router]);
 
+  const refreshProfile = useCallback(async () => {
+    const user = await getProfile();
+    cachedUser = user;
+    setState({ status: "authenticated", user });
+    return user;
+  }, []);
+
   if (state.status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-(--gray-100)">
@@ -109,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             isLoading: false,
             isAuthenticated: false,
             logout,
+            refreshProfile,
           }}
         >
           {children}
@@ -134,6 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
         isAuthenticated: true,
         logout,
+        refreshProfile,
       }}
     >
       {children}

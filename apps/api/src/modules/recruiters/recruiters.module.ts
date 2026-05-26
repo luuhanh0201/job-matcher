@@ -4,9 +4,14 @@ import { RecruitersController } from './recruiters.controller';
 import { RecruiterEntity } from './entity/recruiter.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from '../user/user.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
-  imports: [UserModule, TypeOrmModule.forFeature([RecruiterEntity])],
+  imports: [
+    UserModule,
+    MailModule,
+    TypeOrmModule.forFeature([RecruiterEntity]),
+  ],
   controllers: [RecruitersController],
   providers: [RecruitersService],
   exports: [RecruitersService],
