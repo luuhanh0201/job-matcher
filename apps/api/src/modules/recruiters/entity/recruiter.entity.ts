@@ -23,6 +23,8 @@ export class RecruiterEntity {
   contactPhone?: string;
   @Column({ name: 'contact_email', nullable: true })
   contactEmail?: string;
+  @Column({ name: 'is_verified', default: false })
+  isVerified!: boolean;
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
   @UpdateDateColumn({ name: 'updated_at' })

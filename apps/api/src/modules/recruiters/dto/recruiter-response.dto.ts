@@ -4,6 +4,7 @@ export class RecruiterResponseDto {
   email!: string;
   contactPhone!: string;
   contactEmail?: string;
+  isVerified!: boolean;
   createdAt!: Date;
   updatedAt!: Date;
 }

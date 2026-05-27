@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Post,
   Request,
   UseGuards,
@@ -10,6 +11,7 @@ import { RecruitersService } from './recruiters.service';
 import { JwtAuthGuard } from '../auth/Guards/jwt-auth.guard';
 import { User } from '../user/entities/user.entity';
 import { CreateRecruiterProfileDto } from './dto/recruiters-profile.repository';
+import { UpdateRecruiterProfileDto } from './dto/update-recruiter-profile.dto';
 
 @Controller('recruiters')
 export class RecruitersController {
@@ -35,5 +37,17 @@ export class RecruitersController {
       req?.user?.id,
     );
     return profile;
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  async updateRecruiterProfile(
+    @Request() req: Request & { user: User },
+    @Body() updateRecruiterProfileDto: UpdateRecruiterProfileDto,
+  ) {
+    return await this.recruitersService.updateRecruiterProfile(
+      req?.user?.id,
+      updateRecruiterProfileDto,
+    );
   }
 }
