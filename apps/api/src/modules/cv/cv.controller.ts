@@ -26,7 +26,7 @@ export class CvController {
   constructor(
     private readonly cvService: CvService,
     private readonly pdfParserService: PdfParserService,
-  ) { }
+  ) {}
 
   @Post('upload')
   @UseInterceptors(

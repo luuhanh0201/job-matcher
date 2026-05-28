@@ -27,7 +27,10 @@ export class Cv {
   })
   @JoinColumn({ name: 'user_id' })
   user!: User;
-  @OneToMany(() => Cv, (cv) => cv.user, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+  @OneToMany(() => Cv, (cv) => cv.user, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
   cvs!: Cv[];
   @Column({ name: 'user_id' })
   userId!: string;

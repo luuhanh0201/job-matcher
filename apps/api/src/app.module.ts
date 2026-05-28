@@ -16,6 +16,8 @@ import { envFilePath } from 'typeorm.config';
 import { MailModule } from './modules/mail/mail.module';
 import { HealthController } from './health/health.controller';
 import { RecruitersModule } from './modules/recruiters/recruiters.module';
+import { CompanyModule } from './modules/company/company.module';
+import { LocationModule } from './modules/location/location.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { RecruitersModule } from './modules/recruiters/recruiters.module';
     ActiveLogModule,
     MailModule,
     RecruitersModule,
+    CompanyModule,
+    LocationModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
