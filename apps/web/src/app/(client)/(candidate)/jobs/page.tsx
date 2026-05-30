@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, SearchX } from "lucide-react";
 import { getJobs, type Job } from "@/services/jobs.service";
 import { JobCard } from "@/components/common/job-card";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 8;
 
@@ -11,7 +12,6 @@ export default function JobsPage() {
   const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Fetch all jobs once
@@ -19,7 +19,7 @@ export default function JobsPage() {
     getJobs()
       .then((data) => setAllJobs(data))
       .catch((err: unknown) =>
-        setError(err instanceof Error ? err.message : "Không thể tải danh sách việc làm"),
+        toast.error(err instanceof Error ? err.message : "Không thể tải danh sách việc làm"),
       )
       .finally(() => setLoading(false));
   }, []);
@@ -57,13 +57,6 @@ export default function JobsPage() {
         </p>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-          {error}
-        </div>
-      )}
-
       {/* Initial loading skeleton */}
       {loading && (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -77,7 +70,7 @@ export default function JobsPage() {
       )}
 
       {/* Job list */}
-      {!loading && visibleJobs.length === 0 && !error && (
+      {!loading && visibleJobs.length === 0 && (
         <div className="flex flex-col items-center justify-center gap-3 py-20 text-(--gray-500)">
           <SearchX className="h-10 w-10 opacity-40" />
           <p className="font-medium">Chưa có việc làm nào</p>

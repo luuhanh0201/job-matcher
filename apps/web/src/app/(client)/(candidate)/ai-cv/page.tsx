@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { Check, CircleDashed, FileText, Sparkles, TriangleAlert } from "lucide-react";
+import { Check, CircleDashed, FileText, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,6 +19,7 @@ import { toParsedCvForm } from "@/utils/cv.utils";
 import FormConfirmCvComponent, { DEFAULT_FORM } from "./formConfirmCv";
 import AiResultCard from "./aiResultCard";
 import ResumeProfile from "./resumeProfile";
+import { toast } from "sonner";
 
 function getStepState(
   step: number,
@@ -65,8 +66,6 @@ export default function AiCvPage() {
 
   const [uploadLoading, setUploadLoading] = useState(false);
   const [pollLoading, setPollLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
 
   const progress = Number(cvProcessingStatus?.progress ?? 0);
   const hasCvProcessing = Boolean(cvId && cvProcessingStatus);
@@ -107,8 +106,6 @@ export default function AiCvPage() {
     setForm(DEFAULT_FORM);
     setExtractedData(null);
     setAnalyzerResult(null);
-    setMessage("");
-    setError("");
   };
   const openFilePicker = () => {
     if (fileInputRef.current) {
@@ -120,13 +117,11 @@ export default function AiCvPage() {
 
   const handleUpload = async () => {
     if (!file) {
-      setError("Vui lòng chọn file PDF trước khi upload.");
+      toast.error("Vui lòng chọn file PDF trước khi upload.");
       return;
     }
 
     setUploadLoading(true);
-    setError("");
-    setMessage("");
     // Reset processing state at the start
     setCvProcessingStatus(null);
     setExtractedData(null);
@@ -157,9 +152,9 @@ export default function AiCvPage() {
         state: CvProcessingState.COMPLETED,
         progress: 100,
       });
-      setMessage(response.message || "Upload và trích xuất CV thành công.");
+      toast.success(response.message || "Upload và trích xuất CV thành công.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload CV thất bại.");
+      toast.error(err instanceof Error ? err.message : "Upload CV thất bại.");
     } finally {
       setUploadLoading(false);
       setPollLoading(false);
@@ -168,21 +163,19 @@ export default function AiCvPage() {
 
   const handleAnalyze = async () => {
     if (!extractedData) {
-      setError("Vui lòng upload và trích xuất CV trước khi phân tích.");
+      toast.error("Vui lòng upload và trích xuất CV trước khi phân tích.");
       return;
     }
 
     setAnalyzeLoading(true);
-    setError("");
-    setMessage("");
 
     try {
       const result = await analyzeCv(extractedData);
       setAnalyzerResult(result);
-      setMessage("Phân tích CV thành công.");
+      toast.success("Phân tích CV thành công.");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể phân tích CV.");
+      toast.error(err instanceof Error ? err.message : "Không thể phân tích CV.");
     } finally {
       setAnalyzeLoading(false);
     }
@@ -330,17 +323,6 @@ export default function AiCvPage() {
 
             </div>
 
-            {message ? (
-              <div className="mt-3 rounded-xl border border-(--accent-green)/30 bg-(--accent-green)/10 px-3 py-2 text-sm text-(--gray-900)">
-                {message}
-              </div>
-            ) : null}
-            {error ? (
-              <div className="mt-3 flex items-start gap-2 rounded-xl border border-(--accent-orange)/30 bg-(--accent-orange)/10 px-3 py-2 text-sm text-(--gray-900)">
-                <TriangleAlert className="mt-0.5 h-4 w-4 text-(--accent-orange)" />
-                <span>{error}</span>
-              </div>
-            ) : null}
           </div>
         </CardContent>
       </Card>

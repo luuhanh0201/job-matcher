@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CheckCircle2, XCircle, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { verifyEmail, resendVerificationEmail } from "@/services/auth.service";
+import { toast } from "sonner";
 
 type VerificationState = "loading" | "success" | "error" | "already-verified";
 
@@ -15,14 +16,12 @@ export default function VerifyEmailContent() {
   const token = searchParams.get("token");
 
   const [state, setState] = useState<VerificationState>("loading");
-  const [message, setMessage] = useState("");
   const [isResending, setIsResending] = useState(false);
-  const [resendMessage, setResendMessage] = useState("");
 
   useEffect(() => {
     if (!token) {
       setState("error");
-      setMessage("Token xác minh không hợp lệ");
+      toast.error("Token xác minh không hợp lệ");
       return;
     }
 
@@ -32,10 +31,10 @@ export default function VerifyEmailContent() {
 
         if (response.message.includes("đã được xác minh trước đó")) {
           setState("already-verified");
-          setMessage(response.message);
+          toast.info(response.message);
         } else {
           setState("success");
-          setMessage(response.message);
+          toast.success(response.message);
 
           // Redirect to login after 3 seconds
           setTimeout(() => {
@@ -44,7 +43,7 @@ export default function VerifyEmailContent() {
         }
       } catch (error) {
         setState("error");
-        setMessage(error instanceof Error ? error.message : "Xác minh email thất bại");
+        toast.error(error instanceof Error ? error.message : "Xác minh email thất bại");
       }
     };
 
@@ -59,13 +58,12 @@ export default function VerifyEmailContent() {
     }
 
     setIsResending(true);
-    setResendMessage("");
 
     try {
       const response = await resendVerificationEmail(email);
-      setResendMessage(response.message);
+      toast.success(response.message);
     } catch (error) {
-      setResendMessage(error instanceof Error ? error.message : "Gửi lại email thất bại");
+      toast.error(error instanceof Error ? error.message : "Gửi lại email thất bại");
     } finally {
       setIsResending(false);
     }
@@ -110,7 +108,10 @@ export default function VerifyEmailContent() {
         </h1>
 
         <p className="text-base text-(--gray-600)">
-          {message}
+          {state === "loading" && "Vui lòng chờ trong giây lát."}
+          {state === "success" && "Email của bạn đã được xác minh thành công."}
+          {state === "already-verified" && "Tài khoản đã được xác minh từ trước."}
+          {state === "error" && "Liên kết xác minh không hợp lệ hoặc đã hết hạn."}
         </p>
       </div>
 
@@ -152,12 +153,6 @@ export default function VerifyEmailContent() {
                 </>
               )}
             </Button>
-
-            {resendMessage && (
-              <p className={`text-sm ${resendMessage.includes("thất bại") ? "text-red-600" : "text-green-600"}`}>
-                {resendMessage}
-              </p>
-            )}
 
             <Button
               asChild

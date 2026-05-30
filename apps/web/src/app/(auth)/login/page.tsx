@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import type { LucideIcon } from "lucide-react";
 import { BriefcaseBusiness, ShieldCheck, Sparkles } from "lucide-react";
@@ -18,6 +18,7 @@ import { loginWithFacebook } from "@/services/auth-facebook.service";
 import FacebookLogin from "@greatsumini/react-facebook-login";
 import { FaSquare } from "react-icons/fa";
 import { FaSquareFacebook } from "react-icons/fa6";
+import { toast } from "sonner";
 type LoginFieldErrors = Partial<Record<"email" | "password", string>>;
 
 const features: { icon: LucideIcon; text: string }[] = [
@@ -30,53 +31,59 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [errors, setErrors] = useState<LoginFieldErrors>({});
-  const [serverError, setServerError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const registered = searchParams.get("registered") === "1";
   const sessionExpired = searchParams.get("sessionExpired") === "1";
   const redirectAfterLogin = searchParams.get("redirect") || "/";
 
+  useEffect(() => {
+    if (sessionExpired) {
+      toast.warning("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+    }
+    if (registered) {
+      toast.success("Tạo tài khoản thành công. Vui lòng đăng nhập để tiếp tục.");
+    }
+  }, [registered, sessionExpired]);
+
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setIsSubmitting(true);
-      setServerError("");
       try {
         const tokens = await loginWithGoogle(tokenResponse.access_token);
         saveAuthTokens(tokens);
         router.push(redirectAfterLogin);
       } catch (error) {
-        setServerError(error instanceof Error ? error.message : "Đăng nhập bằng Google thất bại");
+        toast.error(error instanceof Error ? error.message : "Đăng nhập bằng Google thất bại");
       } finally {
         setIsSubmitting(false);
       }
     },
     onError: () => {
-      setServerError("Đăng nhập bằng Google bị huỷ hoặc lỗi");
+      toast.error("Đăng nhập bằng Google bị huỷ hoặc lỗi");
     },
   });
 
   const handleFacebookSuccess = async (facebookLoginResponse: FacebookLoginResponse) => {
     if (!facebookLoginResponse.accessToken) {
-      setServerError("Facebook login không trả về access token");
+      toast.error("Facebook login không trả về access token");
       return;
     }
 
     setIsSubmitting(true);
-    setServerError("");
 
     try {
       const tokens = await loginWithFacebook(facebookLoginResponse.accessToken);
       saveAuthTokens(tokens);
       router.push(redirectAfterLogin);
     } catch (error) {
-      setServerError(error instanceof Error ? error.message : "Đăng nhập bằng Facebook thất bại");
+      toast.error(error instanceof Error ? error.message : "Đăng nhập bằng Facebook thất bại");
     } finally {
       setIsSubmitting(false);
     }
   };
   const handleFacebookError = () => {
-    setServerError("Đăng nhập bằng Facebook bị huỷ hoặc lỗi");
+    toast.error("Đăng nhập bằng Facebook bị huỷ hoặc lỗi");
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -96,12 +103,10 @@ function LoginPageContent() {
         email: fieldErrors.email?.[0],
         password: fieldErrors.password?.[0],
       });
-      setServerError("");
       return;
     }
 
     setErrors({});
-    setServerError("");
     setIsSubmitting(true);
 
     try {
@@ -109,7 +114,7 @@ function LoginPageContent() {
       saveAuthTokens(tokens);
       router.push(redirectAfterLogin);
     } catch (error) {
-      setServerError(error instanceof Error ? error.message : "Đăng nhập thất bại");
+      toast.error(error instanceof Error ? error.message : "Đăng nhập thất bại");
     } finally {
       setIsSubmitting(false);
     }
@@ -170,24 +175,6 @@ function LoginPageContent() {
             </div>
 
             <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
-              {sessionExpired ? (
-                <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-                  Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.
-                </p>
-              ) : null}
-
-              {registered ? (
-                <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                  Tạo tài khoản thành công. Vui lòng đăng nhập để tiếp tục.
-                </p>
-              ) : null}
-
-              {serverError ? (
-                <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-                  {serverError}
-                </p>
-              ) : null}
-
               <div className="space-y-2">
                 <Label htmlFor="email" className="font-bold">
                   Email

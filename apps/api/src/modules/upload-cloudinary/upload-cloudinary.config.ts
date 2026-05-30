@@ -16,7 +16,7 @@ export interface CloudinaryClient {
       file: string,
       options: {
         folder: string;
-        resource_type: 'raw';
+        resource_type: 'raw' | 'image';
         public_id: string;
       },
     ) => Promise<CloudinaryUploadResponse>;

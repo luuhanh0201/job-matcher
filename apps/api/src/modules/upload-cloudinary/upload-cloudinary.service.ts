@@ -9,7 +9,8 @@ import {
   type CloudinaryClient,
   type CloudinaryDestroyResponse,
 } from './upload-cloudinary.config';
-const UPLOAD_FOLDER = 'job-matcher/uploads';
+const UPLOAD_FOLDER_PDFS = 'job-matcher/uploads/pdfs';
+const UPLOAD_FOLDER_IMAGES = 'job-matcher/uploads/images';
 export interface UploadResult {
   public_id: string;
   secure_url: string;
@@ -32,7 +33,7 @@ export class UploadCloudinaryService {
       const dataUri = `data:application/pdf;base64,${file.buffer.toString('base64')}`;
 
       const result = await this.cloudinaryClient.uploader.upload(dataUri, {
-        folder: UPLOAD_FOLDER,
+        folder: UPLOAD_FOLDER_PDFS,
         resource_type: 'raw',
         public_id: this.buildPublicId(file.originalname),
       });
@@ -44,6 +45,28 @@ export class UploadCloudinaryService {
     } catch {
       throw new InternalServerErrorException(
         'Failed to upload PDF to Cloudinary',
+      );
+    }
+  }
+  async uploadImage(file: Express.Multer.File): Promise<UploadResult> {
+    try {
+      const dataUri = `data:${file.mimetype};base64,${file.buffer.toString(
+        'base64',
+      )}`;
+
+      const result = await this.cloudinaryClient.uploader.upload(dataUri, {
+        folder: UPLOAD_FOLDER_IMAGES,
+        resource_type: 'image',
+        public_id: this.buildPublicId(file.originalname),
+      });
+
+      return {
+        public_id: result.public_id,
+        secure_url: result.secure_url,
+      };
+    } catch {
+      throw new InternalServerErrorException(
+        'Failed to upload image to Cloudinary',
       );
     }
   }

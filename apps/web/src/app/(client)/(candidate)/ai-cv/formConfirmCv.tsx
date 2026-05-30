@@ -7,6 +7,7 @@ import { EducationItem, WorkExperienceItem } from "@/types/ai-cv";
 import { ParsedCvForm } from "@/types/cv";
 import { CircleDashed } from "lucide-react";
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { toast } from "sonner";
 
 type FormConfirmCvComponentProps = {
     cvId: string;
@@ -29,8 +30,6 @@ export const DEFAULT_FORM: ParsedCvForm = {
 
 function FormConfirmCvComponent({ cvId, form, setForm }: FormConfirmCvComponentProps) {
     const [saveLoading, setSaveLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [message, setMessage] = useState("");
 
     const canSave = useMemo(() => Boolean(cvId.trim()), [cvId]);
     const setField = (key: keyof ParsedCvForm, value: string) => {
@@ -100,19 +99,18 @@ console.log(form)
     );
     const handleSave = async () => {
         if (!cvId) {
-            setError("Không tìm thấy Cv của bạn, vui lòng tải lại trang và thử lại.");
+            toast.error("Không tìm thấy Cv của bạn, vui lòng tải lại trang và thử lại.");
             return;
         }
 
         setSaveLoading(true);
-        setError("");
 
         try {
             await saveParsedCv({ cvId, ...form });
-            setMessage("Cv của bạn đã được lưu.");
+            toast.success("Cv của bạn đã được lưu.");
             window.scrollTo({ top: 0, behavior: "smooth" });
         } catch (err) {
-            setError(
+            toast.error(
                 err instanceof Error ? err.message : "Không thể lưu dữ liệu CV đã chỉnh sửa.",
             );
         } finally {
@@ -376,18 +374,6 @@ console.log(form)
                         Huỷ
                     </Button>
                 </div>
-
-                {message ? (
-                    <div className="rounded-xl border border-(--accent-green)/30 bg-(--accent-green)/10 px-3 py-2 text-sm text-(--gray-900)">
-                        {message}
-                    </div>
-                ) : null}
-
-                {error ? (
-                    <div className="rounded-xl border border-(--accent-orange)/30 bg-(--accent-orange)/10 px-3 py-2 text-sm text-(--gray-900)">
-                        {error}
-                    </div>
-                ) : null}
             </CardContent>
         </Card>
     );

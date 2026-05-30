@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/auth-context";
 import { createRecruiterProfile } from "@/services/recruiter.service";
+import { toast } from "sonner";
 
 type FieldErrors = {
   contactPhone?: string;
@@ -57,7 +58,6 @@ export default function ApplyRecruiterPage() {
   const [contactPhone, setContactPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
   const [touchedFields, setTouchedFields] = useState<Record<keyof FieldErrors, boolean>>({
     contactPhone: false,
     contactEmail: false,
@@ -92,7 +92,6 @@ export default function ApplyRecruiterPage() {
       return;
     }
 
-    setError("");
     setIsSubmitting(true);
 
     try {
@@ -103,7 +102,7 @@ export default function ApplyRecruiterPage() {
       await refreshProfile();
       router.push("/recruiter");
     } catch (submitError) {
-      setError(
+      toast.error(
         submitError instanceof Error
           ? submitError.message
           : "Không thể gửi đăng ký nhà tuyển dụng",
@@ -119,16 +118,10 @@ export default function ApplyRecruiterPage() {
 
   const handlePhoneChange = (value: string) => {
     setContactPhone(value);
-    if (error) {
-      setError("");
-    }
   };
 
   const handleEmailChange = (value: string) => {
     setContactEmail(value);
-    if (error) {
-      setError("");
-    }
   };
 
   if (isLoading || !user) {
@@ -233,12 +226,6 @@ export default function ApplyRecruiterPage() {
                 </p>
               )}
             </div>
-
-            {error ? (
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-                {error}
-              </div>
-            ) : null}
 
             <div className="flex flex-col-reverse gap-3 border-t border-(--gray-200) pt-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-(--gray-500)">

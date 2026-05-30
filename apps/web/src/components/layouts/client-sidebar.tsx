@@ -16,7 +16,22 @@ import {
   getClientNavItems,
   getClientProfileHref,
   NavItem,
+  SubItem,
 } from "@/components/layouts/client-sidebar.config";
+
+function isPathMatch(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(href + "/");
+}
+
+function getBestMatchedChild(pathname: string, children?: SubItem[]) {
+  if (!children?.length) return null;
+
+  const matched = children
+    .filter((child) => isPathMatch(pathname, child.href))
+    .sort((a, b) => b.href.length - a.href.length);
+
+  return matched[0] ?? null;
+}
 
 type CandidateSidebarProps = {
   mobileOpen: boolean;
@@ -84,12 +99,13 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
       <nav className="flex flex-1 flex-col gap-0.5">
         {navItems.map((item) => {
           const { icon: Icon, label, badge, highlight, children, href } = item;
+          const bestMatchedChild = getBestMatchedChild(pathname, children);
 
           const isActive = href
             ? href === "/jobs"
               ? pathname === "/jobs" || pathname.startsWith("/jobs/")
-              : pathname === href || pathname.startsWith(href + "/")
-            : children?.some((c) => pathname === c.href || pathname.startsWith(c.href + "/"));
+              : isPathMatch(pathname, href)
+            : Boolean(bestMatchedChild);
 
           // Items with children (dropdown)
           if (children) {
@@ -99,6 +115,7 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
                 item={item}
                 isActive={!!isActive}
                 pathname={pathname}
+                activeChildHref={bestMatchedChild?.href}
                 onClose={onClose}
               />
             );
@@ -173,11 +190,13 @@ function DropdownItem({
   item,
   isActive,
   pathname,
+  activeChildHref,
   onClose,
 }: {
   item: NavItem;
   isActive: boolean;
   pathname: string;
+  activeChildHref?: string;
   onClose: () => void;
 }) {
   const [open, setOpen] = useState(isActive);
@@ -208,7 +227,9 @@ function DropdownItem({
       {open && item.children && (
         <div className="ml-8 mt-0.5 flex flex-col gap-0.5">
           {item.children.map((child) => {
-            const childActive = pathname === child.href || pathname.startsWith(child.href + "/");
+            const childActive = activeChildHref
+              ? activeChildHref === child.href
+              : isPathMatch(pathname, child.href);
             return (
               <Link
                 key={child.href}

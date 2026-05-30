@@ -89,6 +89,51 @@ export class UploadCloudinaryController {
   ) {
     return this.uploadCloudinaryService.uploadPdf(file);
   }
+  @Post('image')
+  @ApiOperation({ summary: 'Upload image file to Cloudinary' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Image file (e.g. JPEG, PNG)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Image uploaded successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        public_id: { type: 'string' },
+        secure_url: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 422,
+    description: 'Invalid file type',
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  uploadImage(
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({ fileType: 'image/*' })
+        .build({
+          fileIsRequired: true,
+          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.uploadCloudinaryService.uploadImage(file);
+  }
 
   @Delete()
   @ApiOperation({ summary: 'Delete uploaded file from Cloudinary by publicId' })

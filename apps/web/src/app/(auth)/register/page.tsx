@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerSchema } from "@/schemas/auth.schema";
 import { register } from "@/services/auth.service";
+import { toast } from "sonner";
 
 type RegisterFieldErrors = Partial<Record<"fullName" | "email" | "password" | "confirmPassword", string>>;
 
@@ -21,9 +22,8 @@ const features: { icon: LucideIcon; text: string }[] = [
 
 export default function RegisterPage() {
   const [errors, setErrors] = useState<RegisterFieldErrors>({});
-  const [serverError, setServerError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
+  const [isRegistered, setIsRegistered] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -46,21 +46,19 @@ export default function RegisterPage() {
         password: fieldErrors.password?.[0],
         confirmPassword: fieldErrors.confirmPassword?.[0],
       });
-      setServerError("");
       return;
     }
 
     setErrors({});
-    setServerError("");
-    setSuccessMessage("");
     setIsSubmitting(true);
 
     try {
       const response = await register(payload.data);
-      setSuccessMessage(response.message);
-      // Don't redirect immediately, let user see the success message
+      setIsRegistered(true);
+      toast.success(response.message);
+      toast.info("Vui lòng kiểm tra hộp thư đến (hoặc thư rác) để xác minh email của bạn.");
     } catch (error) {
-      setServerError(error instanceof Error ? error.message : "Đăng ký thất bại");
+      toast.error(error instanceof Error ? error.message : "Đăng ký thất bại");
     } finally {
       setIsSubmitting(false);
     }
@@ -121,27 +119,13 @@ export default function RegisterPage() {
             </div>
 
             <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
-              {serverError ? (
-                <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-                  {serverError}
-                </p>
-              ) : null}
-
-              {successMessage ? (
-                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 space-y-2">
-                  <p className="text-sm font-medium text-green-600">
-                    {successMessage}
-                  </p>
-                  <p className="text-xs text-green-600">
-                    Vui lòng kiểm tra hộp thư đến (hoặc thư rác) để xác minh email của bạn.
-                  </p>
-                  <Link
-                    href="/login"
-                    className="inline-block text-sm font-bold text-green-700 hover:text-green-800 underline"
-                  >
-                    Đi đến trang đăng nhập
-                  </Link>
-                </div>
+              {isRegistered ? (
+                <Link
+                  href="/login"
+                  className="inline-block text-sm font-bold text-(--primary-blue) underline"
+                >
+                  Đi đến trang đăng nhập
+                </Link>
               ) : null}
 
               <div className="space-y-2">
@@ -209,7 +193,7 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 className="h-14 w-full rounded-2xl bg-linear-to-r from-(--primary-blue) to-(--accent-purple) text-base font-black text-white shadow-xl shadow-blue-200/70 hover:opacity-95"
-                disabled={isSubmitting || Boolean(successMessage)}
+                disabled={isSubmitting || isRegistered}
               >
                 {isSubmitting ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
               </Button>

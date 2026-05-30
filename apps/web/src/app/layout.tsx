@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AuthSessionInterceptor } from "@/components/layouts/auth-session-interceptor";
+import { Toaster } from "@/components/ui/sonner";
 import Script from "next/script";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
@@ -56,6 +57,7 @@ export default function RootLayout({
       <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
         <AuthSessionInterceptor />
         {children}
+        <Toaster position="top-right" />
 
         <Script
           async

@@ -51,6 +51,15 @@ const candidateNavItems: NavItem[] = [
 
 const recruiterNavItems: NavItem[] = [
   {
+    label: "Hồ sơ cá nhân",
+    icon: User,
+    children: [
+      { href: "/recruiter/profile", label: "Thông tin cá nhân" },
+      { href: "/recruiter/profile/edit-profile", label: "Cài đặt thông tin cá nhân  " },
+      { href: "/recruiter/security", label: "Bảo mật" },
+    ],
+  },
+  {
     label: "Quản lý tuyển dụng",
     icon: Briefcase,
     children: [
@@ -75,7 +84,14 @@ const recruiterNavItems: NavItem[] = [
     label: "AI Candidate Finder",
     highlight: true,
   },
-  { href: "/recruiter/company/profile", label: "Hồ sơ công ty", icon: Hotel },
+  {
+    label: "Hồ sơ công ty",
+    icon: Hotel,
+    children: [
+      { href: "/recruiter/company/profile", label: "Tạo hồ sơ công ty" },
+      { href: "/recruiter/company/list", label: "Danh sách công ty" },
+    ],
+  },
 ];
 
 const homeNavItem: NavItem = { href: "/", icon: Home, label: "Trang chủ" };
@@ -96,7 +112,7 @@ export function getClientNavItems(role: UserRole | undefined): NavItem[] {
 
 export function getClientProfileHref(role: UserRole | undefined): string {
   if (role === "RECRUITER") {
-    return "/recruiter/company/profile";
+    return "/recruiter/profile";
   }
 
   if (role === "CANDIDATE" || role === undefined) {
