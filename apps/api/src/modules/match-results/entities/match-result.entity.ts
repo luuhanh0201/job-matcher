@@ -1,4 +1,4 @@
-import { Job } from '@/modules/jobs/entities/job.entity';
+import { JobPostEntity } from '@/modules/jobs/entities/job.entity';
 import { ParsedCv } from '@/modules/cv/entities/parsed-cv.entity';
 import {
   Column,
@@ -13,9 +13,9 @@ import {
 export class MatchResult {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
-  @ManyToOne(() => Job, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+  @ManyToOne(() => JobPostEntity, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'job_id' })
-  job!: Job;
+  job!: JobPostEntity;
   @ManyToOne(() => ParsedCv, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'parsed_cv_id' })
   parsedCv!: ParsedCv;

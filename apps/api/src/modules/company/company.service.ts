@@ -28,9 +28,10 @@ export class CompanyService {
     logo?: Express.Multer.File,
   ): Promise<CompanyEntity> {
     const companyName = createCompanyDto.name.trim();
-    const existingCompany = await this.companyRepository.findOne({
-      where: { name: companyName },
-    });
+    const existingCompany = await this.companyRepository
+      .createQueryBuilder('company')
+      .where('LOWER(company.name) = LOWER(:companyName)', { companyName })
+      .getOne();
 
     if (existingCompany) {
       throw new ConflictException(`Công ty với tên ${companyName} đã tồn tại`);

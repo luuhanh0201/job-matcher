@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { MapPin, Briefcase, BadgeDollarSign, TrendingUp, Clock } from "lucide-react";
 import type { Job, EmploymentType, SeniorityLevel } from "@/services/jobs.service";
 
@@ -10,6 +11,7 @@ const EMPLOYMENT_LABEL: Record<EmploymentType, string> = {
 };
 
 const SENIORITY_LABEL: Record<SeniorityLevel, string> = {
+  NO_EXPERIENCE: "Không yêu cầu kinh nghiệm",
   INTERN: "Thực tập sinh",
   JUNIOR: "Junior",
   MID: "Middle",
@@ -53,15 +55,26 @@ function getCompanyColor(company: string) {
 
 export function JobCard({ job }: { job: Job }) {
   const color = getCompanyColor(job.company);
+  const [hasLogoError, setHasLogoError] = useState(false);
 
   return (
     <div className="group rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm transition-all hover:border-(--primary-blue)/30 hover:shadow-md sm:p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        {/* Company logo placeholder */}
         <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-black ${color}`}
+          className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-black ${color}`}
         >
-          {getInitials(job.company)}
+          {job.companyLogoUrl && !hasLogoError ? (
+            // Logo URLs can come from user uploads/external hosts, so avoid next/image host restrictions here.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={job.companyLogoUrl}
+              alt={`${job.company} logo`}
+              className="h-full w-full object-contain p-1"
+              onError={() => setHasLogoError(true)}
+            />
+          ) : (
+            getInitials(job.company)
+          )}
         </div>
 
         <div className="min-w-0 flex-1">

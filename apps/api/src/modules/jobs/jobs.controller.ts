@@ -1,45 +1,54 @@
-import { ConfigService } from '@nestjs/config';
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   Patch,
   Post,
-  Req,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
-import { JobsService } from '@/modules/jobs/jobs.service';
+import { JwtAuthGuard } from '../auth/Guards/jwt-auth.guard';
+import { User } from '../user/entities/user.entity';
+import { CreateJobDto } from './dto/create-job.dto';
+import { JobPostResponseDto } from './dto/job-response.dto';
+import { JobsService } from './jobs.service';
+import { UpdateJobStatusDto } from './dto/update-job-status.dto';
 
 @Controller('jobs')
 export class JobsController {
-  constructor(
-    private readonly jobsService: JobsService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly jobsService: JobsService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createJobDto: any) {
-    return this.jobsService.create(createJobDto);
+  async createPost(
+    @Request() req: Request & { user: User },
+    @Body() createJobDto: CreateJobDto,
+  ): Promise<JobPostResponseDto> {
+    return this.jobsService.createPost(createJobDto, req.user);
   }
 
   @Get()
-  findAll(@Req() req: Request & { user?: string }) {
+  async findAll(): Promise<JobPostResponseDto[]> {
     return this.jobsService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.jobsService.findOne(Number(id));
+  async findOne(@Param('id') id: string): Promise<JobPostResponseDto> {
+    return this.jobsService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateJobDto: any) {
-    return this.jobsService.update(Number(id), updateJobDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.jobsService.remove(Number(id));
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/status')
+  async updateStatus(
+    @Request() req: Request & { user: User },
+    @Param('id') id: string,
+    @Body() updateJobStatusDto: UpdateJobStatusDto,
+  ): Promise<JobPostResponseDto> {
+    return this.jobsService.updateStatus(
+      id,
+      updateJobStatusDto.status,
+      req.user,
+    );
   }
 }
