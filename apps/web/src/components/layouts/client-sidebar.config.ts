@@ -30,6 +30,7 @@ const candidateNavItems: NavItem[] = [
     children: [
       { href: "/profile/me", label: "Thông tin cá nhân" },
       { href: "/profile/job-matches", label: "Công việc phù hợp" },
+      { href: "/profile/applications", label: "Việc đã ứng tuyển" },
       { href: "/profile/security", label: "Bảo mật" },
     ],
   },

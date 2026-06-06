@@ -4,17 +4,29 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   BriefcaseBusiness,
+  CalendarPlus,
   CalendarClock,
-  Download,
+  Eye,
   FileText,
+  Globe,
   Loader2,
   Mail,
   Phone,
+  X,
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { getCandidateProfile } from "@/services/candidate-profile.service";
+import {
+  getCandidateCvList,
+  getCvPreviewObjectUrl,
+} from "@/services/cv.service";
+import { createInterview } from "@/services/interview.service";
 import { getRecruiterApplications } from "@/services/job-application.service";
+import { updateJobApplicationStatus } from "@/services/job-application.service";
+import type { CandidateProfile } from "@/types/candidate-profile";
+import type { CvRecord } from "@/types/cv";
 import {
   JOB_APPLICATION_STATUS_LABEL,
   type JobApplicationProfile,
@@ -27,6 +39,11 @@ function formatDate(value?: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function toDateTimeLocalValue(value: Date) {
+  const localDate = new Date(value.getTime() - value.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
 }
 
 function getStatusClass(status: JobApplicationStatus) {
@@ -48,6 +65,25 @@ function getStatusClass(status: JobApplicationStatus) {
 export default function RecruiterApplicationsPage() {
   const [applications, setApplications] = useState<JobApplicationProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [selectedProfile, setSelectedProfile] =
+    useState<CandidateProfile | null>(null);
+  const [selectedProfileCvs, setSelectedProfileCvs] = useState<CvRecord[]>([]);
+  const [cvPreview, setCvPreview] = useState<{
+    title: string;
+    url: string;
+  } | null>(null);
+  const [isLoadingCvPreview, setIsLoadingCvPreview] = useState(false);
+  const [selectedApplicationForInterview, setSelectedApplicationForInterview] =
+    useState<JobApplicationProfile | null>(null);
+  const [isCreatingInterview, setIsCreatingInterview] = useState(false);
+  const [interviewForm, setInterviewForm] = useState({
+    scheduledAt: "",
+    durationMinutes: "60",
+    meetingUrl: "",
+    location: "",
+    note: "",
+  });
 
   useEffect(() => {
     getRecruiterApplications()
@@ -79,6 +115,153 @@ export default function RecruiterApplicationsPage() {
       },
     );
   }, [applications]);
+
+  const handleViewProfile = async (candidateId: string) => {
+    setIsLoadingProfile(true);
+    try {
+      const [profile, cvs] = await Promise.all([
+        getCandidateProfile(candidateId),
+        getCandidateCvList(candidateId),
+      ]);
+      setSelectedProfile(profile);
+      setSelectedProfileCvs(cvs);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Không thể tải hồ sơ ứng viên",
+      );
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  const handleStatusChange = async (
+    application: JobApplicationProfile,
+    status: JobApplicationStatus,
+  ) => {
+    if (application.status === status) {
+      return;
+    }
+
+    try {
+      const updatedApplication = await updateJobApplicationStatus(
+        application.id,
+        status,
+      );
+      setApplications((prev) =>
+        prev.map((item) =>
+          item.id === updatedApplication.id ? updatedApplication : item,
+        ),
+      );
+      toast.success("Đã cập nhật trạng thái ứng viên");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Không thể cập nhật trạng thái ứng viên",
+      );
+    }
+  };
+
+  const openInterviewForm = (application: JobApplicationProfile) => {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    tomorrow.setMinutes(0, 0, 0);
+    setInterviewForm({
+      scheduledAt: toDateTimeLocalValue(tomorrow),
+      durationMinutes: "60",
+      meetingUrl: "",
+      location: "",
+      note: "",
+    });
+    setSelectedApplicationForInterview(application);
+  };
+
+  const handleCreateInterview = async () => {
+    if (!selectedApplicationForInterview) {
+      return;
+    }
+    if (!interviewForm.scheduledAt) {
+      toast.error("Vui lòng chọn thời gian phỏng vấn");
+      return;
+    }
+
+    setIsCreatingInterview(true);
+    try {
+      await createInterview(selectedApplicationForInterview.id, {
+        scheduledAt: new Date(interviewForm.scheduledAt).toISOString(),
+        durationMinutes: Number(interviewForm.durationMinutes || 60),
+        meetingUrl: interviewForm.meetingUrl,
+        location: interviewForm.location,
+        note: interviewForm.note,
+      });
+      setApplications((prev) =>
+        prev.map((item) =>
+          item.id === selectedApplicationForInterview.id
+            ? { ...item, status: "INTERVIEW" }
+            : item,
+        ),
+      );
+      setSelectedApplicationForInterview(null);
+      toast.success("Đã gửi lời mời phỏng vấn cho ứng viên");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Không thể tạo lịch phỏng vấn",
+      );
+    } finally {
+      setIsCreatingInterview(false);
+    }
+  };
+
+  const closeCvPreview = () => {
+    if (cvPreview?.url) {
+      URL.revokeObjectURL(cvPreview.url);
+    }
+    setCvPreview(null);
+  };
+
+  const openCvPreview = async (cv: CvRecord) => {
+    if (!cv.id) {
+      toast.error("CV không hợp lệ");
+      return;
+    }
+    setIsLoadingCvPreview(true);
+    try {
+      const objectUrl = await getCvPreviewObjectUrl(cv.id);
+      if (cvPreview?.url) {
+        URL.revokeObjectURL(cvPreview.url);
+      }
+      setCvPreview({
+        title: cv.fileName || "CV ứng viên",
+        url: objectUrl,
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Không thể xem trực tiếp CV",
+      );
+    } finally {
+      setIsLoadingCvPreview(false);
+    }
+  };
+
+  const handleViewCv = async (application: JobApplicationProfile) => {
+    if (application.cv?.id) {
+      await openCvPreview(application.cv);
+      return;
+    }
+
+    try {
+      const cvs = await getCandidateCvList(application.candidate.id);
+      const latestCv = cvs.find((cv) => cv.id);
+      if (!latestCv) {
+        toast.error("Ứng viên chưa có CV PDF");
+        return;
+      }
+      await openCvPreview(latestCv);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Không thể tải CV ứng viên",
+      );
+    }
+  };
 
   if (isLoading) {
     return (
@@ -181,29 +364,69 @@ export default function RecruiterApplicationsPage() {
                         value={application.candidate.phone || "Chưa cập nhật"}
                       />
                     </div>
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <select
+                        value={application.status}
+                        onChange={(event) =>
+                          handleStatusChange(
+                            application,
+                            event.target.value as JobApplicationStatus,
+                          )
+                        }
+                        className="h-10 rounded-xl border border-(--gray-200) bg-white px-3 text-sm font-bold text-(--gray-900) outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                      >
+                        {Object.entries(JOB_APPLICATION_STATUS_LABEL).map(
+                          ([status, label]) => (
+                            <option key={status} value={status}>
+                              {label}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                      <Button
+                        type="button"
+                        onClick={() => openInterviewForm(application)}
+                        className="h-10 gap-2 rounded-xl bg-(--primary-blue) px-4 font-bold text-white hover:bg-(--blue-dark)"
+                      >
+                        <CalendarPlus className="h-4 w-4" />
+                        Mời phỏng vấn
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
-                {application.cv ? (
-                  <a
-                    href={application.cv.fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
+                <div className="flex flex-col gap-2 lg:items-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleViewProfile(application.candidate.id)}
+                    className="h-10 w-full gap-2 rounded-xl font-bold lg:w-36"
                   >
+                    <UserRound className="h-4 w-4" />
+                    Xem hồ sơ
+                  </Button>
+                  {application.cv?.fileUrl ? (
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-10 w-full gap-2 rounded-xl font-bold lg:w-auto"
+                      onClick={() => handleViewCv(application)}
+                      className="h-10 w-full gap-2 rounded-xl font-bold lg:w-36"
                     >
-                      <Download className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                       Xem CV
                     </Button>
-                  </a>
-                ) : (
-                  <div className="rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-4 py-3 text-sm font-bold text-(--gray-500)">
-                    Chưa đính kèm CV
-                  </div>
-                )}
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleViewCv(application)}
+                      className="h-10 w-full gap-2 rounded-xl font-bold text-(--gray-600) lg:w-36"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Tìm CV
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {application.coverLetter ? (
@@ -221,6 +444,62 @@ export default function RecruiterApplicationsPage() {
           ))}
         </section>
       )}
+
+      {isLoadingProfile ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+          <div className="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 text-sm font-bold text-(--gray-700) shadow-lg">
+            <Loader2 className="h-5 w-5 animate-spin text-(--primary-blue)" />
+            Đang tải hồ sơ ứng viên...
+          </div>
+        </div>
+      ) : null}
+
+      {isLoadingCvPreview ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 px-4">
+          <div className="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 text-sm font-bold text-(--gray-700) shadow-lg">
+            <Loader2 className="h-5 w-5 animate-spin text-(--primary-blue)" />
+            Đang mở CV PDF...
+          </div>
+        </div>
+      ) : null}
+
+      {selectedProfile ? (
+        <CandidateProfileModal
+          profile={selectedProfile}
+          cvs={selectedProfileCvs}
+          onClose={() => {
+            setSelectedProfile(null);
+            setSelectedProfileCvs([]);
+          }}
+          onViewCv={(cv) => {
+            void openCvPreview(cv);
+          }}
+        />
+      ) : null}
+
+      {cvPreview ? (
+        <CvPreviewModal
+          title={cvPreview.title}
+          url={cvPreview.url}
+          onClose={closeCvPreview}
+        />
+      ) : null}
+
+      {selectedApplicationForInterview ? (
+        <InterviewFormModal
+          application={selectedApplicationForInterview}
+          form={interviewForm}
+          isSubmitting={isCreatingInterview}
+          onChange={(key, value) =>
+            setInterviewForm((prev) => ({
+              ...prev,
+              [key]: value,
+            }))
+          }
+          onSubmit={handleCreateInterview}
+          onClose={() => setSelectedApplicationForInterview(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -241,6 +520,361 @@ function StatCard({
       </p>
       <p className={`mt-2 text-2xl font-black ${className}`}>{value}</p>
     </article>
+  );
+}
+
+function CandidateProfileModal({
+  profile,
+  cvs,
+  onClose,
+  onViewCv,
+}: {
+  profile: CandidateProfile;
+  cvs: CvRecord[];
+  onClose: () => void;
+  onViewCv: (cv: CvRecord) => void;
+}) {
+  const profileData = profile.profile;
+  const skills = profileData?.skills ?? [];
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 px-4 py-6">
+      <section className="mx-auto max-w-5xl rounded-2xl bg-white shadow-xl">
+        <header className="flex items-start justify-between gap-4 border-b border-(--gray-200) p-5">
+          <div className="flex min-w-0 gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-(--blue-light) text-(--primary-blue)">
+              {profile.user.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profile.user.avatar}
+                  alt={profile.user.fullName}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <UserRound className="h-8 w-8" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <h2 className="truncate text-xl font-black text-(--gray-900)">
+                {profile.user.fullName}
+              </h2>
+              <p className="mt-1 text-sm font-bold text-(--gray-600)">
+                {profileData?.currentTitle || "Chưa cập nhật vị trí"}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2 text-sm text-(--gray-600)">
+                <InfoPill icon={Mail} value={profile.user.email} />
+                <InfoPill
+                  icon={Phone}
+                  value={profile.user.phone || "Chưa cập nhật SĐT"}
+                />
+                <InfoPill
+                  icon={CalendarClock}
+                  value={profileData?.totalExperienceYears || "Chưa cập nhật"}
+                />
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-100)"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+
+        <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="space-y-5">
+            <ProfileSection title="Tóm tắt" content={profileData?.summary} />
+            <ProfileSection
+              title="Học vấn"
+              content={profileData?.education?.join("\n")}
+            />
+            <ProfileSection
+              title="Kinh nghiệm"
+              content={profileData?.workExperience?.join("\n")}
+            />
+            <ProfileSection
+              title="Chứng chỉ"
+              content={profileData?.certifications?.join("\n")}
+            />
+            <ProfileSection
+              title="Ngôn ngữ"
+              content={profileData?.languages?.join(", ")}
+            />
+          </div>
+
+          <aside className="space-y-5">
+            <section className="rounded-2xl border border-(--gray-200) bg-white p-4">
+              <h3 className="text-sm font-black text-(--gray-900)">Kỹ năng</h3>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {skills.length > 0 ? (
+                  skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="rounded-full bg-(--blue-light) px-3 py-1 text-xs font-bold text-(--primary-blue)"
+                    >
+                      {skill}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-sm font-medium text-(--gray-500)">
+                    Chưa cập nhật kỹ năng
+                  </p>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-(--gray-200) bg-white p-4">
+              <h3 className="text-sm font-black text-(--gray-900)">Liên kết</h3>
+              <div className="mt-3 space-y-2 text-sm">
+                <InfoPill
+                  icon={Globe}
+                  value={profileData?.portfolioUrl || "Chưa cập nhật portfolio"}
+                />
+                <InfoPill
+                  icon={Globe}
+                  value={profileData?.linkedinUrl || "Chưa cập nhật LinkedIn"}
+                />
+                <InfoPill
+                  icon={Globe}
+                  value={profileData?.githubUrl || "Chưa cập nhật GitHub"}
+                />
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-(--gray-200) bg-white p-4">
+              <h3 className="text-sm font-black text-(--gray-900)">CV PDF</h3>
+              <div className="mt-3 space-y-2">
+                {cvs.length > 0 ? (
+                  cvs.map((cv) => (
+                    <button
+                      key={cv.id}
+                      type="button"
+                      onClick={() => onViewCv(cv)}
+                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 py-2 text-left hover:bg-(--blue-light)/50"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-black text-(--gray-900)">
+                          {cv.fileName || "CV PDF"}
+                        </span>
+                        <span className="text-xs font-medium text-(--gray-500)">
+                          {formatDate(cv.createdAt)}
+                        </span>
+                      </span>
+                      <Eye className="h-4 w-4 shrink-0 text-(--primary-blue)" />
+                    </button>
+                  ))
+                ) : (
+                  <p className="rounded-xl bg-(--gray-100)/60 p-3 text-sm font-medium text-(--gray-500)">
+                    Ứng viên chưa upload CV PDF.
+                  </p>
+                )}
+              </div>
+            </section>
+          </aside>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function CvPreviewModal({
+  title,
+  url,
+  onClose,
+}: {
+  title: string;
+  url: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] bg-black/55 px-4 py-6">
+      <section className="mx-auto flex h-full max-w-6xl flex-col rounded-2xl bg-white shadow-xl">
+        <header className="flex items-center justify-between gap-4 border-b border-(--gray-200) px-5 py-4">
+          <div className="min-w-0">
+            <h2 className="truncate text-base font-black text-(--gray-900)">
+              {title}
+            </h2>
+            <p className="mt-1 text-xs font-medium text-(--gray-500)">
+              Xem trực tiếp CV PDF
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-100)"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+        <iframe
+          src={url}
+          title={title}
+          className="min-h-0 flex-1 rounded-b-2xl"
+        />
+      </section>
+    </div>
+  );
+}
+
+function InterviewFormModal({
+  application,
+  form,
+  isSubmitting,
+  onChange,
+  onSubmit,
+  onClose,
+}: {
+  application: JobApplicationProfile;
+  form: {
+    scheduledAt: string;
+    durationMinutes: string;
+    meetingUrl: string;
+    location: string;
+    note: string;
+  };
+  isSubmitting: boolean;
+  onChange: (key: keyof typeof form, value: string) => void;
+  onSubmit: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/50 px-4 py-6">
+      <section className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-xl">
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-black text-(--gray-900)">
+              Mời phỏng vấn
+            </h2>
+            <p className="mt-1 text-sm font-medium text-(--gray-500)">
+              {application.candidate.fullName} · {application.job.title}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-100)"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+
+        <div className="mt-5 grid gap-4">
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-(--gray-700)">
+              Thời gian phỏng vấn
+            </span>
+            <input
+              type="datetime-local"
+              value={form.scheduledAt}
+              onChange={(event) => onChange("scheduledAt", event.target.value)}
+              className="h-11 w-full rounded-xl border border-(--gray-200) px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-(--gray-700)">
+              Thời lượng
+            </span>
+            <input
+              type="number"
+              min={15}
+              max={480}
+              value={form.durationMinutes}
+              onChange={(event) =>
+                onChange("durationMinutes", event.target.value)
+              }
+              className="h-11 w-full rounded-xl border border-(--gray-200) px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-(--gray-700)">
+              Link phỏng vấn
+            </span>
+            <input
+              value={form.meetingUrl}
+              onChange={(event) => onChange("meetingUrl", event.target.value)}
+              className="h-11 w-full rounded-xl border border-(--gray-200) px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-(--gray-700)">
+              Địa điểm
+            </span>
+            <input
+              value={form.location}
+              onChange={(event) => onChange("location", event.target.value)}
+              className="h-11 w-full rounded-xl border border-(--gray-200) px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-(--gray-700)">Ghi chú</span>
+            <textarea
+              rows={4}
+              value={form.note}
+              onChange={(event) => onChange("note", event.target.value)}
+              className="w-full resize-none rounded-xl border border-(--gray-200) px-3 py-2 text-sm font-medium outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </label>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="h-10 rounded-xl font-bold"
+          >
+            Hủy
+          </Button>
+          <Button
+            type="button"
+            disabled={isSubmitting}
+            onClick={onSubmit}
+            className="h-10 gap-2 rounded-xl bg-(--primary-blue) px-4 font-bold text-white hover:bg-(--blue-dark)"
+          >
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CalendarPlus className="h-4 w-4" />
+            )}
+            Gửi lời mời
+          </Button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ProfileSection({
+  title,
+  content,
+}: {
+  title: string;
+  content?: string | null;
+}) {
+  return (
+    <section className="rounded-2xl border border-(--gray-200) bg-white p-4">
+      <h3 className="text-sm font-black text-(--gray-900)">{title}</h3>
+      <p className="mt-3 whitespace-pre-line text-sm leading-6 text-(--gray-700)">
+        {content || "Chưa cập nhật"}
+      </p>
+    </section>
+  );
+}
+
+function InfoPill({
+  icon: Icon,
+  value,
+}: {
+  icon: React.ElementType;
+  value: string;
+}) {
+  return (
+    <span className="flex min-w-0 items-center gap-2 rounded-xl bg-(--gray-100)/70 px-3 py-2">
+      <Icon className="h-4 w-4 shrink-0 text-(--gray-400)" />
+      <span className="truncate font-medium">{value}</span>
+    </span>
   );
 }
 

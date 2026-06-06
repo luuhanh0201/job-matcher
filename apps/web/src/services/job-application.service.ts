@@ -2,6 +2,7 @@ import { protectedFetchJson } from "@/services/auth.service";
 import type {
   CreateJobApplicationPayload,
   JobApplicationProfile,
+  JobApplicationStatus,
 } from "@/types/job-application";
 
 export async function applyToJob(
@@ -38,5 +39,32 @@ export async function getRecruiterApplications() {
       method: "GET",
     },
     "Không thể tải danh sách ứng viên",
+  );
+}
+
+export async function getMyApplications() {
+  return protectedFetchJson<JobApplicationProfile[]>(
+    "/jobs/applications/me",
+    {
+      method: "GET",
+    },
+    "Không thể tải danh sách việc đã ứng tuyển",
+  );
+}
+
+export async function updateJobApplicationStatus(
+  applicationId: string,
+  status: JobApplicationStatus,
+) {
+  return protectedFetchJson<JobApplicationProfile>(
+    `/jobs/applications/${applicationId}/status`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    },
+    "Không thể cập nhật trạng thái ứng viên",
   );
 }

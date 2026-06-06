@@ -1,4 +1,4 @@
-import { protectedFetchJson } from "@/services/auth.service";
+import { authFetch, protectedFetchJson } from "@/services/auth.service";
 import { getOrCreateDeviceId } from "@/lib/device-id";
 import type {
   AnalyzerResult,
@@ -20,7 +20,17 @@ export async function getCvList() {
   );
 }
 
-export async function getCvById(id: number) {
+export async function getCandidateCvList(userId: string) {
+  return protectedFetchJson<CvRecord[]>(
+    `/cv/user/${userId}`,
+    {
+      method: "GET",
+    },
+    "Không thể tải danh sách CV của ứng viên",
+  );
+}
+
+export async function getCvById(id: string) {
   return protectedFetchJson<CvRecord>(
     `/cv/${id}`,
     {
@@ -28,6 +38,21 @@ export async function getCvById(id: number) {
     },
     "Không thể tải chi tiết CV",
   );
+}
+
+export async function getCvPreviewObjectUrl(id: string) {
+  const response = await authFetch(`/cv/${id}/preview`, {
+    method: "GET",
+    withAuth: true,
+  });
+
+  if (!response.ok) {
+    throw new Error("Không thể xem trực tiếp CV");
+  }
+
+  const blob = await response.blob();
+  const pdfBlob = new Blob([blob], { type: "application/pdf" });
+  return URL.createObjectURL(pdfBlob);
 }
 
 export async function createCv(payload: CvPayload) {
@@ -44,7 +69,7 @@ export async function createCv(payload: CvPayload) {
   );
 }
 
-export async function updateCv(id: number, payload: CvPayload) {
+export async function updateCv(id: string, payload: CvPayload) {
   return protectedFetchJson<CvRecord>(
     `/cv/${id}`,
     {
@@ -58,7 +83,7 @@ export async function updateCv(id: number, payload: CvPayload) {
   );
 }
 
-export async function deleteCv(id: number) {
+export async function deleteCv(id: string) {
   return protectedFetchJson<{ message?: string }>(
     `/cv/${id}`,
     {
@@ -69,6 +94,10 @@ export async function deleteCv(id: number) {
 }
 
 export async function uploadCvFile(file: File) {
+  if (file.type !== "application/pdf") {
+    throw new Error("CV chỉ chấp nhận định dạng PDF");
+  }
+
   const formData = new FormData();
   formData.append("file", file);
 

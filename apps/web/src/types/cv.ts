@@ -19,7 +19,16 @@ export enum CvProcessingResultStatus {
 }
 
 export type CvRecord = {
-    id: number;
+    id: string;
+    userId?: string;
+    publicId?: string;
+    fileName?: string;
+    fileType?: string;
+    fileUrl?: string;
+    uploadStatus?: "PENDING" | "COMPLETED" | "FAILED";
+    processingError?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
     [key: string]: unknown;
 };
 
