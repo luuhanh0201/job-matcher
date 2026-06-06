@@ -19,6 +19,8 @@ import { RecruitersModule } from './modules/recruiters/recruiters.module';
 import { CompanyModule } from './modules/company/company.module';
 import { LocationModule } from './modules/location/location.module';
 import { JobApplicationsModule } from './modules/job-applications/job-applications.module';
+import { CandidateProfilesModule } from './modules/candidate-profiles/candidate-profiles.module';
+import { InterviewsModule } from './modules/interviews/interviews.module';
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { JobApplicationsModule } from './modules/job-applications/job-applicatio
     CompanyModule,
     LocationModule,
     JobApplicationsModule,
+    CandidateProfilesModule,
+    InterviewsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

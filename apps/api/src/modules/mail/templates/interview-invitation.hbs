@@ -1,0 +1,28 @@
+<p>Xin chào {{candidateName}},</p>
+
+<p>
+  Bạn nhận được lời mời phỏng vấn cho vị trí <strong>{{jobTitle}}</strong>
+  tại <strong>{{companyName}}</strong>.
+</p>
+
+<p><strong>Thời gian:</strong> {{scheduledAtText}}</p>
+<p><strong>Thời lượng:</strong> {{durationMinutes}} phút</p>
+
+{{#if meetingUrl}}
+  <p><strong>Link phỏng vấn:</strong> <a href="{{meetingUrl}}">{{meetingUrl}}</a></p>
+{{/if}}
+
+{{#if location}}
+  <p><strong>Địa điểm:</strong> {{location}}</p>
+{{/if}}
+
+{{#if note}}
+  <p><strong>Ghi chú:</strong> {{note}}</p>
+{{/if}}
+
+<p>
+  Vui lòng truy cập trang việc đã ứng tuyển để xác nhận hoặc từ chối lịch phỏng vấn:
+  <a href="{{applicationsUrl}}">{{applicationsUrl}}</a>
+</p>
+
+<p>Job Matcher</p>

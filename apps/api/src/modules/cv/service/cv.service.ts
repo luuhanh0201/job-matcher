@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -29,6 +30,11 @@ type UploadIdentity = {
   deviceId: string;
 };
 
+type CvPreview = {
+  cv: Cv;
+  buffer: Buffer;
+};
+
 @Injectable()
 export class CvService {
   private readonly deviceUploadAt = new Map<string, number>();
@@ -45,6 +51,13 @@ export class CvService {
     identity: UploadIdentity,
     file: Express.Multer.File,
   ): Promise<UploadCvResult> {
+    if (
+      identity.role !== UserRole.CANDIDATE &&
+      identity.role !== UserRole.ADMIN
+    ) {
+      throw new ForbiddenException('Chỉ ứng viên mới có thể upload CV');
+    }
+
     if (identity.role !== UserRole.ADMIN) {
       await this.enforceAccountCooldown(identity.userId);
       this.enforceDeviceCooldown(identity.deviceId);
@@ -192,5 +205,63 @@ export class CvService {
       throw new NotFoundException(`CV with publicId ${publicId} not found`);
     }
     return cv;
+  }
+
+  async findMyCvs(userId: string): Promise<Cv[]> {
+    return this.cvRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findCvsByUserId(
+    userId: string,
+    viewer: { id: string; role: UserRole },
+  ): Promise<Cv[]> {
+    this.ensureCanViewCandidateCvs(userId, viewer);
+    return this.findMyCvs(userId);
+  }
+
+  async findCvById(
+    id: string,
+    viewer: { id: string; role: UserRole },
+  ): Promise<Cv> {
+    const cv = await this.cvRepository.findOne({ where: { id } });
+    if (!cv) {
+      throw new NotFoundException('CV không tồn tại');
+    }
+    this.ensureCanViewCandidateCvs(cv.userId, viewer);
+    return cv;
+  }
+
+  async getCvPreview(
+    id: string,
+    viewer: { id: string; role: UserRole },
+  ): Promise<CvPreview> {
+    const cv = await this.findCvById(id, viewer);
+
+    const response = await fetch(cv.fileUrl);
+    if (!response.ok) {
+      throw new InternalServerErrorException('Không thể tải nội dung CV');
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return {
+      cv,
+      buffer: Buffer.from(arrayBuffer),
+    };
+  }
+
+  private ensureCanViewCandidateCvs(
+    userId: string,
+    viewer: { id: string; role: UserRole },
+  ) {
+    if (viewer.id === userId) {
+      return;
+    }
+    if (viewer.role === UserRole.RECRUITER || viewer.role === UserRole.ADMIN) {
+      return;
+    }
+    throw new ForbiddenException('Bạn không có quyền xem CV của ứng viên này');
   }
 }

@@ -2,9 +2,12 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   HttpStatus,
+  Param,
   Post,
   Req,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -14,6 +17,7 @@ import { ParseFilePipeBuilder } from '@nestjs/common';
 import { CvService } from './service/cv.service';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
+import type { Response } from 'express';
 import { PdfParserService } from './service/pdf-parser.service';
 import { UserRole } from '@/common/enum/index.enum';
 import { SaveParsedCvDto } from './dto/save-parsed-cv.dto';
@@ -27,6 +31,48 @@ export class CvController {
     private readonly cvService: CvService,
     private readonly pdfParserService: PdfParserService,
   ) {}
+
+  @Get()
+  async findMyCvs(@Req() req: Request) {
+    const user = req.user as { id: string };
+    return this.cvService.findMyCvs(user.id);
+  }
+
+  @Get('me')
+  async findMyCvsAlias(@Req() req: Request) {
+    const user = req.user as { id: string };
+    return this.cvService.findMyCvs(user.id);
+  }
+
+  @Get('user/:userId')
+  async findCvsByUserId(@Param('userId') userId: string, @Req() req: Request) {
+    const viewer = req.user as { id: string; role: UserRole };
+    return this.cvService.findCvsByUserId(userId, viewer);
+  }
+
+  @Get(':id/preview')
+  async previewCv(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const viewer = req.user as { id: string; role: UserRole };
+    const { cv, buffer } = await this.cvService.getCvPreview(id, viewer);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${cv.fileName.replace(/"/g, '')}"`,
+    );
+    res.setHeader('Content-Length', buffer.length.toString());
+    return res.send(buffer);
+  }
+
+  @Get(':id')
+  async findCvById(@Param('id') id: string, @Req() req: Request) {
+    const viewer = req.user as { id: string; role: UserRole };
+    return this.cvService.findCvById(id, viewer);
+  }
 
   @Post('upload')
   @UseInterceptors(

@@ -11,6 +11,7 @@ if (typeof process.loadEnvFile === 'function') {
 }
 
 const isSslEnabled = String(process.env.DB_SSL ?? 'false') === 'true';
+const isTsRuntime = __filename.endsWith('.ts');
 
 export default new DataSource({
   type: 'postgres',
@@ -22,6 +23,6 @@ export default new DataSource({
   synchronize: String(process.env.DB_SYNCHRONIZE ?? 'false') === 'true',
   logging: process.env.NODE_ENV === 'development',
   ssl: isSslEnabled ? { rejectUnauthorized: false } : false,
-  entities: ['src/**/*.entity.ts', 'dist/**/*.entity.js'],
-  migrations: ['src/migrations/*.ts', 'dist/migrations/*.js'],
+  entities: [isTsRuntime ? 'src/**/*.entity.ts' : 'dist/**/*.entity.js'],
+  migrations: [isTsRuntime ? 'src/migrations/*.ts' : 'dist/migrations/*.js'],
 });

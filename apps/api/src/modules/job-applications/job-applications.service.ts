@@ -154,6 +154,61 @@ export class JobApplicationsService {
     );
   }
 
+  async findMyApplications(user: User): Promise<JobApplicationResponseDto[]> {
+    if (user.role !== UserRole.CANDIDATE) {
+      throw new ForbiddenException(
+        'Chỉ ứng viên mới có thể xem danh sách việc đã ứng tuyển',
+      );
+    }
+
+    const applications = await this.jobApplicationRepository.find({
+      where: { candidateId: user.id },
+      relations: {
+        job: {
+          company: true,
+        },
+        candidate: true,
+        cv: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return applications.map((application) =>
+      this.toJobApplicationResponse(application),
+    );
+  }
+
+  async updateStatus(
+    applicationId: string,
+    status: JobApplicationStatus,
+    recruiter: User,
+  ): Promise<JobApplicationResponseDto> {
+    this.ensureRecruiter(recruiter);
+
+    const application = await this.jobApplicationRepository.findOne({
+      where: { id: applicationId },
+      relations: {
+        job: {
+          company: true,
+        },
+        candidate: true,
+        cv: true,
+      },
+    });
+    if (!application) {
+      throw new BadRequestException('Hồ sơ ứng tuyển không tồn tại');
+    }
+    this.ensureApplicationOwner(application, recruiter);
+
+    application.status = status;
+    const savedApplication =
+      await this.jobApplicationRepository.save(application);
+
+    return this.toJobApplicationResponse(savedApplication);
+  }
+
   private async resolveCandidateCv(candidateId: string, cvId?: string) {
     if (cvId) {
       const cv = await this.cvRepository.findOne({
@@ -195,6 +250,20 @@ export class JobApplicationsService {
     if (user.role !== UserRole.RECRUITER) {
       throw new ForbiddenException(
         'Chỉ nhà tuyển dụng mới có thể xem danh sách ứng viên',
+      );
+    }
+  }
+
+  private ensureApplicationOwner(
+    application: JobApplicationEntity,
+    recruiter: User,
+  ) {
+    if (
+      !application.job.company?.createdBy?.id ||
+      application.job.company.createdBy.id !== recruiter.id
+    ) {
+      throw new ForbiddenException(
+        'Bạn không có quyền cập nhật hồ sơ ứng tuyển này',
       );
     }
   }
