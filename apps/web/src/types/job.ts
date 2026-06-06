@@ -75,3 +75,12 @@ export type JobPostProfile = {
   createdBy?: UserSummary | null;
   updatedBy?: UserSummary | null;
 };
+
+export const SENIORITY_LEVEL_LABEL: Record<SeniorityLevel, string> = {
+  NO_EXPERIENCE: "Không yêu cầu",
+  INTERN: "Intern",
+  JUNIOR: "Junior",
+  MID: "Middle",
+  SENIOR: "Senior",
+  LEAD: "Lead",
+};

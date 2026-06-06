@@ -18,6 +18,7 @@ import { HealthController } from './health/health.controller';
 import { RecruitersModule } from './modules/recruiters/recruiters.module';
 import { CompanyModule } from './modules/company/company.module';
 import { LocationModule } from './modules/location/location.module';
+import { JobApplicationsModule } from './modules/job-applications/job-applications.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { LocationModule } from './modules/location/location.module';
     RecruitersModule,
     CompanyModule,
     LocationModule,
+    JobApplicationsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

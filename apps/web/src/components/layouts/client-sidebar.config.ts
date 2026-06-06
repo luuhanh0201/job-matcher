@@ -6,7 +6,6 @@ import {
   Settings,
   Sparkles,
   User,
-  Users,
 } from "lucide-react";
 import { UserRole } from "@/types/user-role.type";
 
@@ -67,14 +66,8 @@ const recruiterNavItems: NavItem[] = [
       { href: "/recruiter/manage-jobs", label: "Quản lý tin tuyển dụng" },
       { href: "/recruiter/applications", label: "Quản lý ứng viên" },
       { href: "/recruiter/interviews", label: "Lịch hẹn phỏng vấn" },
-    ],
-  },
-  {
-    label: "Quản lý ứng viên",
-    icon: Users,
-    children: [
       { href: "/recruiter/candidates", label: "Danh sách ứng viên" },
-      { href: "/recruiter/interviews", label: "Lịch phỏng vấn" },
+
     ],
   },
   { href: "/recruiter/messages", icon: MessageCircle, label: "Tin nhắn", badge: 5 },

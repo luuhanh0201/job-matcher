@@ -1,6 +1,8 @@
 import { useState } from "react";
+import Link from "next/link";
 import { MapPin, Briefcase, BadgeDollarSign, TrendingUp, Clock } from "lucide-react";
-import type { Job, EmploymentType, SeniorityLevel } from "@/services/jobs.service";
+import type { Job, EmploymentType } from "@/services/jobs.service";
+import { SENIORITY_LEVEL_LABEL } from "@/types/job";
 
 const EMPLOYMENT_LABEL: Record<EmploymentType, string> = {
   FULL_TIME: "Toàn thời gian",
@@ -8,15 +10,6 @@ const EMPLOYMENT_LABEL: Record<EmploymentType, string> = {
   CONTRACT: "Hợp đồng",
   INTERN: "Thực tập",
   FREELANCE: "Freelance",
-};
-
-const SENIORITY_LABEL: Record<SeniorityLevel, string> = {
-  NO_EXPERIENCE: "Không yêu cầu kinh nghiệm",
-  INTERN: "Thực tập sinh",
-  JUNIOR: "Junior",
-  MID: "Middle",
-  SENIOR: "Senior",
-  LEAD: "Lead",
 };
 
 function formatSalary(min: number, max: number) {
@@ -58,7 +51,10 @@ export function JobCard({ job }: { job: Job }) {
   const [hasLogoError, setHasLogoError] = useState(false);
 
   return (
-    <div className="group rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm transition-all hover:border-(--primary-blue)/30 hover:shadow-md sm:p-5">
+    <Link
+      href={`/jobs/${job.id}`}
+      className="group block rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm transition-all hover:border-(--primary-blue)/30 hover:shadow-md sm:p-5"
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div
           className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-black ${color}`}
@@ -108,7 +104,7 @@ export function JobCard({ job }: { job: Job }) {
             </span>
             <span className="flex items-center gap-1">
               <TrendingUp className="h-3.5 w-3.5" />
-              {SENIORITY_LABEL[job.seniorityLevel]}
+              {SENIORITY_LEVEL_LABEL[job.seniorityLevel]}
             </span>
           </div>
 
@@ -126,6 +122,6 @@ export function JobCard({ job }: { job: Job }) {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

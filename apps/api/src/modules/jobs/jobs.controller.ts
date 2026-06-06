@@ -30,12 +30,31 @@ export class JobsController {
 
   @Get()
   async findAll(): Promise<JobPostResponseDto[]> {
-    return this.jobsService.findAll();
+    return this.jobsService.findPublicOpenJobs();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('recruiter/my')
+  async findRecruiterJobs(
+    @Request() req: Request & { user: User },
+  ): Promise<JobPostResponseDto[]> {
+    return this.jobsService.findRecruiterJobs(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('recruiter/:id')
+  async findRecruiterJobById(
+    @Request() req: Request & { user: User },
+    @Param('id') id: string,
+  ): Promise<JobPostResponseDto> {
+    return this.jobsService.findRecruiterJobById(id, req.user);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<JobPostResponseDto> {
-    return this.jobsService.findOne(id);
+  async findPublicJobById(
+    @Param('id') id: string,
+  ): Promise<JobPostResponseDto> {
+    return this.jobsService.findPublicOpenJobById(id);
   }
 
   @UseGuards(JwtAuthGuard)

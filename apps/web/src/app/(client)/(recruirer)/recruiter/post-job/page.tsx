@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   BriefcaseBusiness,
@@ -92,7 +93,7 @@ const WORK_MODE_OPTIONS: Array<{ value: WorkMode; label: string }> = [
 ];
 
 const SENIORITY_OPTIONS: Array<{ value: SeniorityLevel; label: string }> = [
-  { value: "NO_EXPERIENCE", label: "Không yêu cầu kinh nghiệm" },
+  { value: "NO_EXPERIENCE", label: "Không yêu cầu" },
   { value: "INTERN", label: "Intern" },
   { value: "JUNIOR", label: "Junior" },
   { value: "MID", label: "Middle" },
@@ -154,6 +155,7 @@ function getTomorrowInputValue() {
 }
 
 export default function RecruiterPostJobPage() {
+  const router = useRouter();
   const [form, setForm] = useState<JobPostFormState>(INITIAL_FORM);
   const [companies, setCompanies] = useState<CompanyProfile[]>([]);
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
@@ -259,14 +261,9 @@ export default function RecruiterPostJobPage() {
 
     setIsSubmitting(true);
     try {
-      await createJobPost(toPayload(validationResult.data));
+      const createdJob = await createJobPost(toPayload(validationResult.data));
       toast.success("Đã tạo tin tuyển dụng");
-      setForm((current) => ({
-        ...INITIAL_FORM,
-        companyId: current.companyId,
-        expiredAt: getTomorrowInputValue(),
-      }));
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      router.push(`/recruiter/manage-jobs/${createdJob.id}`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Không thể tạo tin tuyển dụng",

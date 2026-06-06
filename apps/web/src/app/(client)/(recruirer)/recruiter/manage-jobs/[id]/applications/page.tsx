@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import {
+  ArrowLeft,
   BriefcaseBusiness,
   CalendarClock,
   Download,
@@ -14,7 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { getRecruiterApplications } from "@/services/job-application.service";
+import { getJobApplications } from "@/services/job-application.service";
 import {
   JOB_APPLICATION_STATUS_LABEL,
   type JobApplicationProfile,
@@ -45,12 +47,13 @@ function getStatusClass(status: JobApplicationStatus) {
   return "bg-amber-100 text-amber-700";
 }
 
-export default function RecruiterApplicationsPage() {
+export default function RecruiterJobApplicationsPage() {
+  const params = useParams<{ id: string }>();
   const [applications, setApplications] = useState<JobApplicationProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    getRecruiterApplications()
+    getJobApplications(params.id)
       .then((items) => setApplications(items))
       .catch((error) => {
         toast.error(
@@ -60,25 +63,9 @@ export default function RecruiterApplicationsPage() {
         );
       })
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [params.id]);
 
-  const stats = useMemo(() => {
-    return applications.reduce(
-      (result, application) => {
-        result.total += 1;
-        if (application.status === "PENDING") result.pending += 1;
-        if (application.status === "SHORTLISTED") result.shortlisted += 1;
-        if (application.status === "REJECTED") result.rejected += 1;
-        return result;
-      },
-      {
-        total: 0,
-        pending: 0,
-        shortlisted: 0,
-        rejected: 0,
-      },
-    );
-  }, [applications]);
+  const job = useMemo(() => applications[0]?.job, [applications]);
 
   if (isLoading) {
     return (
@@ -90,31 +77,36 @@ export default function RecruiterApplicationsPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-black text-(--gray-900)">
-            Quản lý ứng viên
-          </h1>
-          <p className="mt-1 text-sm text-(--gray-500)">
-            Danh sách ứng viên đã ứng tuyển vào các tin tuyển dụng của bạn.
-          </p>
+      <header className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
+        <Link
+          href={`/recruiter/manage-jobs/${params.id}`}
+          className="inline-flex w-fit items-center gap-2 text-sm font-bold text-(--primary-blue) hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Quay lại chi tiết tin
+        </Link>
+
+        <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-(--gray-900)">
+              Danh sách ứng viên
+            </h1>
+            <p className="mt-2 text-sm font-medium text-(--gray-500)">
+              {job
+                ? `${job.title} · ${job.company?.name || "Chưa cập nhật công ty"}`
+                : "Tin tuyển dụng này chưa có ứng viên"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-4 py-3">
+            <p className="text-xs font-bold uppercase text-(--gray-500)">
+              Tổng ứng viên
+            </p>
+            <p className="mt-1 text-xl font-black text-(--gray-900)">
+              {applications.length}
+            </p>
+          </div>
         </div>
       </header>
-
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <StatCard label="Tổng ứng viên" value={stats.total} />
-        <StatCard label="Mới nộp" value={stats.pending} />
-        <StatCard
-          label="Phù hợp"
-          value={stats.shortlisted}
-          className="text-emerald-600"
-        />
-        <StatCard
-          label="Từ chối"
-          value={stats.rejected}
-          className="text-rose-600"
-        />
-      </section>
 
       {applications.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-(--gray-200) bg-white p-8 text-center shadow-sm">
@@ -125,7 +117,7 @@ export default function RecruiterApplicationsPage() {
             Chưa có ứng viên
           </h2>
           <p className="mt-2 text-sm font-medium text-(--gray-500)">
-            Khi candidate ứng tuyển, hồ sơ sẽ tự động xuất hiện tại đây.
+            Khi ứng viên ứng tuyển, hồ sơ sẽ hiển thị tại đây theo từng tin.
           </p>
         </section>
       ) : (
@@ -149,7 +141,6 @@ export default function RecruiterApplicationsPage() {
                       <UserRound className="h-7 w-7" />
                     )}
                   </div>
-
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="truncate text-base font-black text-(--gray-900)">
@@ -161,17 +152,7 @@ export default function RecruiterApplicationsPage() {
                         {JOB_APPLICATION_STATUS_LABEL[application.status]}
                       </span>
                     </div>
-
                     <div className="mt-3 grid gap-2 text-sm text-(--gray-600) md:grid-cols-2">
-                      <InfoLine
-                        icon={BriefcaseBusiness}
-                        value={application.job.title}
-                        href={`/recruiter/manage-jobs/${application.jobId}`}
-                      />
-                      <InfoLine
-                        icon={CalendarClock}
-                        value={formatDate(application.createdAt)}
-                      />
                       <InfoLine
                         icon={Mail}
                         value={application.candidate.email}
@@ -179,6 +160,14 @@ export default function RecruiterApplicationsPage() {
                       <InfoLine
                         icon={Phone}
                         value={application.candidate.phone || "Chưa cập nhật"}
+                      />
+                      <InfoLine
+                        icon={BriefcaseBusiness}
+                        value={application.job.title}
+                      />
+                      <InfoLine
+                        icon={CalendarClock}
+                        value={formatDate(application.createdAt)}
                       />
                     </div>
                   </div>
@@ -225,55 +214,17 @@ export default function RecruiterApplicationsPage() {
   );
 }
 
-function StatCard({
-  label,
-  value,
-  className = "text-(--gray-900)",
-}: {
-  label: string;
-  value: number;
-  className?: string;
-}) {
-  return (
-    <article className="rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-(--gray-500)">
-        {label}
-      </p>
-      <p className={`mt-2 text-2xl font-black ${className}`}>{value}</p>
-    </article>
-  );
-}
-
 function InfoLine({
   icon: Icon,
   value,
-  href,
 }: {
   icon: React.ElementType;
   value: string;
-  href?: string;
 }) {
-  const content = (
-    <>
-      <Icon className="h-4 w-4 shrink-0 text-(--gray-400)" />
-      <span className="truncate font-medium">{value}</span>
-    </>
-  );
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className="flex min-w-0 items-center gap-2 font-bold text-(--primary-blue) hover:underline"
-      >
-        {content}
-      </Link>
-    );
-  }
-
   return (
     <span className="flex min-w-0 items-center gap-2">
-      {content}
+      <Icon className="h-4 w-4 shrink-0 text-(--gray-400)" />
+      <span className="truncate font-medium">{value}</span>
     </span>
   );
 }

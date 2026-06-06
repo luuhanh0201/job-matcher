@@ -11,37 +11,19 @@ import {
   CircleDollarSign,
   FileText,
   Loader2,
-  MapPin,
-  Save,
-  UserRoundSearch,
+  Send,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { getJobPostById, updateJobPostStatus } from "@/services/job.service";
-import {
-  SENIORITY_LEVEL_LABEL,
-  type JobPostProfile,
-  type JobPostStatus,
-} from "@/types/job";
-
-const STATUS_LABEL: Record<JobPostStatus, string> = {
-  DRAFT: "Nháp",
-  OPEN: "Đang tuyển",
-  CLOSED: "Đã đóng",
-};
-
-function getStatusClass(status: JobPostStatus) {
-  if (status === "OPEN") return "bg-emerald-100 text-emerald-700";
-  if (status === "DRAFT") return "bg-amber-100 text-amber-700";
-  return "bg-gray-200 text-gray-700";
-}
+import { applyToJob } from "@/services/job-application.service";
+import { getPublicJobPostById } from "@/services/job.service";
+import { SENIORITY_LEVEL_LABEL, type JobPostProfile } from "@/types/job";
 
 function formatDate(value?: string | null) {
   if (!value) return "--";
   return new Intl.DateTimeFormat("vi-VN", {
     dateStyle: "medium",
-    timeStyle: "short",
   }).format(new Date(value));
 }
 
@@ -70,43 +52,43 @@ function formatLocation(job: JobPostProfile) {
     .join(", ");
 }
 
-export default function RecruiterJobPostDetailPage() {
+export default function CandidateJobDetailPage() {
   const params = useParams<{ id: string }>();
   const [job, setJob] = useState<JobPostProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [hasLogoError, setHasLogoError] = useState(false);
 
   useEffect(() => {
-    getJobPostById(params.id)
+    getPublicJobPostById(params.id)
       .then((item) => setJob(item))
       .catch((error) => {
         toast.error(
           error instanceof Error
             ? error.message
-            : "Không thể tải chi tiết tin tuyển dụng",
+            : "Không thể tải chi tiết việc làm",
         );
       })
       .finally(() => setIsLoading(false));
   }, [params.id]);
 
-  const handleStatusChange = async (status: JobPostStatus) => {
-    if (!job || status === job.status) {
+  const handleApplyJob = async () => {
+    if (!job || isApplying || hasApplied) {
       return;
     }
 
-    setIsUpdatingStatus(true);
+    setIsApplying(true);
     try {
-      const updatedJob = await updateJobPostStatus(job.id, status);
-      setJob(updatedJob);
-      toast.success("Đã cập nhật trạng thái tin tuyển dụng");
+      await applyToJob(job.id);
+      setHasApplied(true);
+      toast.success("Ứng tuyển thành công");
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Không thể cập nhật trạng thái tin tuyển dụng",
+        error instanceof Error ? error.message : "Không thể ứng tuyển tin này",
       );
     } finally {
-      setIsUpdatingStatus(false);
+      setIsApplying(false);
     }
   };
 
@@ -122,13 +104,13 @@ export default function RecruiterJobPostDetailPage() {
     return (
       <div className="rounded-2xl border border-(--gray-200) bg-white p-6 text-center shadow-sm">
         <p className="text-sm font-bold text-(--gray-700)">
-          Không tìm thấy tin tuyển dụng
+          Không tìm thấy việc làm
         </p>
         <Link
-          href="/recruiter/manage-jobs"
+          href="/jobs"
           className="mt-3 inline-flex text-sm font-bold text-(--primary-blue)"
         >
-          Quay lại danh sách
+          Quay lại danh sách việc làm
         </Link>
       </div>
     );
@@ -136,54 +118,67 @@ export default function RecruiterJobPostDetailPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-col gap-4 rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
+      <header className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
         <Link
-          href="/recruiter/manage-jobs"
+          href="/jobs"
           className="inline-flex w-fit items-center gap-2 text-sm font-bold text-(--primary-blue) hover:underline"
         >
           <ArrowLeft className="h-4 w-4" />
           Quay lại danh sách
         </Link>
 
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
+        <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-(--blue-light) text-(--primary-blue)">
+              {job.company?.logoUrl && !hasLogoError ? (
+                // Logo URLs can come from user uploads/external hosts, so avoid next/image host restrictions here.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={job.company.logoUrl}
+                  alt={`${job.company.name} logo`}
+                  className="h-full w-full object-contain p-1"
+                  onError={() => setHasLogoError(true)}
+                />
+              ) : (
+                <Building2 className="h-8 w-8" />
+              )}
+            </div>
+            <div>
               <h1 className="text-2xl font-black text-(--gray-900)">
                 {job.title}
               </h1>
-              <span
-                className={`rounded-full px-2.5 py-1 text-xs font-bold ${getStatusClass(job.status)}`}
-              >
-                {STATUS_LABEL[job.status]}
-              </span>
+              <p className="mt-1 text-sm font-bold text-(--gray-600)">
+                {job.company?.name || "Chưa cập nhật công ty"}
+              </p>
+              <p className="mt-2 text-sm text-(--gray-500)">
+                {formatLocation(job) || "Chưa cập nhật địa điểm"}
+              </p>
             </div>
-            <p className="mt-2 text-sm font-medium text-(--gray-500)">
-              {job.company?.name || "Chưa cập nhật công ty"} · {job.department}
-            </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Link href={`/recruiter/manage-jobs/${job.id}/applications`}>
-              <Button
-                variant="outline"
-                className="h-10 gap-2 rounded-xl px-4 font-bold"
-              >
-                <UserRoundSearch className="h-4 w-4" />
-                Xem ứng viên
-              </Button>
-            </Link>
-            <Link href="/recruiter/post-job">
-              <Button className="h-10 rounded-xl bg-(--primary-blue) px-4 font-bold text-white hover:bg-(--blue-dark)">
-                Đăng tin mới
-              </Button>
-            </Link>
-          </div>
+
+          <Button
+            disabled={isApplying || hasApplied}
+            onClick={handleApplyJob}
+            className="h-11 gap-2 rounded-xl bg-(--primary-blue) px-5 font-bold text-white hover:bg-(--blue-dark) disabled:opacity-70"
+          >
+            {isApplying ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+            {hasApplied ? "Đã ứng tuyển" : "Ứng tuyển"}
+          </Button>
         </div>
       </header>
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <InfoCard icon={Building2} label="Công ty" value={job.company?.name || "--"} />
-        <InfoCard icon={MapPin} label="Địa điểm" value={formatLocation(job) || "--"} />
         <InfoCard icon={CircleDollarSign} label="Lương" value={formatSalary(job)} />
+        <InfoCard icon={BriefcaseBusiness} label="Loại việc" value={job.jobType} />
+        <InfoCard
+          icon={Users}
+          label="Cấp bậc"
+          value={SENIORITY_LEVEL_LABEL[job.seniorityLevel]}
+        />
         <InfoCard icon={CalendarClock} label="Hạn ứng tuyển" value={formatDate(job.expiredAt)} />
       </section>
 
@@ -197,43 +192,15 @@ export default function RecruiterJobPostDetailPage() {
 
         <aside className="space-y-5">
           <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
-            <h2 className="flex items-center gap-2 text-base font-black text-(--gray-900)">
-              <Save className="h-5 w-5 text-(--primary-blue)" />
-              Cập nhật trạng thái
-            </h2>
-            <div className="mt-4 space-y-3">
-              <select
-                value={job.status}
-                disabled={isUpdatingStatus}
-                onChange={(event) =>
-                  handleStatusChange(event.target.value as JobPostStatus)
-                }
-                className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-bold text-(--gray-900) outline-none disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                <option value="DRAFT">Nháp</option>
-                <option value="OPEN">Đang tuyển</option>
-                <option value="CLOSED">Đã đóng</option>
-              </select>
-              <p className="text-xs font-medium text-(--gray-500)">
-                Trạng thái chỉ được thay đổi trong trang chi tiết tin tuyển dụng.
-              </p>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
             <h2 className="text-base font-black text-(--gray-900)">
-              Thông tin tuyển dụng
+              Thông tin nhanh
             </h2>
             <div className="mt-4 space-y-3 text-sm">
-              <DetailRow label="Loại công việc" value={job.jobType} />
+              <DetailRow label="Công ty" value={job.company?.name || "--"} />
+              <DetailRow label="Phòng ban" value={job.department} />
               <DetailRow label="Hình thức" value={job.workMode} />
-              <DetailRow
-                label="Cấp bậc"
-                value={SENIORITY_LEVEL_LABEL[job.seniorityLevel]}
-              />
               <DetailRow label="Số lượng" value={job.quantity?.toString() || "--"} />
               <DetailRow label="Ngày đăng" value={formatDate(job.publishedAt)} />
-              <DetailRow label="Ngày tạo" value={formatDate(job.createdAt)} />
             </div>
           </section>
 

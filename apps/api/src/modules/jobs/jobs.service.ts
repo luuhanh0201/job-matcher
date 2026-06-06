@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JobPostEntity } from './entities/job.entity';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { CreateJobDto } from './dto/create-job.dto';
 import { User } from '../user/entities/user.entity';
 import { CompanyEntity } from '../company/entity/company.entity';
@@ -66,8 +66,12 @@ export class JobsService {
     return this.toJobPostResponse(savedJob);
   }
 
-  async findAll(): Promise<JobPostResponseDto[]> {
+  async findPublicOpenJobs(): Promise<JobPostResponseDto[]> {
     const jobs = await this.jobPostRepository.find({
+      where: {
+        status: JobPostStatus.OPEN,
+        expiredAt: MoreThan(new Date()),
+      },
       relations: {
         company: true,
         createdBy: true,
@@ -79,7 +83,42 @@ export class JobsService {
     return jobs.map((job) => this.toJobPostResponse(job));
   }
 
-  async findOne(id: string): Promise<JobPostResponseDto> {
+  async findPublicOpenJobById(id: string): Promise<JobPostResponseDto> {
+    const job = await this.jobPostRepository.findOne({
+      where: {
+        id,
+        status: JobPostStatus.OPEN,
+        expiredAt: MoreThan(new Date()),
+      },
+      relations: {
+        company: true,
+        createdBy: true,
+      },
+    });
+    if (!job) {
+      throw new BadRequestException(
+        'Tin tuyển dụng không tồn tại hoặc đã đóng',
+      );
+    }
+    return this.toJobPostResponse(job);
+  }
+
+  async findRecruiterJobs(user: User): Promise<JobPostResponseDto[]> {
+    const jobs = await this.jobPostRepository
+      .createQueryBuilder('job')
+      .leftJoinAndSelect('job.company', 'company')
+      .leftJoinAndSelect('job.createdBy', 'createdBy')
+      .where("company.created_by ->> 'id' = :userId", { userId: user.id })
+      .orderBy('job.created_at', 'DESC')
+      .getMany();
+
+    return jobs.map((job) => this.toJobPostResponse(job));
+  }
+
+  async findRecruiterJobById(
+    id: string,
+    user: User,
+  ): Promise<JobPostResponseDto> {
     const job = await this.jobPostRepository.findOne({
       where: { id },
       relations: {
@@ -89,6 +128,9 @@ export class JobsService {
     });
     if (!job) {
       throw new BadRequestException('Tin tuyển dụng không tồn tại');
+    }
+    if (!job.company?.createdBy?.id || job.company.createdBy.id !== user.id) {
+      throw new ForbiddenException('Bạn không có quyền xem tin tuyển dụng này');
     }
     return this.toJobPostResponse(job);
   }

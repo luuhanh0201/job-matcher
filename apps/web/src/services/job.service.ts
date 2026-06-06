@@ -1,4 +1,4 @@
-import { protectedFetchJson } from "@/services/auth.service";
+import { authFetchJson, protectedFetchJson } from "@/services/auth.service";
 import type {
   CreateJobPostPayload,
   JobPostProfile,
@@ -21,7 +21,7 @@ export async function createJobPost(payload: CreateJobPostPayload) {
 
 export async function getJobPosts() {
   return protectedFetchJson<JobPostProfile[]>(
-    "/jobs",
+    "/jobs/recruiter/my",
     {
       method: "GET",
     },
@@ -31,6 +31,16 @@ export async function getJobPosts() {
 
 export async function getJobPostById(jobPostId: string) {
   return protectedFetchJson<JobPostProfile>(
+    `/jobs/recruiter/${jobPostId}`,
+    {
+      method: "GET",
+    },
+    "Không thể tải chi tiết tin tuyển dụng",
+  );
+}
+
+export async function getPublicJobPostById(jobPostId: string) {
+  return authFetchJson<JobPostProfile>(
     `/jobs/${jobPostId}`,
     {
       method: "GET",
