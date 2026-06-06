@@ -14,6 +14,7 @@ import { User } from '@/modules/user/entities/user.entity';
 import { CreateInterviewDto } from './dto/create-interview.dto';
 import { InterviewResponseDto } from './dto/interview-response.dto';
 import { RespondInterviewDto } from './dto/respond-interview.dto';
+import { UpdateInterviewDto } from './dto/update-interview.dto';
 import { InterviewEntity } from './entities/interview.entity';
 
 @Injectable()
@@ -36,12 +37,9 @@ export class InterviewsService {
     const application = await this.findApplicationOrFail(applicationId);
     this.ensureApplicationOwner(application, recruiter);
 
-    const scheduledAt = new Date(createInterviewDto.scheduledAt);
-    if (Number.isNaN(scheduledAt.getTime()) || scheduledAt <= new Date()) {
-      throw new BadRequestException(
-        'Thời gian phỏng vấn phải là thời điểm trong tương lai',
-      );
-    }
+    const scheduledAt = this.parseFutureScheduledAt(
+      createInterviewDto.scheduledAt,
+    );
 
     const interview = this.interviewRepository.create({
       application,
@@ -133,6 +131,78 @@ export class InterviewsService {
     return interviews.map((interview) => this.toInterviewResponse(interview));
   }
 
+  async updateInterview(
+    interviewId: string,
+    recruiter: User,
+    updateInterviewDto: UpdateInterviewDto,
+  ): Promise<InterviewResponseDto> {
+    this.ensureRecruiter(recruiter);
+
+    const interview = await this.findRecruiterInterviewOrFail(
+      interviewId,
+      recruiter,
+    );
+    if (interview.status === InterviewStatus.CANCELLED) {
+      throw new BadRequestException('Không thể sửa lịch phỏng vấn đã hủy');
+    }
+    if (interview.scheduledAt <= new Date()) {
+      throw new BadRequestException('Không thể sửa lịch phỏng vấn đã quá hạn');
+    }
+
+    if (updateInterviewDto.scheduledAt !== undefined) {
+      interview.scheduledAt = this.parseFutureScheduledAt(
+        updateInterviewDto.scheduledAt,
+      );
+      interview.status = InterviewStatus.PENDING;
+    }
+    if (updateInterviewDto.durationMinutes !== undefined) {
+      interview.durationMinutes = updateInterviewDto.durationMinutes;
+    }
+    if (updateInterviewDto.meetingUrl !== undefined) {
+      interview.meetingUrl = this.normalizeOptionalString(
+        updateInterviewDto.meetingUrl,
+      );
+    }
+    if (updateInterviewDto.location !== undefined) {
+      interview.location = this.normalizeOptionalString(
+        updateInterviewDto.location,
+      );
+    }
+    if (updateInterviewDto.note !== undefined) {
+      interview.note = this.normalizeOptionalString(updateInterviewDto.note);
+    }
+
+    const savedInterview = await this.interviewRepository.save(interview);
+    await this.mailService.sendInterviewUpdatedEmail(
+      this.toInterviewScheduleEmailPayload(savedInterview),
+    );
+
+    return this.toInterviewResponse(savedInterview);
+  }
+
+  async cancelInterview(
+    interviewId: string,
+    recruiter: User,
+  ): Promise<InterviewResponseDto> {
+    this.ensureRecruiter(recruiter);
+
+    const interview = await this.findRecruiterInterviewOrFail(
+      interviewId,
+      recruiter,
+    );
+    if (interview.status === InterviewStatus.CANCELLED) {
+      throw new BadRequestException('Lịch phỏng vấn đã được hủy trước đó');
+    }
+
+    interview.status = InterviewStatus.CANCELLED;
+    const savedInterview = await this.interviewRepository.save(interview);
+    await this.mailService.sendInterviewCancelledEmail(
+      this.toInterviewScheduleEmailPayload(savedInterview),
+    );
+
+    return this.toInterviewResponse(savedInterview);
+  }
+
   async respondInterview(
     interviewId: string,
     candidate: User,
@@ -167,6 +237,12 @@ export class InterviewsService {
     if (interview.status === InterviewStatus.CANCELLED) {
       throw new BadRequestException('Lịch phỏng vấn đã bị hủy');
     }
+    if (interview.status !== InterviewStatus.PENDING) {
+      throw new BadRequestException('Lịch phỏng vấn đã được phản hồi trước đó');
+    }
+    if (interview.scheduledAt <= new Date()) {
+      throw new BadRequestException('Lịch phỏng vấn đã quá hạn xác nhận');
+    }
 
     interview.status = respondInterviewDto.status;
     const savedInterview = await this.interviewRepository.save(interview);
@@ -182,6 +258,30 @@ export class InterviewsService {
     });
 
     return this.toInterviewResponse(savedInterview);
+  }
+
+  private async findRecruiterInterviewOrFail(
+    interviewId: string,
+    recruiter: User,
+  ) {
+    const interview = await this.interviewRepository.findOne({
+      where: { id: interviewId },
+      relations: {
+        application: {
+          job: {
+            company: true,
+          },
+        },
+        candidate: true,
+        recruiter: true,
+      },
+    });
+    if (!interview) {
+      throw new BadRequestException('Lịch phỏng vấn không tồn tại');
+    }
+    this.ensureApplicationOwner(interview.application, recruiter);
+
+    return interview;
   }
 
   private async findApplicationOrFail(applicationId: string) {
@@ -223,12 +323,37 @@ export class InterviewsService {
     }
   }
 
+  private parseFutureScheduledAt(value: string) {
+    const scheduledAt = new Date(value);
+    if (Number.isNaN(scheduledAt.getTime()) || scheduledAt <= new Date()) {
+      throw new BadRequestException(
+        'Thời gian phỏng vấn phải là thời điểm trong tương lai',
+      );
+    }
+    return scheduledAt;
+  }
+
   private normalizeOptionalString(value?: string) {
     if (value === undefined) {
       return undefined;
     }
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
+  }
+
+  private toInterviewScheduleEmailPayload(interview: InterviewEntity) {
+    return {
+      to: interview.candidate.email,
+      candidateName: interview.candidate.fullName,
+      recruiterName: interview.recruiter.fullName,
+      jobTitle: interview.application.job.title,
+      companyName: interview.application.job.company?.name ?? 'Job Matcher',
+      scheduledAt: interview.scheduledAt,
+      durationMinutes: interview.durationMinutes,
+      meetingUrl: interview.meetingUrl,
+      location: interview.location,
+      note: interview.note,
+    };
   }
 
   private toInterviewResponse(

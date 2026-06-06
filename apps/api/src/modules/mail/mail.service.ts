@@ -25,6 +25,8 @@ type InterviewResponseEmailPayload = {
   status: InterviewStatus;
 };
 
+type InterviewScheduleChangeEmailPayload = InterviewInvitationEmailPayload;
+
 @Injectable()
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
@@ -123,6 +125,60 @@ export class MailService {
       .catch((error) => {
         console.error(
           `Lỗi gửi email phản hồi phỏng vấn đến ${payload.to}:`,
+          error,
+        );
+      });
+  }
+
+  async sendInterviewUpdatedEmail(
+    payload: InterviewScheduleChangeEmailPayload,
+  ) {
+    const applicationsUrl = `${process.env.FRONTEND_URL}/profile/applications`;
+    await this.mailerService
+      .sendMail({
+        to: payload.to,
+        subject: `Lịch phỏng vấn ${payload.jobTitle} đã được cập nhật - Job Matcher`,
+        template: 'interview-updated',
+        context: {
+          ...payload,
+          scheduledAtText: this.formatDateTime(payload.scheduledAt),
+          applicationsUrl,
+        },
+      })
+      .then(() => {
+        console.log(
+          `Email cập nhật lịch phỏng vấn đã được gửi đến ${payload.to}`,
+        );
+      })
+      .catch((error) => {
+        console.error(
+          `Lỗi gửi email cập nhật lịch phỏng vấn đến ${payload.to}:`,
+          error,
+        );
+      });
+  }
+
+  async sendInterviewCancelledEmail(
+    payload: InterviewScheduleChangeEmailPayload,
+  ) {
+    const applicationsUrl = `${process.env.FRONTEND_URL}/profile/applications`;
+    await this.mailerService
+      .sendMail({
+        to: payload.to,
+        subject: `Lịch phỏng vấn ${payload.jobTitle} đã bị hủy - Job Matcher`,
+        template: 'interview-cancelled',
+        context: {
+          ...payload,
+          scheduledAtText: this.formatDateTime(payload.scheduledAt),
+          applicationsUrl,
+        },
+      })
+      .then(() => {
+        console.log(`Email hủy lịch phỏng vấn đã được gửi đến ${payload.to}`);
+      })
+      .catch((error) => {
+        console.error(
+          `Lỗi gửi email hủy lịch phỏng vấn đến ${payload.to}:`,
           error,
         );
       });

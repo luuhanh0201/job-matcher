@@ -1,0 +1,21 @@
+<p>Xin chào {{candidateName}},</p>
+
+<p>
+  Lịch phỏng vấn cho vị trí <strong>{{jobTitle}}</strong> tại
+  <strong>{{companyName}}</strong> đã được cập nhật.
+</p>
+
+<ul>
+  <li><strong>Thời gian:</strong> {{scheduledAtText}}</li>
+  <li><strong>Thời lượng:</strong> {{durationMinutes}} phút</li>
+  {{#if meetingUrl}}<li><strong>Link phỏng vấn:</strong> <a href="{{meetingUrl}}">{{meetingUrl}}</a></li>{{/if}}
+  {{#if location}}<li><strong>Địa điểm:</strong> {{location}}</li>{{/if}}
+  {{#if note}}<li><strong>Ghi chú:</strong> {{note}}</li>{{/if}}
+</ul>
+
+<p>
+  Bạn có thể xem lại lịch phỏng vấn trong Job Matcher:
+  <a href="{{applicationsUrl}}">{{applicationsUrl}}</a>
+</p>
+
+<p>Trân trọng,<br />Job Matcher</p>

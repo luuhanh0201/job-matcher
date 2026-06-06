@@ -1,0 +1,19 @@
+<p>Xin chào {{candidateName}},</p>
+
+<p>
+  Lịch phỏng vấn cho vị trí <strong>{{jobTitle}}</strong> tại
+  <strong>{{companyName}}</strong> đã bị hủy.
+</p>
+
+<ul>
+  <li><strong>Thời gian đã hẹn:</strong> {{scheduledAtText}}</li>
+  <li><strong>Nhà tuyển dụng:</strong> {{recruiterName}}</li>
+  {{#if note}}<li><strong>Ghi chú:</strong> {{note}}</li>{{/if}}
+</ul>
+
+<p>
+  Bạn có thể xem lại trạng thái trong Job Matcher:
+  <a href="{{applicationsUrl}}">{{applicationsUrl}}</a>
+</p>
+
+<p>Trân trọng,<br />Job Matcher</p>
