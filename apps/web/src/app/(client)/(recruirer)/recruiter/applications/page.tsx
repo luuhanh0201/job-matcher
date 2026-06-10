@@ -74,6 +74,7 @@ export default function RecruiterApplicationsPage() {
     url: string;
   } | null>(null);
   const [isLoadingCvPreview, setIsLoadingCvPreview] = useState(false);
+  const [isLoadingStatusChange, setIsLoadingStatusChange] = useState<string | null>(null);
   const [selectedApplicationForInterview, setSelectedApplicationForInterview] =
     useState<JobApplicationProfile | null>(null);
   const [isCreatingInterview, setIsCreatingInterview] = useState(false);
@@ -117,7 +118,6 @@ export default function RecruiterApplicationsPage() {
   }, [applications]);
 
   const handleViewProfile = async (candidateId: string) => {
-    setIsLoadingProfile(true);
     try {
       const [profile, cvs] = await Promise.all([
         getCandidateProfile(candidateId),
@@ -138,10 +138,11 @@ export default function RecruiterApplicationsPage() {
     application: JobApplicationProfile,
     status: JobApplicationStatus,
   ) => {
+    setIsLoadingStatusChange(application.id);
     if (application.status === status) {
       return;
     }
-
+    
     try {
       const updatedApplication = await updateJobApplicationStatus(
         application.id,
@@ -152,8 +153,10 @@ export default function RecruiterApplicationsPage() {
           item.id === updatedApplication.id ? updatedApplication : item,
         ),
       );
+      setIsLoadingStatusChange(null);
       toast.success("Đã cập nhật trạng thái ứng viên");
     } catch (error) {
+      setIsLoadingStatusChange(null);
       toast.error(
         error instanceof Error
           ? error.message
@@ -252,7 +255,7 @@ export default function RecruiterApplicationsPage() {
       const cvs = await getCandidateCvList(application.candidate.id);
       const latestCv = cvs.find((cv) => cv.id);
       if (!latestCv) {
-        toast.error("Ứng viên chưa có CV PDF");
+        toast.error("Ứng viên chưa có CV");
         return;
       }
       await openCvPreview(latestCv);
@@ -316,7 +319,7 @@ export default function RecruiterApplicationsPage() {
           {applications.map((application) => (
             <article
               key={application.id}
-              className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm"
+              className="relative rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm"
             >
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
                 <div className="flex min-w-0 gap-4">
@@ -364,7 +367,13 @@ export default function RecruiterApplicationsPage() {
                         value={application.candidate.phone || "Chưa cập nhật"}
                       />
                     </div>
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                    {
+                      isLoadingStatusChange === application.id ? (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/70">
+                          <Loader2 className="h-5 w-5 animate-spin text-(--primary-blue)" />
+                        </div>
+                      ):(
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
                       <select
                         value={application.status}
                         onChange={(event) =>
@@ -383,6 +392,8 @@ export default function RecruiterApplicationsPage() {
                           ),
                         )}
                       </select>
+                      {
+                        application.status !== "HIRED" ? (
                       <Button
                         type="button"
                         onClick={() => openInterviewForm(application)}
@@ -390,8 +401,14 @@ export default function RecruiterApplicationsPage() {
                       >
                         <CalendarPlus className="h-4 w-4" />
                         Mời phỏng vấn
-                      </Button>
+                      </Button> 
+                        ) : <></>
+                      }
+                       
                     </div>
+                      )
+
+                    }
                   </div>
                 </div>
 

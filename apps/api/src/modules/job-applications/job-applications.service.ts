@@ -12,6 +12,7 @@ import { UserRole } from '@/common/enum/index.enum';
 import { isPostgresUniqueViolation } from '@/common/helpers/unique-violation.helper';
 import { Cv } from '@/modules/cv/entities/cv.entity';
 import { JobPostEntity } from '@/modules/jobs/entities/job.entity';
+import { MailService } from '@/modules/mail/mail.service';
 import { User } from '@/modules/user/entities/user.entity';
 import { CreateJobApplicationDto } from './dto/create-job-application.dto';
 import { JobApplicationResponseDto } from './dto/job-application-response.dto';
@@ -26,6 +27,7 @@ export class JobApplicationsService {
     private readonly jobPostRepository: Repository<JobPostEntity>,
     @InjectRepository(Cv)
     private readonly cvRepository: Repository<Cv>,
+    private readonly mailService: MailService,
   ) {}
 
   async applyToJob(
@@ -202,9 +204,14 @@ export class JobApplicationsService {
     }
     this.ensureApplicationOwner(application, recruiter);
 
+    const previousStatus = application.status;
     application.status = status;
     const savedApplication =
       await this.jobApplicationRepository.save(application);
+
+    if (previousStatus !== status) {
+      await this.sendApplicationStatusEmail(savedApplication);
+    }
 
     return this.toJobApplicationResponse(savedApplication);
   }
@@ -265,6 +272,29 @@ export class JobApplicationsService {
       throw new ForbiddenException(
         'Bạn không có quyền cập nhật hồ sơ ứng tuyển này',
       );
+    }
+  }
+
+  private async sendApplicationStatusEmail(application: JobApplicationEntity) {
+    const payload = {
+      to: application.candidate.email,
+      candidateName: application.candidate.fullName,
+      jobTitle: application.job.title,
+      companyName: application.job.company?.name ?? 'Job Matcher',
+    };
+
+    if (application.status === JobApplicationStatus.HIRED) {
+      await this.mailService.sendApplicationHiredEmail(payload);
+      return;
+    }
+
+    if (application.status === JobApplicationStatus.REJECTED) {
+      await this.mailService.sendApplicationRejectedEmail(payload);
+      return;
+    }
+
+    if (application.status === JobApplicationStatus.SHORTLISTED) {
+      await this.mailService.sendCandidateTalentPoolEmail(payload);
     }
   }
 

@@ -27,6 +27,13 @@ type InterviewResponseEmailPayload = {
 
 type InterviewScheduleChangeEmailPayload = InterviewInvitationEmailPayload;
 
+type ApplicationResultEmailPayload = {
+  to: string;
+  candidateName: string;
+  jobTitle: string;
+  companyName: string;
+};
+
 @Injectable()
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
@@ -179,6 +186,78 @@ export class MailService {
       .catch((error) => {
         console.error(
           `Lỗi gửi email hủy lịch phỏng vấn đến ${payload.to}:`,
+          error,
+        );
+      });
+  }
+  async sendApplicationHiredEmail(payload: ApplicationResultEmailPayload) {
+    const applicationsUrl = `${process.env.FRONTEND_URL}/profile/applications`;
+    await this.mailerService
+      .sendMail({
+        to: payload.to,
+        subject: `Chúc mừng bạn đã trúng tuyển ${payload.jobTitle} - Job Matcher`,
+        template: 'interview-passed',
+        context: {
+          ...payload,
+          applicationsUrl,
+        },
+      })
+      .then(() => {
+        console.log(
+          `Email thông báo trúng tuyển đã được gửi đến ${payload.to}`,
+        );
+      })
+      .catch((error) => {
+        console.error(
+          `Lỗi gửi email thông báo trúng tuyển đến ${payload.to}:`,
+          error,
+        );
+      });
+  }
+
+  async sendApplicationRejectedEmail(payload: ApplicationResultEmailPayload) {
+    const applicationsUrl = `${process.env.FRONTEND_URL}/profile/applications`;
+    await this.mailerService
+      .sendMail({
+        to: payload.to,
+        subject: `Thông báo kết quả ứng tuyển ${payload.jobTitle} - Job Matcher`,
+        template: 'interview-rejected',
+        context: {
+          ...payload,
+          applicationsUrl,
+        },
+      })
+      .then(() => {
+        console.log(
+          `Email thông báo từ chối ứng tuyển đã được gửi đến ${payload.to}`,
+        );
+      })
+      .catch((error) => {
+        console.error(
+          `Lỗi gửi email thông báo từ chối ứng tuyển đến ${payload.to}:`,
+          error,
+        );
+      });
+  }
+
+  async sendCandidateTalentPoolEmail(payload: ApplicationResultEmailPayload) {
+    const applicationsUrl = `${process.env.FRONTEND_URL}/profile/applications`;
+    await this.mailerService
+      .sendMail({
+        to: payload.to,
+        subject: `Hồ sơ của bạn đã được lưu lại cho ${payload.jobTitle} - Job Matcher`,
+        template: 'candidate-talent-pool',
+        context: {
+          ...payload,
+          applicationsUrl,
+        },
+      })
+      .then(() => {
+        console.log(`Email thông báo lưu hồ sơ đã được gửi đến ${payload.to}`);
+      })
+      .catch((error) => {
+        console.error(
+          `Lỗi gửi email thông báo lưu hồ sơ đến ${payload.to}:`,
           error,
         );
       });

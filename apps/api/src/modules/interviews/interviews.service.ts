@@ -33,7 +33,27 @@ export class InterviewsService {
     createInterviewDto: CreateInterviewDto,
   ): Promise<InterviewResponseDto> {
     this.ensureRecruiter(recruiter);
-
+    const existingInterview = await this.interviewRepository.findOne({
+      where: {
+        applicationId,
+        status: InterviewStatus.PENDING,
+        application: {
+          job: {
+            company: {
+              createdBy: {
+                id: recruiter.id,
+              },
+            },
+          },
+        },
+      },
+    });
+    console.log(existingInterview);
+    if (existingInterview) {
+      throw new BadRequestException(
+        'Đã tồn tại lịch phỏng vấn cho hồ sơ ứng tuyển này',
+      );
+    }
     const application = await this.findApplicationOrFail(applicationId);
     this.ensureApplicationOwner(application, recruiter);
 
