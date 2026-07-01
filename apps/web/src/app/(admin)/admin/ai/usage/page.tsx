@@ -59,7 +59,6 @@ function formatNumber(n: number): string {
 const PROVIDER_COLOR_PALETTE = [
   "#3b82f6",
   "#a855f7",
-  "#f97316",
   "#10b981",
   "#ec4899",
   "#eab308",
@@ -67,14 +66,30 @@ const PROVIDER_COLOR_PALETTE = [
   "#ef4444",
 ];
 
-// Hash tên provider thành 1 màu cố định trong bảng màu, để cùng 1 model luôn
-// hiển thị cùng 1 màu ở cả biểu đồ lẫn danh sách phân bổ bên dưới.
+// Màu cố định theo nhà cung cấp (khớp màu badge ở trang Quản lý AI), để cùng
+// 1 vendor luôn hiển thị cùng 1 màu dù đổi tên gợi nhớ.
+const VENDOR_COLOR: Record<string, string> = {
+  ANTHROPIC: "#f97316",
+  OPENAI: "#10b981",
+  GEMINI: "#6366f1",
+  GROQ: "#F55036",
+};
+
+// Hash tên provider thành 1 màu cố định trong bảng màu (dùng khi vendor không
+// nằm trong VENDOR_COLOR, hoặc không xác định được vendor).
 function getColorForKey(key: string): string {
   let hash = 0;
   for (let i = 0; i < key.length; i += 1) {
     hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
   }
   return PROVIDER_COLOR_PALETTE[hash % PROVIDER_COLOR_PALETTE.length] ?? PROVIDER_COLOR_PALETTE[0]!;
+}
+
+function getColorForProvider(providerName: string, vendor?: string): string {
+  if (vendor && VENDOR_COLOR[vendor]) {
+    return VENDOR_COLOR[vendor];
+  }
+  return getColorForKey(providerName);
 }
 
 function StatCard({
@@ -146,15 +161,17 @@ export default function AdminAiUsagePage() {
     loadSeriesByProvider(groupBy);
   }, [groupBy]);
 
-  const { chartData, providerNames } = useMemo(() => {
+  const { chartData, providerNames, providerVendorByName } = useMemo(() => {
     const namesInOrder: string[] = [];
     const namesSeen = new Set<string>();
+    const vendorByName = new Map<string, string>();
     const periodMap = new Map<string, Record<string, number | string>>();
 
     for (const row of seriesByProvider) {
       if (!namesSeen.has(row.providerName)) {
         namesSeen.add(row.providerName);
         namesInOrder.push(row.providerName);
+        vendorByName.set(row.providerName, row.vendor);
       }
       if (!periodMap.has(row.period)) {
         periodMap.set(row.period, { period: row.period });
@@ -170,7 +187,7 @@ export default function AdminAiUsagePage() {
         label: formatPeriodLabel(period, groupBy),
       }));
 
-    return { chartData: data, providerNames: namesInOrder };
+    return { chartData: data, providerNames: namesInOrder, providerVendorByName: vendorByName };
   }, [seriesByProvider, groupBy]);
 
   const maxFeatureTokens = Math.max(
@@ -245,7 +262,7 @@ export default function AdminAiUsagePage() {
                     key={name}
                     type="monotone"
                     dataKey={name}
-                    stroke={getColorForKey(name)}
+                    stroke={getColorForProvider(name, providerVendorByName.get(name))}
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     activeDot={{ r: 5 }}
@@ -279,7 +296,7 @@ export default function AdminAiUsagePage() {
                       {summary.byProvider.map((item) => (
                         <Cell
                           key={`${item.providerId ?? "deleted"}-${item.vendor}-${item.model}`}
-                          fill={getColorForKey(item.providerName)}
+                          fill={getColorForProvider(item.providerName, item.vendor)}
                         />
                       ))}
                     </Pie>
@@ -295,7 +312,7 @@ export default function AdminAiUsagePage() {
                   >
                     <span
                       className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: getColorForKey(item.providerName) }}
+                      style={{ backgroundColor: getColorForProvider(item.providerName, item.vendor) }}
                     />
                     <span
                       className="flex-1 truncate text-xs text-(--gray-600)"
