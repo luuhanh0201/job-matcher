@@ -4,6 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { JobPostEntity } from '@/modules/jobs/entities/job.entity';
 import { ParsedCv } from '@/modules/cv/entities/parsed-cv.entity';
+import { AiUsageFeature } from '@/modules/ai-usage/entities/ai-usage-log.entity';
 
 export interface MatchScores {
   overallScore: number;
@@ -57,6 +58,7 @@ export class AiJobMatcherService {
     const raw = await this.aiService.chatWithSystem(
       this.systemPrompt,
       userMessage,
+      AiUsageFeature.JOB_MATCHING,
     );
 
     return this.parseResult(raw);

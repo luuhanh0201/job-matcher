@@ -1,86 +1,94 @@
-import Anthropic from '@anthropic-ai/sdk';
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { AiProvidersService } from '@/modules/ai-providers/ai-providers.service';
+import { AiUsageLogsService } from '@/modules/ai-usage/ai-usage-logs.service';
+import { AiUsageFeature } from '@/modules/ai-usage/entities/ai-usage-log.entity';
+import { AiAdapterFactory } from './adapters/ai-adapter.factory';
+import {
+  AiChatMessage,
+  AiProviderAdapter,
+} from './adapters/ai-provider-adapter.interface';
+import { ActiveAiProviderConfig } from '@/modules/ai-providers/ai-providers.service';
 
 @Injectable()
-export class AiService implements OnModuleInit {
-  private readonly logger = new Logger(AiService.name);
-  private client!: Anthropic;
-  private model!: string;
-  private maxTokens!: number;
+export class AiService {
+  constructor(
+    private readonly aiProvidersService: AiProvidersService,
+    private readonly aiAdapterFactory: AiAdapterFactory,
+    private readonly aiUsageLogsService: AiUsageLogsService,
+  ) {}
 
-  constructor(private readonly configService: ConfigService) {}
-  onModuleInit() {
-    const apiKey = this.configService.get<string>('ANTHROPIC_API_KEY');
-    if (!apiKey) {
-      this.logger.warn(
-        'ANTHROPIC_API_KEY is not set. AI features will be disabled.',
-      );
-      return;
-    }
-    this.client = new Anthropic({ apiKey });
-    this.model =
-      this.configService.get<string>('ANTHROPIC_MODEL') || 'claude-sonnet-4-5';
-    const maxTokensRaw = this.configService.get<string>('ANTHROPIC_MAX_TOKENS');
-    const parsedMaxTokens = Number.parseInt(maxTokensRaw ?? '', 10);
-    this.maxTokens =
-      Number.isInteger(parsedMaxTokens) && parsedMaxTokens > 0
-        ? parsedMaxTokens
-        : 1024;
-
-    this.logger.log(
-      `Anthropic client initialized with model ${this.model} and max tokens ${this.maxTokens}`,
+  async chat(userMessage: string, feature: AiUsageFeature): Promise<string> {
+    const { adapter, config } = await this.resolveActiveAdapter();
+    return this.callAndLog(
+      () => adapter.chat(userMessage, config),
+      config,
+      feature,
     );
-  }
-
-  async chat(userMessage: string): Promise<string> {
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: this.maxTokens,
-      messages: [{ role: 'user', content: userMessage }],
-    });
-
-    const block = response?.content[0];
-
-    if (block?.type !== 'text') {
-      throw new Error('Unexpected response type from Anthropic API');
-    }
-    return block.text;
   }
 
   async chatWithSystem(
     systemPrompt: string,
     userMessage: string,
+    feature: AiUsageFeature,
   ): Promise<string> {
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: this.maxTokens,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }],
-    });
-
-    const block = response?.content[0];
-
-    if (block?.type !== 'text') {
-      throw new Error('Unexpected response type from Anthropic API');
-    }
-    return block.text;
+    const { adapter, config } = await this.resolveActiveAdapter();
+    return this.callAndLog(
+      () => adapter.chatWithSystem(systemPrompt, userMessage, config),
+      config,
+      feature,
+    );
   }
 
   async multiTurnChat(
-    messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+    messages: AiChatMessage[],
+    feature: AiUsageFeature,
   ): Promise<string> {
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: this.maxTokens,
-      messages,
-    });
+    const { adapter, config } = await this.resolveActiveAdapter();
+    return this.callAndLog(
+      () => adapter.multiTurnChat(messages, config),
+      config,
+      feature,
+    );
+  }
 
-    const block = response.content[0];
-    if (block.type !== 'text') {
-      throw new Error('Unexpected response type from Anthropic');
+  private async callAndLog(
+    call: () => ReturnType<AiProviderAdapter['chat']>,
+    config: ActiveAiProviderConfig,
+    feature: AiUsageFeature,
+  ): Promise<string> {
+    try {
+      const result = await call();
+      await this.aiUsageLogsService.record({
+        providerId: config.id,
+        vendor: config.vendor,
+        model: config.model,
+        feature,
+        usage: result.usage,
+        success: true,
+      });
+      return result.text;
+    } catch (error) {
+      await this.aiUsageLogsService.record({
+        providerId: config.id,
+        vendor: config.vendor,
+        model: config.model,
+        feature,
+        usage: { inputTokens: 0, outputTokens: 0 },
+        success: false,
+      });
+      throw error;
+    }
+  }
+
+  private async resolveActiveAdapter() {
+    const config = await this.aiProvidersService.getActiveProviderForRuntime();
+    if (!config) {
+      throw new InternalServerErrorException(
+        'Chưa cấu hình AI Provider đang active, vui lòng liên hệ Admin',
+      );
     }
 
-    return block.text;
+    const adapter = this.aiAdapterFactory.getAdapter(config.vendor);
+    return { adapter, config };
   }
 }

@@ -16,6 +16,7 @@ import { join } from 'path';
 import { AiService } from './ai.service';
 import { AnalyzerCvResultDto } from './dto/analyzer-cv-result.dto';
 import { AnalyzeCvDto } from './dto/analyze-cv.dto';
+import { AiUsageFeature } from '@/modules/ai-usage/entities/ai-usage-log.entity';
 
 const FALLBACK_PROMPT =
   'Bạn là AI Analyzer chuyên phân tích và đánh giá CV/resume ứng viên, Nhiệm vụ Đọc nội dung CV được cung cấp và trả về **DUY NHẤT** một JSON hợp lệ, Không thêm markdown, không giải thích, không văn bản thừa ngoài JSON';
@@ -84,6 +85,7 @@ export class AiAnalyzerService {
         const rawResponse = await this.aiService.chatWithSystem(
           systemPrompt,
           userMessage,
+          AiUsageFeature.CV_ANALYSIS,
         );
         const parsed = this.parseJsonResponse(rawResponse);
         const validated = await this.validateAnalyzerResult(parsed);

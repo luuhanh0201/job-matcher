@@ -21,6 +21,8 @@ import { LocationModule } from './modules/location/location.module';
 import { JobApplicationsModule } from './modules/job-applications/job-applications.module';
 import { CandidateProfilesModule } from './modules/candidate-profiles/candidate-profiles.module';
 import { InterviewsModule } from './modules/interviews/interviews.module';
+import { AiProvidersModule } from './modules/ai-providers/ai-providers.module';
+import { AiUsageModule } from './modules/ai-usage/ai-usage.module';
 
 @Module({
   imports: [
@@ -48,6 +50,8 @@ import { InterviewsModule } from './modules/interviews/interviews.module';
     JobApplicationsModule,
     CandidateProfilesModule,
     InterviewsModule,
+    AiProvidersModule,
+    AiUsageModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

@@ -10,6 +10,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { AiService } from './ai.service';
 import { ExtractedCvDto } from '@/modules/cv/dto/extracted-cv.dto';
+import { AiUsageFeature } from '@/modules/ai-usage/entities/ai-usage-log.entity';
 
 type ExtractedEducation = {
   school: string;
@@ -64,6 +65,7 @@ export class AiExtractorService {
         const rawResponse = await this.aiService.chatWithSystem(
           this.systemPrompt,
           this.buildUserMessage(cvText),
+          AiUsageFeature.CV_EXTRACTION,
         );
 
         const parsed = this.parseJsonResponse(rawResponse);

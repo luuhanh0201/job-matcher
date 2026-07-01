@@ -7,6 +7,7 @@ import { AiExtractorService } from './ai-extractor.service';
 import { AiAnalyzerService } from './ai-analyzer.service';
 import { AnalyzeCvDto } from './dto/analyze-cv.dto';
 import { UserRole } from '@/common/enum/index.enum';
+import { AiUsageFeature } from '@/modules/ai-usage/entities/ai-usage-log.entity';
 
 @Controller('ai')
 export class AiController {
@@ -20,8 +21,12 @@ export class AiController {
   @UseGuards(AuthGuard('jwt'))
   async chat(@Body() dto: ChatDto) {
     const reply = dto.systemPrompt
-      ? await this.aiService.chatWithSystem(dto.systemPrompt, dto.message)
-      : await this.aiService.chat(dto.message);
+      ? await this.aiService.chatWithSystem(
+          dto.systemPrompt,
+          dto.message,
+          AiUsageFeature.CHAT,
+        )
+      : await this.aiService.chat(dto.message, AiUsageFeature.CHAT);
 
     return { reply };
   }
@@ -29,7 +34,10 @@ export class AiController {
   @Post('chat/multi-turn')
   @UseGuards(AuthGuard('jwt'))
   async multiTurn(@Body() dto: MultiTurnChatDto) {
-    const reply = await this.aiService.multiTurnChat(dto.messages);
+    const reply = await this.aiService.multiTurnChat(
+      dto.messages,
+      AiUsageFeature.CHAT,
+    );
     return { reply };
   }
 
