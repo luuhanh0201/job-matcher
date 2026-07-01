@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '@/modules/auth/Guards/jwt-auth.guard';
 import { User } from '@/modules/user/entities/user.entity';
 import { CreateJobApplicationDto } from './dto/create-job-application.dto';
 import { JobApplicationResponseDto } from './dto/job-application-response.dto';
+import { JobApplicationStatusLogResponseDto } from './dto/job-application-status-log-response.dto';
 import { JobApplicationsService } from './job-applications.service';
 import { UpdateJobApplicationStatusDto } from './dto/update-job-application-status.dto';
 
@@ -63,6 +64,15 @@ export class JobApplicationsController {
       updateJobApplicationStatusDto.status,
       req.user,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('applications/:applicationId/status-logs')
+  async findStatusLogs(
+    @Request() req: Request & { user: User },
+    @Param('applicationId') applicationId: string,
+  ): Promise<JobApplicationStatusLogResponseDto[]> {
+    return this.jobApplicationsService.findStatusLogs(applicationId, req.user);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { JobPostEntity } from './entities/job.entity';
 import { MoreThan, Repository } from 'typeorm';
 import { CreateJobDto } from './dto/create-job.dto';
+import { UpdateJobDto } from './dto/update-job.dto';
 import { User } from '../user/entities/user.entity';
 import { CompanyEntity } from '../company/entity/company.entity';
 import { JobPostResponseDto } from './dto/job-response.dto';
@@ -133,6 +134,44 @@ export class JobsService {
       throw new ForbiddenException('Bạn không có quyền xem tin tuyển dụng này');
     }
     return this.toJobPostResponse(job);
+  }
+
+  async updateJobContent(
+    id: string,
+    dto: UpdateJobDto,
+    user: User,
+  ): Promise<JobPostResponseDto> {
+    const job = await this.jobPostRepository.findOne({
+      where: { id },
+      relations: { company: true, createdBy: true },
+    });
+    if (!job) {
+      throw new BadRequestException('Tin tuyển dụng không tồn tại');
+    }
+    if (!job.company?.createdBy?.id || job.company.createdBy.id !== user.id) {
+      throw new ForbiddenException('Bạn không có quyền chỉnh sửa tin tuyển dụng này');
+    }
+    if (
+      dto.salaryType === SalaryType.RANGE ||
+      (job.salaryType === SalaryType.RANGE && dto.salaryType === undefined)
+    ) {
+      const min = dto.salaryMin ?? job.salaryMin;
+      const max = dto.salaryMax ?? job.salaryMax;
+      if (min !== undefined && max !== undefined && min > max) {
+        throw new BadRequestException(
+          'Mức lương tối thiểu không được lớn hơn mức lương tối đa',
+        );
+      }
+    }
+
+    Object.assign(job, dto);
+    if (dto.expiredAt) {
+      job.expiredAt = new Date(dto.expiredAt);
+    }
+    job.updatedBy = { id: user.id, name: user.fullName, email: user.email };
+
+    const savedJob = await this.jobPostRepository.save(job);
+    return this.toJobPostResponse(savedJob);
   }
 
   async updateStatus(

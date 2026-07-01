@@ -16,13 +16,26 @@ import { MailService } from '@/modules/mail/mail.service';
 import { User } from '@/modules/user/entities/user.entity';
 import { CreateJobApplicationDto } from './dto/create-job-application.dto';
 import { JobApplicationResponseDto } from './dto/job-application-response.dto';
+import { JobApplicationStatusLogResponseDto } from './dto/job-application-status-log-response.dto';
 import { JobApplicationEntity } from './entities/job-application.entity';
+import { JobApplicationStatusLogEntity } from './entities/job-application-status-log.entity';
+
+const JOB_APPLICATION_STATUS_LABEL: Record<JobApplicationStatus, string> = {
+  [JobApplicationStatus.PENDING]: 'Chờ xem xét',
+  [JobApplicationStatus.VIEWED]: 'Đã xem',
+  [JobApplicationStatus.SHORTLISTED]: 'Phù hợp',
+  [JobApplicationStatus.REJECTED]: 'Từ chối',
+  [JobApplicationStatus.INTERVIEW]: 'Phỏng vấn',
+  [JobApplicationStatus.HIRED]: 'Đã tuyển',
+};
 
 @Injectable()
 export class JobApplicationsService {
   constructor(
     @InjectRepository(JobApplicationEntity)
     private readonly jobApplicationRepository: Repository<JobApplicationEntity>,
+    @InjectRepository(JobApplicationStatusLogEntity)
+    private readonly statusLogRepository: Repository<JobApplicationStatusLogEntity>,
     @InjectRepository(JobPostEntity)
     private readonly jobPostRepository: Repository<JobPostEntity>,
     @InjectRepository(Cv)
@@ -82,6 +95,17 @@ export class JobApplicationsService {
     });
 
     const savedApplication = await this.saveApplication(application);
+    await this.createStatusLog(
+      {
+        ...savedApplication,
+        job,
+        candidate,
+        cv,
+      },
+      null,
+      JobApplicationStatus.PENDING,
+      candidate,
+    );
 
     return this.toJobApplicationResponse({
       ...savedApplication,
@@ -132,6 +156,38 @@ export class JobApplicationsService {
     return applications.map((application) =>
       this.toJobApplicationResponse(application),
     );
+  }
+
+  async findStatusLogs(
+    applicationId: string,
+    user: User,
+  ): Promise<JobApplicationStatusLogResponseDto[]> {
+    const application = await this.jobApplicationRepository.findOne({
+      where: { id: applicationId },
+      relations: {
+        job: {
+          company: true,
+        },
+        candidate: true,
+        cv: true,
+      },
+    });
+    if (!application) {
+      throw new BadRequestException('Hồ sơ ứng tuyển không tồn tại');
+    }
+    this.ensureCanViewApplication(application, user);
+
+    const logs = await this.statusLogRepository.find({
+      where: { applicationId },
+      relations: {
+        changedBy: true,
+      },
+      order: {
+        createdAt: 'ASC',
+      },
+    });
+
+    return logs.map((log) => this.toStatusLogResponse(log));
   }
 
   async findRecruiterApplications(
@@ -210,6 +266,12 @@ export class JobApplicationsService {
       await this.jobApplicationRepository.save(application);
 
     if (previousStatus !== status) {
+      await this.createStatusLog(
+        application,
+        previousStatus,
+        status,
+        recruiter,
+      );
       await this.sendApplicationStatusEmail(savedApplication);
     }
 
@@ -275,6 +337,68 @@ export class JobApplicationsService {
     }
   }
 
+  private ensureCanViewApplication(
+    application: JobApplicationEntity,
+    user: User,
+  ) {
+    if (user.role === UserRole.ADMIN) {
+      return;
+    }
+
+    if (
+      user.role === UserRole.CANDIDATE &&
+      application.candidateId === user.id
+    ) {
+      return;
+    }
+
+    if (user.role === UserRole.RECRUITER) {
+      this.ensureApplicationOwner(application, user);
+      return;
+    }
+
+    throw new ForbiddenException(
+      'Bạn không có quyền xem lịch sử hồ sơ ứng tuyển này',
+    );
+  }
+
+  private async createStatusLog(
+    application: JobApplicationEntity,
+    fromStatus: JobApplicationStatus | null,
+    toStatus: JobApplicationStatus,
+    changedBy: User,
+  ) {
+    const log = this.statusLogRepository.create({
+      application,
+      applicationId: application.id,
+      fromStatus,
+      toStatus,
+      content: this.buildStatusLogContent(fromStatus, toStatus, changedBy),
+      changedBy,
+      changedById: changedBy.id,
+      changedBySnapshot: {
+        id: changedBy.id,
+        fullName: changedBy.fullName,
+        email: changedBy.email,
+        role: changedBy.role,
+      },
+    });
+
+    await this.statusLogRepository.save(log);
+  }
+
+  private buildStatusLogContent(
+    fromStatus: JobApplicationStatus | null,
+    toStatus: JobApplicationStatus,
+    changedBy: User,
+  ) {
+    if (!fromStatus) {
+      return `${changedBy.fullName} đã tạo hồ sơ ứng tuyển với trạng thái ${JOB_APPLICATION_STATUS_LABEL[toStatus]}`;
+    }
+
+    return `${changedBy.fullName} đã cập nhật trạng thái từ ${JOB_APPLICATION_STATUS_LABEL[fromStatus]} sang ${JOB_APPLICATION_STATUS_LABEL[toStatus]}`;
+  }
+
   private async sendApplicationStatusEmail(application: JobApplicationEntity) {
     const payload = {
       to: application.candidate.email,
@@ -336,6 +460,29 @@ export class JobApplicationsService {
       status: application.status,
       createdAt: application.createdAt,
       updatedAt: application.updatedAt,
+    };
+  }
+
+  private toStatusLogResponse(
+    log: JobApplicationStatusLogEntity,
+  ): JobApplicationStatusLogResponseDto {
+    const changedBySnapshot = log.changedBySnapshot;
+
+    return {
+      id: log.id,
+      applicationId: log.applicationId,
+      fromStatus: log.fromStatus ?? null,
+      toStatus: log.toStatus,
+      content: log.content,
+      changedBy: changedBySnapshot
+        ? {
+            id: changedBySnapshot.id,
+            fullName: changedBySnapshot.fullName,
+            email: changedBySnapshot.email,
+            role: changedBySnapshot.role,
+          }
+        : null,
+      createdAt: log.createdAt,
     };
   }
 }

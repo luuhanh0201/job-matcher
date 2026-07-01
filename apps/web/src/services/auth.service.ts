@@ -270,3 +270,18 @@ export async function resendVerificationEmail(email: string) {
     "Gửi lại email xác minh thất bại",
   );
 }
+
+export async function changePassword(payload: {
+  currentPassword?: string;
+  newPassword: string;
+}) {
+  return protectedFetchJson<{ message: string }>(
+    "/auth/change-password",
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+    "Đổi mật khẩu thất bại",
+  );
+}

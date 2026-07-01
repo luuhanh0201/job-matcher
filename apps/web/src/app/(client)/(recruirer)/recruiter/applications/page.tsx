@@ -6,6 +6,7 @@ import {
   BriefcaseBusiness,
   CalendarPlus,
   CalendarClock,
+  ClipboardList,
   Eye,
   FileText,
   Globe,
@@ -23,13 +24,17 @@ import {
   getCvPreviewObjectUrl,
 } from "@/services/cv.service";
 import { createInterview } from "@/services/interview.service";
-import { getRecruiterApplications } from "@/services/job-application.service";
-import { updateJobApplicationStatus } from "@/services/job-application.service";
+import {
+  getJobApplicationStatusLogs,
+  getRecruiterApplications,
+  updateJobApplicationStatus,
+} from "@/services/job-application.service";
 import type { CandidateProfile } from "@/types/candidate-profile";
 import type { CvRecord } from "@/types/cv";
 import {
   JOB_APPLICATION_STATUS_LABEL,
   type JobApplicationProfile,
+  type JobApplicationStatusLog,
   type JobApplicationStatus,
 } from "@/types/job-application";
 
@@ -74,7 +79,12 @@ export default function RecruiterApplicationsPage() {
     url: string;
   } | null>(null);
   const [isLoadingCvPreview, setIsLoadingCvPreview] = useState(false);
-  const [isLoadingStatusChange, setIsLoadingStatusChange] = useState<string | null>(null);
+  const [isLoadingStatusChange, setIsLoadingStatusChange] = useState<
+    string | null
+  >(null);
+  const [statusLogsByApplicationId, setStatusLogsByApplicationId] = useState<
+    Record<string, JobApplicationStatusLog[]>
+  >({});
   const [selectedApplicationForInterview, setSelectedApplicationForInterview] =
     useState<JobApplicationProfile | null>(null);
   const [isCreatingInterview, setIsCreatingInterview] = useState(false);
@@ -88,7 +98,10 @@ export default function RecruiterApplicationsPage() {
 
   useEffect(() => {
     getRecruiterApplications()
-      .then((items) => setApplications(items))
+      .then((items) => {
+        setApplications(items);
+        void loadStatusLogs(items.map((item) => item.id));
+      })
       .catch((error) => {
         toast.error(
           error instanceof Error
@@ -98,6 +111,23 @@ export default function RecruiterApplicationsPage() {
       })
       .finally(() => setIsLoading(false));
   }, []);
+
+  const loadStatusLogs = async (applicationIds: string[]) => {
+    try {
+      const logsEntries = await Promise.all(
+        applicationIds.map(async (applicationId) => [
+          applicationId,
+          await getJobApplicationStatusLogs(applicationId),
+        ] as const),
+      );
+      setStatusLogsByApplicationId((prev) => ({
+        ...prev,
+        ...Object.fromEntries(logsEntries),
+      }));
+    } catch {
+      toast.error("Không thể tải lịch sử trạng thái hồ sơ");
+    }
+  };
 
   const stats = useMemo(() => {
     return applications.reduce(
@@ -138,11 +168,11 @@ export default function RecruiterApplicationsPage() {
     application: JobApplicationProfile,
     status: JobApplicationStatus,
   ) => {
-    setIsLoadingStatusChange(application.id);
     if (application.status === status) {
       return;
     }
-    
+
+    setIsLoadingStatusChange(application.id);
     try {
       const updatedApplication = await updateJobApplicationStatus(
         application.id,
@@ -153,15 +183,16 @@ export default function RecruiterApplicationsPage() {
           item.id === updatedApplication.id ? updatedApplication : item,
         ),
       );
-      setIsLoadingStatusChange(null);
+      await loadStatusLogs([application.id]);
       toast.success("Đã cập nhật trạng thái ứng viên");
     } catch (error) {
-      setIsLoadingStatusChange(null);
       toast.error(
         error instanceof Error
           ? error.message
           : "Không thể cập nhật trạng thái ứng viên",
       );
+    } finally {
+      setIsLoadingStatusChange(null);
     }
   };
 
@@ -203,6 +234,7 @@ export default function RecruiterApplicationsPage() {
             : item,
         ),
       );
+      await loadStatusLogs([selectedApplicationForInterview.id]);
       setSelectedApplicationForInterview(null);
       toast.success("Đã gửi lời mời phỏng vấn cho ứng viên");
     } catch (error) {
@@ -367,16 +399,15 @@ export default function RecruiterApplicationsPage() {
                         value={application.candidate.phone || "Chưa cập nhật"}
                       />
                     </div>
-                    {
-                      isLoadingStatusChange === application.id ? (
-                        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/70">
-                          <Loader2 className="h-5 w-5 animate-spin text-(--primary-blue)" />
-                        </div>
-                      ):(
-                        <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <select
-                        value={application.status}
-                        onChange={(event) =>
+                    {isLoadingStatusChange === application.id ? (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/70">
+                        <Loader2 className="h-5 w-5 animate-spin text-(--primary-blue)" />
+                      </div>
+                    ) : (
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <select
+                          value={application.status}
+                          onChange={(event) =>
                           handleStatusChange(
                             application,
                             event.target.value as JobApplicationStatus,
@@ -390,25 +421,20 @@ export default function RecruiterApplicationsPage() {
                               {label}
                             </option>
                           ),
-                        )}
-                      </select>
-                      {
-                        application.status !== "HIRED" ? (
-                      <Button
-                        type="button"
-                        onClick={() => openInterviewForm(application)}
-                        className="h-10 gap-2 rounded-xl bg-(--primary-blue) px-4 font-bold text-white hover:bg-(--blue-dark)"
-                      >
-                        <CalendarPlus className="h-4 w-4" />
-                        Mời phỏng vấn
-                      </Button> 
-                        ) : <></>
-                      }
-                       
-                    </div>
-                      )
-
-                    }
+                          )}
+                        </select>
+                        {application.status !== "HIRED" ? (
+                          <Button
+                            type="button"
+                            onClick={() => openInterviewForm(application)}
+                            className="h-10 gap-2 rounded-xl bg-(--primary-blue) px-4 font-bold text-white hover:bg-(--blue-dark)"
+                          >
+                            <CalendarPlus className="h-4 w-4" />
+                            Mời phỏng vấn
+                          </Button>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -457,6 +483,10 @@ export default function RecruiterApplicationsPage() {
                   </p>
                 </div>
               ) : null}
+
+              <StatusHistory
+                logs={statusLogsByApplicationId[application.id] ?? []}
+              />
             </article>
           ))}
         </section>
@@ -537,6 +567,57 @@ function StatCard({
       </p>
       <p className={`mt-2 text-2xl font-black ${className}`}>{value}</p>
     </article>
+  );
+}
+
+function StatusHistory({ logs }: { logs: JobApplicationStatusLog[] }) {
+  return (
+    <section className="mt-4 rounded-xl border border-(--gray-200) bg-(--gray-100)/40 p-4">
+      <div className="flex items-center gap-2 text-sm font-black text-(--gray-900)">
+        <ClipboardList className="h-4 w-4 text-(--primary-blue)" />
+        Lịch sử trạng thái
+      </div>
+
+      {logs.length === 0 ? (
+        <p className="mt-3 text-sm font-medium text-(--gray-500)">
+          Chưa có lịch sử thay đổi.
+        </p>
+      ) : (
+        <ol className="mt-3 space-y-3">
+          {logs.map((log) => (
+            <li key={log.id} className="flex gap-3">
+              <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-(--primary-blue)" />
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-(--gray-800)">
+                  {log.content}
+                </p>
+                <p className="mt-1 text-xs font-medium text-(--gray-500)">
+                  {formatDate(log.createdAt)} ·{" "}
+                  {log.changedBy?.fullName || "Không xác định"}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-bold">
+                  {log.fromStatus ? (
+                    <>
+                      <span
+                        className={`rounded-full px-2 py-0.5 ${getStatusClass(log.fromStatus)}`}
+                      >
+                        {JOB_APPLICATION_STATUS_LABEL[log.fromStatus]}
+                      </span>
+                      <span className="text-(--gray-400)">→</span>
+                    </>
+                  ) : null}
+                  <span
+                    className={`rounded-full px-2 py-0.5 ${getStatusClass(log.toStatus)}`}
+                  >
+                    {JOB_APPLICATION_STATUS_LABEL[log.toStatus]}
+                  </span>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 }
 

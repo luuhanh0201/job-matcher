@@ -5,6 +5,8 @@ import type {
   JobPostStatus,
 } from "@/types/job";
 
+export type UpdateJobPostPayload = Partial<Omit<CreateJobPostPayload, "companyId" | "status">>;
+
 export async function createJobPost(payload: CreateJobPostPayload) {
   return protectedFetchJson<JobPostProfile>(
     "/jobs",
@@ -63,5 +65,22 @@ export async function updateJobPostStatus(
       body: JSON.stringify({ status }),
     },
     "Không thể cập nhật trạng thái tin tuyển dụng",
+  );
+}
+
+export async function updateJobPost(
+  jobPostId: string,
+  payload: UpdateJobPostPayload,
+) {
+  return protectedFetchJson<JobPostProfile>(
+    `/jobs/${jobPostId}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+    "Không thể cập nhật tin tuyển dụng",
   );
 }

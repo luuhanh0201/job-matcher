@@ -4,6 +4,7 @@ import {
   HttpStatus,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +15,7 @@ import { UploadCloudinaryService } from '@/modules/upload-cloudinary/upload-clou
 import { UploadStatus } from '@/common/enum/StatusUpload.enum';
 import { UserRole } from '@/common/enum/index.enum';
 import { SaveParsedCvDto } from '../dto/save-parsed-cv.dto';
+import { MatchResultsService } from '@/modules/match-results/match-results.service';
 
 const UPLOAD_COOLDOWN_MS = 5 * 60 * 1000;
 
@@ -38,6 +40,7 @@ type CvPreview = {
 @Injectable()
 export class CvService {
   private readonly deviceUploadAt = new Map<string, number>();
+  private readonly logger = new Logger(CvService.name);
 
   constructor(
     @InjectRepository(Cv)
@@ -45,6 +48,7 @@ export class CvService {
     @InjectRepository(ParsedCv)
     private readonly parsedCvRepository: Repository<ParsedCv>,
     private readonly uploadCloudinaryService: UploadCloudinaryService,
+    private readonly matchResultsService: MatchResultsService,
   ) {}
 
   async uploadCv(
@@ -180,7 +184,15 @@ export class CvService {
         certifications: input.certifications,
         languages: input.languages,
       });
-      return this.parsedCvRepository.save(updated);
+      const savedUpdated = await this.parsedCvRepository.save(updated);
+
+      this.matchResultsService
+        .runMatchingForParsedCv(savedUpdated.id)
+        .catch((err: unknown) =>
+          this.logger.error('Background job matching failed', err),
+        );
+
+      return savedUpdated;
     }
 
     const parsedCv = this.parsedCvRepository.create({
@@ -196,7 +208,16 @@ export class CvService {
       certifications: input.certifications,
       languages: input.languages,
     });
-    return this.parsedCvRepository.save(parsedCv);
+    const savedParsedCv = await this.parsedCvRepository.save(parsedCv);
+
+    // Fire-and-forget: trigger job matching after CV parse completes
+    this.matchResultsService
+      .runMatchingForParsedCv(savedParsedCv.id)
+      .catch((err: unknown) =>
+        this.logger.error('Background job matching failed', err),
+      );
+
+    return savedParsedCv;
   }
 
   async findOne(publicId: string): Promise<Cv> {

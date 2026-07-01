@@ -2,6 +2,7 @@ import { protectedFetchJson } from "@/services/auth.service";
 import type {
   CreateJobApplicationPayload,
   JobApplicationProfile,
+  JobApplicationStatusLog,
   JobApplicationStatus,
 } from "@/types/job-application";
 
@@ -66,5 +67,15 @@ export async function updateJobApplicationStatus(
       body: JSON.stringify({ status }),
     },
     "Không thể cập nhật trạng thái ứng viên",
+  );
+}
+
+export async function getJobApplicationStatusLogs(applicationId: string) {
+  return protectedFetchJson<JobApplicationStatusLog[]>(
+    `/jobs/applications/${applicationId}/status-logs`,
+    {
+      method: "GET",
+    },
+    "Không thể tải lịch sử trạng thái hồ sơ",
   );
 }

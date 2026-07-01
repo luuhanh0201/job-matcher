@@ -110,6 +110,11 @@ export class UserService {
     });
   }
 
+  async updatePassword(userId: string, newPassword: string): Promise<void> {
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.update(userId, { passwordHash });
+  }
+
   async registerRecruiter(userId: string) {
     const user = await this.findById(userId);
     if (!user) {

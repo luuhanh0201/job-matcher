@@ -11,6 +11,7 @@ import {
 import { JwtAuthGuard } from '../auth/Guards/jwt-auth.guard';
 import { User } from '../user/entities/user.entity';
 import { CreateJobDto } from './dto/create-job.dto';
+import { UpdateJobDto } from './dto/update-job.dto';
 import { JobPostResponseDto } from './dto/job-response.dto';
 import { JobsService } from './jobs.service';
 import { UpdateJobStatusDto } from './dto/update-job-status.dto';
@@ -55,6 +56,16 @@ export class JobsController {
     @Param('id') id: string,
   ): Promise<JobPostResponseDto> {
     return this.jobsService.findPublicOpenJobById(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  async updateJobContent(
+    @Request() req: Request & { user: User },
+    @Param('id') id: string,
+    @Body() updateJobDto: UpdateJobDto,
+  ): Promise<JobPostResponseDto> {
+    return this.jobsService.updateJobContent(id, updateJobDto, req.user);
   }
 
   @UseGuards(JwtAuthGuard)

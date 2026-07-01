@@ -6,9 +6,14 @@ import { UploadCloudinaryModule } from '../upload-cloudinary/upload-cloudinary.m
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Cv } from './entities/cv.entity';
 import { ParsedCv } from './entities/parsed-cv.entity';
+import { MatchResultsModule } from '@/modules/match-results/match-results.module';
 
 @Module({
-  imports: [UploadCloudinaryModule, TypeOrmModule.forFeature([Cv, ParsedCv])],
+  imports: [
+    UploadCloudinaryModule,
+    TypeOrmModule.forFeature([Cv, ParsedCv]),
+    MatchResultsModule,
+  ],
   controllers: [CvController],
   providers: [CvService, PdfParserService],
   exports: [CvService, PdfParserService],

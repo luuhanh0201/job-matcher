@@ -46,6 +46,21 @@ export type JobApplicationProfile = {
   updatedAt: string;
 };
 
+export type JobApplicationStatusLog = {
+  id: string;
+  applicationId: string;
+  fromStatus: JobApplicationStatus | null;
+  toStatus: JobApplicationStatus;
+  content: string;
+  changedBy: {
+    id: string;
+    fullName: string;
+    email: string;
+    role: "CANDIDATE" | "RECRUITER" | "ADMIN";
+  } | null;
+  createdAt: string;
+};
+
 export const JOB_APPLICATION_STATUS_LABEL: Record<
   JobApplicationStatus,
   string

@@ -5,6 +5,7 @@ import {
   BriefcaseBusiness,
   CalendarClock,
   CheckCircle2,
+  ClipboardList,
   Clock3,
   ExternalLink,
   Loader2,
@@ -15,11 +16,16 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { getMyApplications } from "@/services/job-application.service";
+import {
+  getJobApplicationStatusLogs,
+  getMyApplications,
+} from "@/services/job-application.service";
 import { getMyInterviews, respondInterview } from "@/services/interview.service";
 import {
   JOB_APPLICATION_STATUS_LABEL,
   type JobApplicationProfile,
+  type JobApplicationStatus,
+  type JobApplicationStatusLog,
 } from "@/types/job-application";
 import {
   INTERVIEW_STATUS_LABEL,
@@ -42,6 +48,16 @@ function getInterviewStatusClass(status: InterviewStatus) {
   return "bg-amber-100 text-amber-700";
 }
 
+function getApplicationStatusClass(status: JobApplicationStatus) {
+  if (status === "SHORTLISTED" || status === "HIRED") {
+    return "bg-emerald-100 text-emerald-700";
+  }
+  if (status === "REJECTED") return "bg-rose-100 text-rose-700";
+  if (status === "INTERVIEW") return "bg-blue-100 text-blue-700";
+  if (status === "VIEWED") return "bg-violet-100 text-violet-700";
+  return "bg-amber-100 text-amber-700";
+}
+
 function isInterviewExpired(interview: InterviewProfile) {
   return new Date(interview.scheduledAt) <= new Date();
 }
@@ -49,6 +65,9 @@ function isInterviewExpired(interview: InterviewProfile) {
 export default function CandidateApplicationsPage() {
   const [applications, setApplications] = useState<JobApplicationProfile[]>([]);
   const [interviews, setInterviews] = useState<InterviewProfile[]>([]);
+  const [statusLogsByApplicationId, setStatusLogsByApplicationId] = useState<
+    Record<string, JobApplicationStatusLog[]>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [respondingInterviewId, setRespondingInterviewId] = useState("");
 
@@ -57,6 +76,7 @@ export default function CandidateApplicationsPage() {
       .then(([applicationItems, interviewItems]) => {
         setApplications(applicationItems);
         setInterviews(interviewItems);
+        void loadStatusLogs(applicationItems.map((item) => item.id));
       })
       .catch((error) => {
         toast.error(
@@ -67,6 +87,23 @@ export default function CandidateApplicationsPage() {
       })
       .finally(() => setIsLoading(false));
   }, []);
+
+  const loadStatusLogs = async (applicationIds: string[]) => {
+    try {
+      const logsEntries = await Promise.all(
+        applicationIds.map(async (applicationId) => [
+          applicationId,
+          await getJobApplicationStatusLogs(applicationId),
+        ] as const),
+      );
+      setStatusLogsByApplicationId((prev) => ({
+        ...prev,
+        ...Object.fromEntries(logsEntries),
+      }));
+    } catch {
+      toast.error("Không thể tải lịch sử trạng thái hồ sơ");
+    }
+  };
 
   const interviewsByApplicationId = useMemo(() => {
     return interviews.reduce<Record<string, InterviewProfile[]>>(
@@ -262,12 +299,67 @@ export default function CandidateApplicationsPage() {
                     })}
                   </div>
                 ) : null}
+
+                <StatusHistory
+                  logs={statusLogsByApplicationId[application.id] ?? []}
+                />
               </article>
             );
           })}
         </section>
       )}
     </div>
+  );
+}
+
+function StatusHistory({ logs }: { logs: JobApplicationStatusLog[] }) {
+  return (
+    <section className="mt-4 rounded-xl border border-(--gray-200) bg-(--gray-100)/40 p-4">
+      <div className="flex items-center gap-2 text-sm font-black text-(--gray-900)">
+        <ClipboardList className="h-4 w-4 text-(--primary-blue)" />
+        Lịch sử trạng thái
+      </div>
+
+      {logs.length === 0 ? (
+        <p className="mt-3 text-sm font-medium text-(--gray-500)">
+          Chưa có lịch sử thay đổi.
+        </p>
+      ) : (
+        <ol className="mt-3 space-y-3">
+          {logs.map((log) => (
+            <li key={log.id} className="flex gap-3">
+              <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-(--primary-blue)" />
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-(--gray-800)">
+                  {log.content}
+                </p>
+                <p className="mt-1 text-xs font-medium text-(--gray-500)">
+                  {formatDate(log.createdAt)} ·{" "}
+                  {log.changedBy?.fullName || "Không xác định"}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-bold">
+                  {log.fromStatus ? (
+                    <>
+                      <span
+                        className={`rounded-full px-2 py-0.5 ${getApplicationStatusClass(log.fromStatus)}`}
+                      >
+                        {JOB_APPLICATION_STATUS_LABEL[log.fromStatus]}
+                      </span>
+                      <span className="text-(--gray-400)">→</span>
+                    </>
+                  ) : null}
+                  <span
+                    className={`rounded-full px-2 py-0.5 ${getApplicationStatusClass(log.toStatus)}`}
+                  >
+                    {JOB_APPLICATION_STATUS_LABEL[log.toStatus]}
+                  </span>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 }
 

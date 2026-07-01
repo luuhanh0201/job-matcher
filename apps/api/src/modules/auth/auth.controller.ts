@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Post,
   Request,
   UseGuards,
@@ -14,6 +15,7 @@ import { LocalAuthGuard } from './Guards/local-auth.guard';
 import { AuthService } from './auth.service';
 import { AuthGoogleService } from './auth-google.service';
 import { AuthFacebookService } from './auth-facebook.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -115,6 +117,19 @@ export class AuthController {
         .headers?.['user-agent'],
     };
     return this.facebookAuthService.loginWithFacebook(facebookToken, meta);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('change-password')
+  changePassword(
+    @Request() req: Request & { user: User },
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(
+      req.user.id,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 
   @Post('verify-email')

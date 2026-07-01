@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -212,6 +213,32 @@ export class AuthService {
       message: 'Xác minh email thành công',
       data: { isVerify: true },
     };
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string | undefined,
+    newPassword: string,
+  ) {
+    const user = await this.userService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('Người dùng không tồn tại');
+    }
+
+    if (user.passwordHash) {
+      // User has existing password — must verify current password
+      if (!currentPassword) {
+        throw new BadRequestException('Vui lòng cung cấp mật khẩu hiện tại');
+      }
+      const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isMatch) {
+        throw new BadRequestException('Mật khẩu hiện tại không đúng');
+      }
+    }
+    // If no passwordHash (social login user), allow setting new password directly
+
+    await this.userService.updatePassword(userId, newPassword);
+    return { message: 'Đổi mật khẩu thành công' };
   }
 
   async resendVerificationEmail(email: string) {

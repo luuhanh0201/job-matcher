@@ -6,7 +6,12 @@
     "deleteOutDir": true,
     "assets": [
       {
-        "include": "src/modules/mail/templates/**/*.hbs",
+        "include": "modules/mail/templates/**/*.hbs",
+        "outDir": "dist/src",
+        "watchAssets": true
+      },
+      {
+        "include": "modules/ai/prompts/**/*.md",
         "outDir": "dist/src",
         "watchAssets": true
       }

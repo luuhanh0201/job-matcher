@@ -4,6 +4,7 @@ import { AiService } from './ai.service';
 import { AiController } from './ai.controller';
 import { AiExtractorService } from './ai-extractor.service';
 import { AiAnalyzerService } from './ai-analyzer.service';
+import { AiJobMatcherService } from './ai-job-matcher.service';
 
 @Module({
   imports: [
@@ -12,8 +13,8 @@ import { AiAnalyzerService } from './ai-analyzer.service';
       max: 1000,
     }),
   ],
-  providers: [AiService, AiExtractorService, AiAnalyzerService],
-  exports: [AiService, AiExtractorService, AiAnalyzerService],
+  providers: [AiService, AiExtractorService, AiAnalyzerService, AiJobMatcherService],
+  exports: [AiService, AiExtractorService, AiAnalyzerService, AiJobMatcherService],
   controllers: [AiController],
 })
 export class AiModule {}

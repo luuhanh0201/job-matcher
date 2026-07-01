@@ -1,26 +1,147 @@
-import { Injectable } from '@nestjs/common';
-import { CreateMatchResultDto } from './dto/create-match-result.dto';
-import { UpdateMatchResultDto } from './dto/update-match-result.dto';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { MatchResult } from './entities/match-result.entity';
+import { JobPostEntity } from '@/modules/jobs/entities/job.entity';
+import { ParsedCv } from '@/modules/cv/entities/parsed-cv.entity';
+import { AiJobMatcherService } from '@/modules/ai/ai-job-matcher.service';
+import { JobPostStatus } from '@/common/enum/Job.enum';
 
 @Injectable()
 export class MatchResultsService {
-  create(createMatchResultDto: CreateMatchResultDto) {
-    return 'This action adds a new matchResult';
+  private readonly logger = new Logger(MatchResultsService.name);
+
+  constructor(
+    @InjectRepository(MatchResult)
+    private readonly matchResultRepository: Repository<MatchResult>,
+    @InjectRepository(JobPostEntity)
+    private readonly jobRepository: Repository<JobPostEntity>,
+    @InjectRepository(ParsedCv)
+    private readonly parsedCvRepository: Repository<ParsedCv>,
+    private readonly aiJobMatcherService: AiJobMatcherService,
+  ) {}
+
+  async runMatchingForParsedCv(parsedCvId: string): Promise<void> {
+    try {
+      const parsedCv = await this.parsedCvRepository.findOneBy({ id: parsedCvId });
+      if (!parsedCv) {
+        this.logger.warn(`ParsedCv ${parsedCvId} not found, skipping matching`);
+        return;
+      }
+
+      const jobs = await this.jobRepository.find({
+        where: { status: JobPostStatus.OPEN },
+        order: { publishedAt: 'DESC' },
+        take: 20,
+      });
+
+      if (jobs.length === 0) {
+        this.logger.log('No open jobs found for matching');
+        return;
+      }
+
+      this.logger.log(
+        `Running matching for parsedCv ${parsedCvId} against ${jobs.length} jobs`,
+      );
+
+      const matchResults = await Promise.all(
+        jobs.map((job) => this.scoreOneJob(job, parsedCv)),
+      );
+
+      for (const { job, scores } of matchResults) {
+        const result = this.matchResultRepository.create({
+          job,
+          parsedCv,
+          overallScore: scores.overallScore,
+          skillScore: scores.skillScore,
+          experienceScore: scores.experienceScore,
+          educationScore: scores.educationScore,
+          titleScore: scores.titleScore,
+          matchedSkills: scores.matchedSkills,
+          missingSkills: scores.missingSkills,
+          explanation: scores.explanation,
+        });
+        await this.matchResultRepository.save(result);
+      }
+
+      this.logger.log(
+        `Matching complete for parsedCv ${parsedCvId}: ${matchResults.length} results saved`,
+      );
+    } catch (error) {
+      this.logger.error(`Matching failed for parsedCv ${parsedCvId}`, error);
+    }
   }
 
-  findAll() {
-    return `This action returns all matchResults`;
+  private async scoreOneJob(job: JobPostEntity, parsedCv: ParsedCv) {
+    try {
+      const scores = await this.aiJobMatcherService.matchJobWithCv(job, parsedCv);
+      return { job, scores };
+    } catch (error) {
+      this.logger.warn(`AI matching failed for job ${job.id}: ${String(error)}`);
+      return {
+        job,
+        scores: {
+          overallScore: 0,
+          skillScore: 0,
+          experienceScore: 0,
+          educationScore: 0,
+          titleScore: 0,
+          matchedSkills: '[]',
+          missingSkills: '[]',
+          explanation: 'Không thể phân tích kết quả do lỗi hệ thống.',
+        },
+      };
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} matchResult`;
+  async getMyMatchResults(userId: string) {
+    const results = await this.matchResultRepository
+      .createQueryBuilder('match')
+      .innerJoinAndSelect('match.job', 'job')
+      .innerJoinAndSelect('match.parsedCv', 'parsedCv')
+      .innerJoinAndSelect('parsedCv.cv', 'cv')
+      .where('cv.userId = :userId', { userId })
+      .orderBy('match.overallScore', 'DESC')
+      .getMany();
+
+    return results.map((r) => this.toResponse(r));
   }
 
-  update(id: number, updateMatchResultDto: UpdateMatchResultDto) {
-    return `This action updates a #${id} matchResult`;
-  }
+  private toResponse(match: MatchResult) {
+    const safeParseArray = (s: string): string[] => {
+      try {
+        const parsed: unknown = JSON.parse(s);
+        return Array.isArray(parsed) ? (parsed as string[]) : [];
+      } catch {
+        return [];
+      }
+    };
 
-  remove(id: number) {
-    return `This action removes a #${id} matchResult`;
+    return {
+      id: match.id,
+      overallScore: match.overallScore,
+      skillScore: match.skillScore,
+      experienceScore: match.experienceScore,
+      educationScore: match.educationScore,
+      titleScore: match.titleScore,
+      matchedSkills: safeParseArray(match.matchedSkills),
+      missingSkills: safeParseArray(match.missingSkills),
+      explanation: match.explanation,
+      matchedAt: match.matchedAt,
+      job: {
+        id: match.job.id,
+        title: match.job.title,
+        department: match.job.department,
+        jobType: match.job.jobType,
+        workMode: match.job.workMode,
+        salaryType: match.job.salaryType,
+        salaryMin: match.job.salaryMin ?? null,
+        salaryMax: match.job.salaryMax ?? null,
+        currency: match.job.currency,
+        seniorityLevel: match.job.seniorityLevel,
+        skills: match.job.skills ?? [],
+        expiredAt: match.job.expiredAt ?? null,
+      },
+    };
   }
 }

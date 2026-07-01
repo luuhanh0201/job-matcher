@@ -12,6 +12,7 @@ import {
   FileText,
   Loader2,
   MapPin,
+  Pencil,
   Save,
   UserRoundSearch,
   Users,
@@ -169,6 +170,15 @@ export default function RecruiterJobPostDetailPage() {
               >
                 <UserRoundSearch className="h-4 w-4" />
                 Xem ứng viên
+              </Button>
+            </Link>
+            <Link href={`/recruiter/manage-jobs/${job.id}/edit`}>
+              <Button
+                variant="outline"
+                className="h-10 gap-2 rounded-xl px-4 font-bold"
+              >
+                <Pencil className="h-4 w-4" />
+                Chỉnh sửa
               </Button>
             </Link>
             <Link href="/recruiter/post-job">

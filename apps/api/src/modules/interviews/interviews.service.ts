@@ -9,6 +9,7 @@ import { InterviewStatus } from '@/common/enum/Interview.enum';
 import { JobApplicationStatus } from '@/common/enum/JobApplication.enum';
 import { UserRole } from '@/common/enum/index.enum';
 import { JobApplicationEntity } from '@/modules/job-applications/entities/job-application.entity';
+import { JobApplicationStatusLogEntity } from '@/modules/job-applications/entities/job-application-status-log.entity';
 import { MailService } from '@/modules/mail/mail.service';
 import { User } from '@/modules/user/entities/user.entity';
 import { CreateInterviewDto } from './dto/create-interview.dto';
@@ -17,6 +18,15 @@ import { RespondInterviewDto } from './dto/respond-interview.dto';
 import { UpdateInterviewDto } from './dto/update-interview.dto';
 import { InterviewEntity } from './entities/interview.entity';
 
+const JOB_APPLICATION_STATUS_LABEL: Record<JobApplicationStatus, string> = {
+  [JobApplicationStatus.PENDING]: 'Chờ xem xét',
+  [JobApplicationStatus.VIEWED]: 'Đã xem',
+  [JobApplicationStatus.SHORTLISTED]: 'Phù hợp',
+  [JobApplicationStatus.REJECTED]: 'Từ chối',
+  [JobApplicationStatus.INTERVIEW]: 'Phỏng vấn',
+  [JobApplicationStatus.HIRED]: 'Đã tuyển',
+};
+
 @Injectable()
 export class InterviewsService {
   constructor(
@@ -24,6 +34,8 @@ export class InterviewsService {
     private readonly interviewRepository: Repository<InterviewEntity>,
     @InjectRepository(JobApplicationEntity)
     private readonly jobApplicationRepository: Repository<JobApplicationEntity>,
+    @InjectRepository(JobApplicationStatusLogEntity)
+    private readonly statusLogRepository: Repository<JobApplicationStatusLogEntity>,
     private readonly mailService: MailService,
   ) {}
 
@@ -76,8 +88,17 @@ export class InterviewsService {
       status: InterviewStatus.PENDING,
     });
 
+    const previousApplicationStatus = application.status;
     application.status = JobApplicationStatus.INTERVIEW;
     await this.jobApplicationRepository.save(application);
+    if (previousApplicationStatus !== JobApplicationStatus.INTERVIEW) {
+      await this.createApplicationStatusLog(
+        application,
+        previousApplicationStatus,
+        JobApplicationStatus.INTERVIEW,
+        recruiter,
+      );
+    }
     const savedInterview = await this.interviewRepository.save(interview);
 
     await this.mailService.sendInterviewInvitationEmail({
@@ -374,6 +395,31 @@ export class InterviewsService {
       location: interview.location,
       note: interview.note,
     };
+  }
+
+  private async createApplicationStatusLog(
+    application: JobApplicationEntity,
+    fromStatus: JobApplicationStatus,
+    toStatus: JobApplicationStatus,
+    changedBy: User,
+  ) {
+    const log = this.statusLogRepository.create({
+      application,
+      applicationId: application.id,
+      fromStatus,
+      toStatus,
+      content: `${changedBy.fullName} đã cập nhật trạng thái từ ${JOB_APPLICATION_STATUS_LABEL[fromStatus]} sang ${JOB_APPLICATION_STATUS_LABEL[toStatus]}`,
+      changedBy,
+      changedById: changedBy.id,
+      changedBySnapshot: {
+        id: changedBy.id,
+        fullName: changedBy.fullName,
+        email: changedBy.email,
+        role: changedBy.role,
+      },
+    });
+
+    await this.statusLogRepository.save(log);
   }
 
   private toInterviewResponse(
