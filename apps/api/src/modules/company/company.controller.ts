@@ -19,12 +19,16 @@ import { CompanyResponseDto } from './dto/company-response.dto';
 import { User } from '../user/entities/user.entity';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { UserRole } from '@/common/enum/index.enum';
 
 @Controller('company')
 export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.RECRUITER)
   @UseInterceptors(FileInterceptor('logoUrl'))
   @Post('create-company')
   async createCompany(
@@ -121,7 +125,8 @@ export class CompanyController {
     }
     return company;
   }
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.RECRUITER)
   @Patch(':id')
   async updateCompany(
     @Request() req: Request & { user: User },
@@ -136,7 +141,8 @@ export class CompanyController {
     return newDataCompany;
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.RECRUITER)
   @UseInterceptors(FileInterceptor('logo'))
   @Patch(':id/logo')
   async updateCompanyLogo(

@@ -17,6 +17,7 @@ export class AiController {
   ) {}
 
   @Post('chat')
+  @UseGuards(AuthGuard('jwt'))
   async chat(@Body() dto: ChatDto) {
     const reply = dto.systemPrompt
       ? await this.aiService.chatWithSystem(dto.systemPrompt, dto.message)
@@ -26,12 +27,14 @@ export class AiController {
   }
 
   @Post('chat/multi-turn')
+  @UseGuards(AuthGuard('jwt'))
   async multiTurn(@Body() dto: MultiTurnChatDto) {
     const reply = await this.aiService.multiTurnChat(dto.messages);
     return { reply };
   }
 
   @Post('extract-cv')
+  @UseGuards(AuthGuard('jwt'))
   async extractCv(@Body() dto: ExtractCvDto) {
     return this.aiExtractorService.extractCv(dto.cvText);
   }

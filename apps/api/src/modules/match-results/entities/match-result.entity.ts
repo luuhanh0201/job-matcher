@@ -7,9 +7,11 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 
 @Entity('match_results')
+@Unique('UQ_match_result_job_parsed_cv', ['job', 'parsedCv'])
 export class MatchResult {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

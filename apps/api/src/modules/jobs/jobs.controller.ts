@@ -15,12 +15,16 @@ import { UpdateJobDto } from './dto/update-job.dto';
 import { JobPostResponseDto } from './dto/job-response.dto';
 import { JobsService } from './jobs.service';
 import { UpdateJobStatusDto } from './dto/update-job-status.dto';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { UserRole } from '@/common/enum/index.enum';
 
 @Controller('jobs')
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.RECRUITER)
   @Post()
   async createPost(
     @Request() req: Request & { user: User },
@@ -58,7 +62,8 @@ export class JobsController {
     return this.jobsService.findPublicOpenJobById(id);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.RECRUITER)
   @Patch(':id')
   async updateJobContent(
     @Request() req: Request & { user: User },
@@ -68,7 +73,8 @@ export class JobsController {
     return this.jobsService.updateJobContent(id, updateJobDto, req.user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.RECRUITER)
   @Patch(':id/status')
   async updateStatus(
     @Request() req: Request & { user: User },

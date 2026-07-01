@@ -4,12 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserStatus } from '@/common/enum/index.enum';
-type JwtPayload = {
-  sub: string;
-  email: string;
-  role: string;
-  fullName: string;
-};
+import { JwtPayload } from '@/common/type/JwtPayload.type';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -27,6 +22,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
   async validate(payload: JwtPayload) {
+    if (payload.type !== 'access') {
+      throw new UnauthorizedException(
+        'Token không hợp lệ cho thao tác này (yêu cầu access token)',
+      );
+    }
     const email = payload.email;
     if (!email) {
       throw new UnauthorizedException('Token không hợp lệ');

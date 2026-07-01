@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -16,8 +17,11 @@ import { UploadStatus } from '@/common/enum/StatusUpload.enum';
 import { UserRole } from '@/common/enum/index.enum';
 import { SaveParsedCvDto } from '../dto/save-parsed-cv.dto';
 import { MatchResultsService } from '@/modules/match-results/match-results.service';
+import { JobApplicationEntity } from '@/modules/job-applications/entities/job-application.entity';
+import { isPdfMagicBytes } from './pdf-parser.service';
 
 const UPLOAD_COOLDOWN_MS = 5 * 60 * 1000;
+const MATCH_TRIGGER_COOLDOWN_MS = 60 * 1000;
 
 type UploadCvResult = {
   cv: Cv;
@@ -40,6 +44,7 @@ type CvPreview = {
 @Injectable()
 export class CvService {
   private readonly deviceUploadAt = new Map<string, number>();
+  private readonly matchTriggerAt = new Map<string, number>();
   private readonly logger = new Logger(CvService.name);
 
   constructor(
@@ -47,6 +52,8 @@ export class CvService {
     private readonly cvRepository: Repository<Cv>,
     @InjectRepository(ParsedCv)
     private readonly parsedCvRepository: Repository<ParsedCv>,
+    @InjectRepository(JobApplicationEntity)
+    private readonly jobApplicationRepository: Repository<JobApplicationEntity>,
     private readonly uploadCloudinaryService: UploadCloudinaryService,
     private readonly matchResultsService: MatchResultsService,
   ) {}
@@ -65,6 +72,10 @@ export class CvService {
     if (identity.role !== UserRole.ADMIN) {
       await this.enforceAccountCooldown(identity.userId);
       this.enforceDeviceCooldown(identity.deviceId);
+    }
+
+    if (!isPdfMagicBytes(file.buffer)) {
+      throw new BadRequestException('Nội dung tệp không phải là PDF hợp lệ.');
     }
 
     const existingCv = await this.cvRepository.findOne({
@@ -100,6 +111,8 @@ export class CvService {
 
       const savedCv = await this.cvRepository.save(cv);
 
+      await this.cleanupOldCvs(identity.userId, savedCv.id);
+
       if (identity.role !== UserRole.ADMIN) {
         this.deviceUploadAt.set(identity.deviceId, Date.now());
       }
@@ -123,6 +136,31 @@ export class CvService {
 
       throw new InternalServerErrorException('Không thể upload CV');
     }
+  }
+
+  private async cleanupOldCvs(userId: string, keepCvId: string) {
+    const oldCvs = await this.cvRepository.find({
+      where: { userId },
+    });
+    const toDelete = oldCvs.filter((oldCv) => oldCv.id !== keepCvId);
+    if (toDelete.length === 0) {
+      return;
+    }
+
+    for (const oldCv of toDelete) {
+      await this.uploadCloudinaryService
+        .deleteFile(oldCv.publicId)
+        .catch((err: unknown) =>
+          this.logger.warn(
+            `Không thể xoá file Cloudinary cũ ${oldCv.publicId}: ${String(err)}`,
+          ),
+        );
+    }
+
+    // Xoá row Cv cũ sẽ cascade xoá ParsedCv + match_results liên quan (đã cấu hình onDelete CASCADE).
+    await this.cvRepository.remove(toDelete).catch((err: unknown) => {
+      this.logger.error('Không thể dọn CV cũ trong database', err);
+    });
   }
 
   private async enforceAccountCooldown(userId: string) {
@@ -161,10 +199,16 @@ export class CvService {
     }
   }
 
-  async saveParsedCv(input: SaveParsedCvDto): Promise<ParsedCv> {
+  async saveParsedCv(
+    input: SaveParsedCvDto,
+    caller: { id: string; role: UserRole },
+  ): Promise<ParsedCv> {
     const cv = await this.cvRepository.findOneBy({ id: input.cvId });
     if (!cv) {
       throw new NotFoundException(`CV with id ${input.cvId} not found`);
+    }
+    if (caller.role !== UserRole.ADMIN && cv.userId !== caller.id) {
+      throw new ForbiddenException('Bạn không có quyền cập nhật CV này');
     }
 
     const existing = await this.parsedCvRepository.findOneBy({
@@ -186,11 +230,7 @@ export class CvService {
       });
       const savedUpdated = await this.parsedCvRepository.save(updated);
 
-      this.matchResultsService
-        .runMatchingForParsedCv(savedUpdated.id)
-        .catch((err: unknown) =>
-          this.logger.error('Background job matching failed', err),
-        );
+      this.triggerMatchingWithCooldown(cv.userId, savedUpdated.id);
 
       return savedUpdated;
     }
@@ -210,14 +250,30 @@ export class CvService {
     });
     const savedParsedCv = await this.parsedCvRepository.save(parsedCv);
 
+    this.triggerMatchingWithCooldown(cv.userId, savedParsedCv.id);
+
+    return savedParsedCv;
+  }
+
+  private triggerMatchingWithCooldown(userId: string, parsedCvId: string) {
+    const lastTriggeredAt = this.matchTriggerAt.get(userId);
+    if (
+      lastTriggeredAt &&
+      Date.now() - lastTriggeredAt < MATCH_TRIGGER_COOLDOWN_MS
+    ) {
+      this.logger.warn(
+        `Bỏ qua trigger matching cho user ${userId} do đang trong cooldown`,
+      );
+      return;
+    }
+    this.matchTriggerAt.set(userId, Date.now());
+
     // Fire-and-forget: trigger job matching after CV parse completes
     this.matchResultsService
-      .runMatchingForParsedCv(savedParsedCv.id)
+      .runMatchingForParsedCv(parsedCvId)
       .catch((err: unknown) =>
         this.logger.error('Background job matching failed', err),
       );
-
-    return savedParsedCv;
   }
 
   async findOne(publicId: string): Promise<Cv> {
@@ -239,7 +295,7 @@ export class CvService {
     userId: string,
     viewer: { id: string; role: UserRole },
   ): Promise<Cv[]> {
-    this.ensureCanViewCandidateCvs(userId, viewer);
+    await this.ensureCanViewCandidateCvs(userId, viewer);
     return this.findMyCvs(userId);
   }
 
@@ -251,7 +307,7 @@ export class CvService {
     if (!cv) {
       throw new NotFoundException('CV không tồn tại');
     }
-    this.ensureCanViewCandidateCvs(cv.userId, viewer);
+    await this.ensureCanViewCandidateCvs(cv.userId, viewer);
     return cv;
   }
 
@@ -273,15 +329,31 @@ export class CvService {
     };
   }
 
-  private ensureCanViewCandidateCvs(
+  private async ensureCanViewCandidateCvs(
     userId: string,
     viewer: { id: string; role: UserRole },
   ) {
     if (viewer.id === userId) {
       return;
     }
-    if (viewer.role === UserRole.RECRUITER || viewer.role === UserRole.ADMIN) {
+    if (viewer.role === UserRole.ADMIN) {
       return;
+    }
+    if (viewer.role === UserRole.RECRUITER) {
+      const hasApplied = await this.jobApplicationRepository
+        .createQueryBuilder('application')
+        .innerJoin('application.job', 'job')
+        .innerJoin('job.company', 'company')
+        .where('application.candidate_id = :candidateId', {
+          candidateId: userId,
+        })
+        .andWhere("company.created_by ->> 'id' = :recruiterId", {
+          recruiterId: viewer.id,
+        })
+        .getExists();
+      if (hasApplied) {
+        return;
+      }
     }
     throw new ForbiddenException('Bạn không có quyền xem CV của ứng viên này');
   }

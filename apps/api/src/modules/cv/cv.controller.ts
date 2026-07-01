@@ -122,7 +122,8 @@ export class CvController {
   }
 
   @Post('save-parsed-cv')
-  async saveParsedCv(@Body() dto: SaveParsedCvDto) {
-    return this.cvService.saveParsedCv(dto);
+  async saveParsedCv(@Body() dto: SaveParsedCvDto, @Req() req: Request) {
+    const caller = req.user as { id: string; role: UserRole };
+    return this.cvService.saveParsedCv(dto, caller);
   }
 }

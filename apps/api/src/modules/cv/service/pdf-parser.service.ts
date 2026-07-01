@@ -13,6 +13,12 @@ type PdfFile = {
   buffer: Buffer;
 };
 
+// %PDF- là magic bytes bắt buộc ở đầu mọi file PDF hợp lệ theo spec ISO 32000.
+// Kiểm tra byte thực tế thay vì chỉ tin mimetype do client tự khai báo trong multipart form.
+export function isPdfMagicBytes(buffer: Buffer): boolean {
+  return buffer.subarray(0, 5).toString('latin1') === '%PDF-';
+}
+
 @Injectable()
 export class PdfParserService {
   private readonly logger = new Logger(PdfParserService.name);
@@ -25,6 +31,12 @@ export class PdfParserService {
     if (file.mimetype !== 'application/pdf') {
       throw new BadRequestException(
         'Loại tệp không hợp lệ. Chỉ cho phép tệp PDF.',
+      );
+    }
+
+    if (!isPdfMagicBytes(file.buffer)) {
+      throw new BadRequestException(
+        'Nội dung tệp không phải là PDF hợp lệ.',
       );
     }
   }

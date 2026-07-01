@@ -29,6 +29,31 @@ const JOB_APPLICATION_STATUS_LABEL: Record<JobApplicationStatus, string> = {
   [JobApplicationStatus.HIRED]: 'Đã tuyển',
 };
 
+// Bảng trạng thái hợp lệ: HIRED/REJECTED là trạng thái cuối, không cho quay lại.
+// INTERVIEW chỉ được set qua flow tạo lịch phỏng vấn (InterviewsService), không qua updateStatus.
+const ALLOWED_STATUS_TRANSITIONS: Record<
+  JobApplicationStatus,
+  JobApplicationStatus[]
+> = {
+  [JobApplicationStatus.PENDING]: [
+    JobApplicationStatus.VIEWED,
+    JobApplicationStatus.SHORTLISTED,
+    JobApplicationStatus.REJECTED,
+  ],
+  [JobApplicationStatus.VIEWED]: [
+    JobApplicationStatus.SHORTLISTED,
+    JobApplicationStatus.REJECTED,
+  ],
+  [JobApplicationStatus.SHORTLISTED]: [JobApplicationStatus.REJECTED],
+  [JobApplicationStatus.INTERVIEW]: [
+    JobApplicationStatus.HIRED,
+    JobApplicationStatus.REJECTED,
+    JobApplicationStatus.SHORTLISTED,
+  ],
+  [JobApplicationStatus.HIRED]: [],
+  [JobApplicationStatus.REJECTED]: [],
+};
+
 @Injectable()
 export class JobApplicationsService {
   constructor(
@@ -261,6 +286,9 @@ export class JobApplicationsService {
     this.ensureApplicationOwner(application, recruiter);
 
     const previousStatus = application.status;
+    if (previousStatus !== status) {
+      this.ensureValidStatusTransition(previousStatus, status);
+    }
     application.status = status;
     const savedApplication =
       await this.jobApplicationRepository.save(application);
@@ -276,6 +304,23 @@ export class JobApplicationsService {
     }
 
     return this.toJobApplicationResponse(savedApplication);
+  }
+
+  private ensureValidStatusTransition(
+    from: JobApplicationStatus,
+    to: JobApplicationStatus,
+  ) {
+    if (to === JobApplicationStatus.INTERVIEW) {
+      throw new BadRequestException(
+        'Vui lòng dùng chức năng mời phỏng vấn để chuyển hồ sơ sang trạng thái Phỏng vấn',
+      );
+    }
+    const allowedNextStatuses = ALLOWED_STATUS_TRANSITIONS[from] ?? [];
+    if (!allowedNextStatuses.includes(to)) {
+      throw new BadRequestException(
+        `Không thể chuyển trạng thái từ "${JOB_APPLICATION_STATUS_LABEL[from]}" sang "${JOB_APPLICATION_STATUS_LABEL[to]}"`,
+      );
+    }
   }
 
   private async resolveCandidateCv(candidateId: string, cvId?: string) {

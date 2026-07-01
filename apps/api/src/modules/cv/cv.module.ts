@@ -7,11 +7,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Cv } from './entities/cv.entity';
 import { ParsedCv } from './entities/parsed-cv.entity';
 import { MatchResultsModule } from '@/modules/match-results/match-results.module';
+import { JobApplicationEntity } from '@/modules/job-applications/entities/job-application.entity';
 
 @Module({
   imports: [
     UploadCloudinaryModule,
-    TypeOrmModule.forFeature([Cv, ParsedCv]),
+    TypeOrmModule.forFeature([Cv, ParsedCv, JobApplicationEntity]),
     MatchResultsModule,
   ],
   controllers: [CvController],

@@ -48,6 +48,10 @@ export class MatchResultsService {
         jobs.map((job) => this.scoreOneJob(job, parsedCv)),
       );
 
+      // Xoá kết quả matching cũ của parsedCv trước khi lưu batch mới để
+      // tránh trùng lặp khi hàm này được gọi nhiều lần liên tiếp (race condition).
+      await this.matchResultRepository.delete({ parsedCv: { id: parsedCvId } });
+
       for (const { job, scores } of matchResults) {
         const result = this.matchResultRepository.create({
           job,
@@ -101,6 +105,10 @@ export class MatchResultsService {
       .innerJoinAndSelect('match.parsedCv', 'parsedCv')
       .innerJoinAndSelect('parsedCv.cv', 'cv')
       .where('cv.userId = :userId', { userId })
+      .andWhere('job.status = :openStatus', {
+        openStatus: JobPostStatus.OPEN,
+      })
+      .andWhere('(job.expiredAt IS NULL OR job.expiredAt > now())')
       .orderBy('match.overallScore', 'DESC')
       .getMany();
 

@@ -238,7 +238,15 @@ export class AuthService {
     // If no passwordHash (social login user), allow setting new password directly
 
     await this.userService.updatePassword(userId, newPassword);
+    await this.revokeAllSessions(userId, 'PasswordChanged');
     return { message: 'Đổi mật khẩu thành công' };
+  }
+
+  private async revokeAllSessions(userId: string, reason: string) {
+    await this.userSessionRepository.update(
+      { userId, isActive: true },
+      { isActive: false, revokedAt: new Date(), revokeReason: reason },
+    );
   }
 
   async resendVerificationEmail(email: string) {

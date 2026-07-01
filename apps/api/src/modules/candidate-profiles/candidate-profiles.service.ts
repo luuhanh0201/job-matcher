@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserRole } from '@/common/enum/index.enum';
 import { User } from '@/modules/user/entities/user.entity';
+import { JobApplicationEntity } from '@/modules/job-applications/entities/job-application.entity';
 import { CandidateProfileResponseDto } from './dto/candidate-profile-response.dto';
 import { UpdateCandidateProfileDto } from './dto/update-candidate-profile.dto';
 import { CandidateProfileEntity } from './entities/candidate-profile.entity';
@@ -19,6 +20,8 @@ export class CandidateProfilesService {
     private readonly candidateProfileRepository: Repository<CandidateProfileEntity>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(JobApplicationEntity)
+    private readonly jobApplicationRepository: Repository<JobApplicationEntity>,
   ) {}
 
   async getMyProfile(user: User): Promise<CandidateProfileResponseDto> {
@@ -89,7 +92,7 @@ export class CandidateProfilesService {
     userId: string,
     viewer: User,
   ): Promise<CandidateProfileResponseDto> {
-    this.ensureCanViewCandidateProfile(userId, viewer);
+    await this.ensureCanViewCandidateProfile(userId, viewer);
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
@@ -118,12 +121,28 @@ export class CandidateProfilesService {
     return this.candidateProfileRepository.save(profile);
   }
 
-  private ensureCanViewCandidateProfile(userId: string, viewer: User) {
+  private async ensureCanViewCandidateProfile(userId: string, viewer: User) {
     if (viewer.id === userId) {
       return;
     }
-    if (viewer.role === UserRole.RECRUITER || viewer.role === UserRole.ADMIN) {
+    if (viewer.role === UserRole.ADMIN) {
       return;
+    }
+    if (viewer.role === UserRole.RECRUITER) {
+      const hasApplied = await this.jobApplicationRepository
+        .createQueryBuilder('application')
+        .innerJoin('application.job', 'job')
+        .innerJoin('job.company', 'company')
+        .where('application.candidate_id = :candidateId', {
+          candidateId: userId,
+        })
+        .andWhere("company.created_by ->> 'id' = :recruiterId", {
+          recruiterId: viewer.id,
+        })
+        .getExists();
+      if (hasApplied) {
+        return;
+      }
     }
     throw new ForbiddenException('Bạn không có quyền xem hồ sơ ứng viên này');
   }

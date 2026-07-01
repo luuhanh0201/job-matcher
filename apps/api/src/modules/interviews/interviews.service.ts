@@ -4,7 +4,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { InterviewStatus } from '@/common/enum/Interview.enum';
 import { JobApplicationStatus } from '@/common/enum/JobApplication.enum';
 import { UserRole } from '@/common/enum/index.enum';
@@ -36,6 +36,7 @@ export class InterviewsService {
     private readonly jobApplicationRepository: Repository<JobApplicationEntity>,
     @InjectRepository(JobApplicationStatusLogEntity)
     private readonly statusLogRepository: Repository<JobApplicationStatusLogEntity>,
+    private readonly dataSource: DataSource,
     private readonly mailService: MailService,
   ) {}
 
@@ -45,61 +46,73 @@ export class InterviewsService {
     createInterviewDto: CreateInterviewDto,
   ): Promise<InterviewResponseDto> {
     this.ensureRecruiter(recruiter);
+
+    const application = await this.findApplicationOrFail(applicationId);
+    this.ensureApplicationOwner(application, recruiter);
+
+    if (
+      application.status === JobApplicationStatus.REJECTED ||
+      application.status === JobApplicationStatus.HIRED
+    ) {
+      throw new BadRequestException(
+        'Không thể mời phỏng vấn hồ sơ đã bị từ chối hoặc đã tuyển',
+      );
+    }
+
     const existingInterview = await this.interviewRepository.findOne({
       where: {
         applicationId,
         status: InterviewStatus.PENDING,
-        application: {
-          job: {
-            company: {
-              createdBy: {
-                id: recruiter.id,
-              },
-            },
-          },
-        },
       },
     });
-    console.log(existingInterview);
     if (existingInterview) {
       throw new BadRequestException(
         'Đã tồn tại lịch phỏng vấn cho hồ sơ ứng tuyển này',
       );
     }
-    const application = await this.findApplicationOrFail(applicationId);
-    this.ensureApplicationOwner(application, recruiter);
 
     const scheduledAt = this.parseFutureScheduledAt(
       createInterviewDto.scheduledAt,
     );
 
-    const interview = this.interviewRepository.create({
-      application,
-      applicationId: application.id,
-      candidate: application.candidate,
-      candidateId: application.candidateId,
-      recruiter,
-      recruiterId: recruiter.id,
-      scheduledAt,
-      durationMinutes: createInterviewDto.durationMinutes ?? 60,
-      meetingUrl: this.normalizeOptionalString(createInterviewDto.meetingUrl),
-      location: this.normalizeOptionalString(createInterviewDto.location),
-      note: this.normalizeOptionalString(createInterviewDto.note),
-      status: InterviewStatus.PENDING,
-    });
-
     const previousApplicationStatus = application.status;
-    application.status = JobApplicationStatus.INTERVIEW;
-    await this.jobApplicationRepository.save(application);
-    if (previousApplicationStatus !== JobApplicationStatus.INTERVIEW) {
-      await this.createApplicationStatusLog(
-        application,
-        previousApplicationStatus,
-        JobApplicationStatus.INTERVIEW,
-        recruiter,
-      );
-    }
-    const savedInterview = await this.interviewRepository.save(interview);
+
+    const savedInterview = await this.dataSource.transaction(
+      async (manager) => {
+        const interview = manager.create(InterviewEntity, {
+          application,
+          applicationId: application.id,
+          candidate: application.candidate,
+          candidateId: application.candidateId,
+          recruiter,
+          recruiterId: recruiter.id,
+          scheduledAt,
+          durationMinutes: createInterviewDto.durationMinutes ?? 60,
+          meetingUrl: this.normalizeOptionalString(
+            createInterviewDto.meetingUrl,
+          ),
+          location: this.normalizeOptionalString(createInterviewDto.location),
+          note: this.normalizeOptionalString(createInterviewDto.note),
+          status: InterviewStatus.PENDING,
+        });
+        const saved = await manager.save(interview);
+
+        application.status = JobApplicationStatus.INTERVIEW;
+        await manager.save(application);
+
+        if (previousApplicationStatus !== JobApplicationStatus.INTERVIEW) {
+          await this.createApplicationStatusLog(
+            manager,
+            application,
+            previousApplicationStatus,
+            JobApplicationStatus.INTERVIEW,
+            recruiter,
+          );
+        }
+
+        return saved;
+      },
+    );
 
     await this.mailService.sendInterviewInvitationEmail({
       to: application.candidate.email,
@@ -235,8 +248,30 @@ export class InterviewsService {
       throw new BadRequestException('Lịch phỏng vấn đã được hủy trước đó');
     }
 
-    interview.status = InterviewStatus.CANCELLED;
-    const savedInterview = await this.interviewRepository.save(interview);
+    const application = interview.application;
+    const previousApplicationStatus = application.status;
+
+    const savedInterview = await this.dataSource.transaction(
+      async (manager) => {
+        interview.status = InterviewStatus.CANCELLED;
+        const saved = await manager.save(interview);
+
+        if (previousApplicationStatus === JobApplicationStatus.INTERVIEW) {
+          application.status = JobApplicationStatus.SHORTLISTED;
+          await manager.save(application);
+          await this.createApplicationStatusLog(
+            manager,
+            application,
+            previousApplicationStatus,
+            JobApplicationStatus.SHORTLISTED,
+            recruiter,
+          );
+        }
+
+        return saved;
+      },
+    );
+
     await this.mailService.sendInterviewCancelledEmail(
       this.toInterviewScheduleEmailPayload(savedInterview),
     );
@@ -285,8 +320,32 @@ export class InterviewsService {
       throw new BadRequestException('Lịch phỏng vấn đã quá hạn xác nhận');
     }
 
-    interview.status = respondInterviewDto.status;
-    const savedInterview = await this.interviewRepository.save(interview);
+    const application = interview.application;
+    const previousApplicationStatus = application.status;
+
+    const savedInterview = await this.dataSource.transaction(
+      async (manager) => {
+        interview.status = respondInterviewDto.status;
+        const saved = await manager.save(interview);
+
+        if (
+          respondInterviewDto.status === InterviewStatus.DECLINED &&
+          previousApplicationStatus === JobApplicationStatus.INTERVIEW
+        ) {
+          application.status = JobApplicationStatus.SHORTLISTED;
+          await manager.save(application);
+          await this.createApplicationStatusLog(
+            manager,
+            application,
+            previousApplicationStatus,
+            JobApplicationStatus.SHORTLISTED,
+            candidate,
+          );
+        }
+
+        return saved;
+      },
+    );
 
     await this.mailService.sendInterviewResponseEmail({
       to: interview.recruiter.email,
@@ -398,12 +457,13 @@ export class InterviewsService {
   }
 
   private async createApplicationStatusLog(
+    manager: EntityManager,
     application: JobApplicationEntity,
     fromStatus: JobApplicationStatus,
     toStatus: JobApplicationStatus,
     changedBy: User,
   ) {
-    const log = this.statusLogRepository.create({
+    const log = manager.create(JobApplicationStatusLogEntity, {
       application,
       applicationId: application.id,
       fromStatus,
@@ -419,7 +479,7 @@ export class InterviewsService {
       },
     });
 
-    await this.statusLogRepository.save(log);
+    await manager.save(log);
   }
 
   private toInterviewResponse(
