@@ -93,6 +93,24 @@ export class UserService {
     return updatedUser;
   }
 
+  async linkFacebookAccount(userId: string, facebookId: string): Promise<User> {
+    const existingUser = await this.findByFacebookId(facebookId);
+    if (existingUser && existingUser.id !== userId) {
+      throw new UnauthorizedException(
+        'Tài khoản Facebook đã được liên kết với một người dùng khác',
+      );
+    }
+    await this.userRepository.update(userId, {
+      facebookId,
+      provider: 'facebook',
+    });
+    const updatedUser = await this.findById(userId);
+    if (!updatedUser) {
+      throw new UnauthorizedException('Người dùng không tồn tại');
+    }
+    return updatedUser;
+  }
+
   async findByVerifyToken(token: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { verifyToken: token } });
   }

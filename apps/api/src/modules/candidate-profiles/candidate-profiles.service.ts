@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { UserRole } from '@/common/enum/index.enum';
 import { User } from '@/modules/user/entities/user.entity';
 import { JobApplicationEntity } from '@/modules/job-applications/entities/job-application.entity';
+import { UploadCloudinaryService } from '@/modules/upload-cloudinary/upload-cloudinary.service';
 import { CandidateProfileResponseDto } from './dto/candidate-profile-response.dto';
 import { UpdateCandidateProfileDto } from './dto/update-candidate-profile.dto';
 import { CandidateProfileEntity } from './entities/candidate-profile.entity';
@@ -22,6 +23,7 @@ export class CandidateProfilesService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(JobApplicationEntity)
     private readonly jobApplicationRepository: Repository<JobApplicationEntity>,
+    private readonly cloudinaryService: UploadCloudinaryService,
   ) {}
 
   async getMyProfile(user: User): Promise<CandidateProfileResponseDto> {
@@ -86,6 +88,21 @@ export class CandidateProfilesService {
     ]);
 
     return this.toCandidateProfileResponse(savedUser, savedProfile);
+  }
+
+  async updateMyAvatar(
+    user: User,
+    avatar: Express.Multer.File,
+  ): Promise<CandidateProfileResponseDto> {
+    const uploadResult = await this.cloudinaryService.uploadImage(avatar);
+    user.avatar = uploadResult.secure_url;
+
+    const [savedUser, profile] = await Promise.all([
+      this.userRepository.save(user),
+      this.findOrCreateProfile(user),
+    ]);
+
+    return this.toCandidateProfileResponse(savedUser, profile);
   }
 
   async getProfileByUserId(

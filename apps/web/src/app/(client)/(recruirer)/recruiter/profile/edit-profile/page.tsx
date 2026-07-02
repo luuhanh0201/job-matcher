@@ -78,8 +78,8 @@ export default function RecruiterEditProfilePage() {
 		<main className="space-y-5">
 			<header className="flex items-center justify-between gap-3">
 				<div>
-					<h1 className="text-2xl font-black text-(--gray-900)">Cài đặt thông tin cá nhân</h1>
-					<p className="mt-1 text-sm text-(--gray-500)">
+					<h1 className="text-2xl font-black text-foreground">Cài đặt thông tin cá nhân</h1>
+					<p className="mt-1 text-sm text-muted-foreground">
 						Chỉnh sửa thông tin liên hệ chính để nhà tuyển dụng và ứng viên kết nối dễ hơn.
 					</p>
 				</div>
@@ -90,9 +90,9 @@ export default function RecruiterEditProfilePage() {
 				</Link>
 			</header>
 
-			<section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm sm:p-6">
+			<section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
 				{isLoading ? (
-					<p className="text-sm font-medium text-(--gray-500)">Đang tải dữ liệu...</p>
+					<p className="text-sm font-medium text-muted-foreground">Đang tải dữ liệu...</p>
 				) : (
 					<form className="space-y-5" onSubmit={handleSubmit}>
 						<div className="space-y-2">
@@ -105,7 +105,7 @@ export default function RecruiterEditProfilePage() {
 								value={form.fullName}
 								onChange={(event) => handleChange("fullName", event.target.value)}
 								placeholder="VD: Lưu Đình Hạnh"
-								className="h-12 rounded-2xl border-(--gray-200) bg-(--gray-100)/60"
+								className="h-12 rounded-2xl border-border bg-muted/60"
 							/>
 						</div>
 
@@ -120,14 +120,14 @@ export default function RecruiterEditProfilePage() {
 								value={form.contactEmail}
 								onChange={(event) => handleChange("contactEmail", event.target.value)}
 								placeholder="contact@example.com"
-								className="h-12 rounded-2xl border-(--gray-200) bg-(--gray-100)/60"
+								className="h-12 rounded-2xl border-border bg-muted/60"
 							/>
 						</div>
 
                         <div className="space-y-2">
 							<Label htmlFor="personalEmail" className="font-bold">
 								Email cá nhân
-                                <p className="text-xs text-(--gray-500)">
+                                <p className="text-xs text-muted-foreground">
                                     Email này sẽ không hiển thị công khai, chỉ dùng để nhận thông báo quan trọng.
                                 </p>
 							</Label>
@@ -136,7 +136,7 @@ export default function RecruiterEditProfilePage() {
 								name="personalEmail"
 								type="email"
 								value={user?.email || ""}
-								className="h-12 rounded-2xl border-(--gray-200) bg-(--gray-100)/60"
+								className="h-12 rounded-2xl border-border bg-muted/60"
                                 disabled
 							/>
 						</div>
@@ -151,14 +151,14 @@ export default function RecruiterEditProfilePage() {
 								value={form.contactPhone}
 								onChange={(event) => handleChange("contactPhone", event.target.value)}
 								placeholder="VD: 0901234567"
-								className="h-12 rounded-2xl border-(--gray-200) bg-(--gray-100)/60"
+								className="h-12 rounded-2xl border-border bg-muted/60"
 							/>
 						</div>
 
 						<div className="flex justify-end">
 							<Button
 								type="submit"
-								className="h-11 gap-2 rounded-xl bg-(--primary-blue) px-5 font-bold text-white hover:bg-(--blue-dark)"
+								className="h-11 gap-2 rounded-xl bg-primary px-5 font-bold text-primary-foreground hover:bg-primary/90"
 								disabled={isSubmitting}
 							>
 								<Save className="h-4 w-4" />

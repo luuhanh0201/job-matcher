@@ -32,7 +32,9 @@ export class Migration1782928897785 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX "public"."UQ_ai_provider_single_active"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."UQ_ai_provider_single_active"`,
+    );
     await queryRunner.query(`DROP TABLE "ai_providers"`);
     await queryRunner.query(`DROP TYPE "public"."ai_providers_vendor_enum"`);
   }

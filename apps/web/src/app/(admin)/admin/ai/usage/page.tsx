@@ -102,17 +102,17 @@ function StatCard({
   loading: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-(--gray-200) p-4">
-      <p className="text-xs font-medium text-(--gray-500)">{label}</p>
+    <div className="rounded-lg border border-border p-4">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
       {loading || !stats ? (
-        <div className="mt-2 h-6 w-24 animate-pulse rounded bg-(--gray-100)" />
+        <div className="mt-2 h-6 w-24 animate-pulse rounded bg-muted" />
       ) : (
         <>
-          <p className="mt-1 text-xl font-bold text-(--gray-900)">
+          <p className="mt-1 text-xl font-bold text-foreground">
             {formatNumber(stats.totalTokens)}{" "}
-            <span className="text-xs font-normal text-(--gray-500)">token</span>
+            <span className="text-xs font-normal text-muted-foreground">token</span>
           </p>
-          <p className="mt-1 text-xs text-(--gray-500)">
+          <p className="mt-1 text-xs text-muted-foreground">
             {stats.callCount} lượt gọi
             {stats.errorCount > 0 ? `, ${stats.errorCount} lỗi` : ""}
           </p>
@@ -203,29 +203,29 @@ export default function AdminAiUsagePage() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h1 className="flex items-center gap-2 text-2xl font-bold text-(--gray-900)">
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
           <BsRobot className="h-6 w-6 text-indigo-600" />
           Thống kê sử dụng AI
         </h1>
-        <p className="text-sm text-(--gray-600)">
+        <p className="text-sm text-muted-foreground">
           Theo dõi lượng token hệ thống đã dùng theo thời gian và theo từng AI Provider.
         </p>
       </div>
 
       <AiSectionTabs />
 
-      <Card className="border border-(--gray-200) bg-white p-6 shadow-sm">
+      <Card className="border border-border bg-card p-6 shadow-sm">
         <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <h3 className="text-lg font-bold text-(--gray-900)">Lượng token theo thời gian</h3>
-          <div className="flex gap-1 rounded-lg border border-(--gray-200) p-1">
+          <h3 className="text-lg font-bold text-foreground">Lượng token theo thời gian</h3>
+          <div className="flex gap-1 rounded-lg border border-border p-1">
             {GROUP_BY_OPTIONS.map((option) => (
               <button
                 key={option.value}
                 onClick={() => setGroupBy(option.value)}
                 className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
                   groupBy === option.value
-                    ? "bg-(--primary-blue) text-white"
-                    : "text-(--gray-600) hover:bg-(--gray-100)"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
                 }`}
               >
                 {option.label}
@@ -243,10 +243,10 @@ export default function AdminAiUsagePage() {
         <div className="mb-6 h-72 w-full">
           {isSeriesLoading ? (
             <div className="flex h-full items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-(--gray-200) border-t-(--primary-blue)" />
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
             </div>
           ) : chartData.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-sm text-(--gray-500)">
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               Chưa có dữ liệu sử dụng trong khoảng thời gian này.
             </div>
           ) : (
@@ -272,13 +272,13 @@ export default function AdminAiUsagePage() {
             </ResponsiveContainer>
           )}
         </div>
-        <p className="mb-6 -mt-4 text-xs text-(--gray-500)">
+        <p className="mb-6 -mt-4 text-xs text-muted-foreground">
           Mỗi màu/đường tương ứng với 1 AI Provider — xem chi tiết lượng token của từng model bên dưới.
         </p>
 
         {summary && summary.byProvider.length > 0 && (
           <div className="mb-6">
-            <h4 className="mb-3 text-sm font-semibold text-(--gray-900)">
+            <h4 className="mb-3 text-sm font-semibold text-foreground">
               Phân bổ theo AI Model (tháng này)
             </h4>
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
@@ -315,14 +315,14 @@ export default function AdminAiUsagePage() {
                       style={{ backgroundColor: getColorForProvider(item.providerName, item.vendor) }}
                     />
                     <span
-                      className="flex-1 truncate text-xs text-(--gray-600)"
+                      className="flex-1 truncate text-xs text-muted-foreground"
                       title={`${item.providerName} (${item.model})`}
                     >
                       {item.providerName}
                     </span>
-                    <span className="shrink-0 text-xs font-medium text-(--gray-900)">
+                    <span className="shrink-0 text-xs font-medium text-foreground">
                       {formatNumber(item.totalTokens)}
-                      <span className="ml-1 text-(--gray-400)">
+                      <span className="ml-1 text-muted-foreground">
                         ({((item.totalTokens / totalProviderTokens) * 100).toFixed(0)}%)
                       </span>
                     </span>
@@ -335,22 +335,22 @@ export default function AdminAiUsagePage() {
 
         {summary && summary.byFeature.length > 0 && (
           <div>
-            <h4 className="mb-3 text-sm font-semibold text-(--gray-900)">
+            <h4 className="mb-3 text-sm font-semibold text-foreground">
               Phân bổ theo tính năng (tháng này)
             </h4>
             <div className="space-y-2">
               {summary.byFeature.map((item) => (
                 <div key={item.feature} className="flex items-center gap-3">
-                  <span className="w-32 shrink-0 text-xs text-(--gray-600)">
+                  <span className="w-32 shrink-0 text-xs text-muted-foreground">
                     {FEATURE_LABEL[item.feature]}
                   </span>
-                  <div className="h-2 flex-1 rounded-full bg-(--gray-100)">
+                  <div className="h-2 flex-1 rounded-full bg-muted">
                     <div
-                      className="h-2 rounded-full bg-(--primary-blue)"
+                      className="h-2 rounded-full bg-primary"
                       style={{ width: `${(item.totalTokens / maxFeatureTokens) * 100}%` }}
                     />
                   </div>
-                  <span className="w-20 shrink-0 text-right text-xs font-medium text-(--gray-900)">
+                  <span className="w-20 shrink-0 text-right text-xs font-medium text-foreground">
                     {formatNumber(item.totalTokens)}
                   </span>
                 </div>

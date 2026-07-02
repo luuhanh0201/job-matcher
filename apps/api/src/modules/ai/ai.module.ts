@@ -19,8 +19,18 @@ import { AiAdaptersModule } from './adapters/ai-adapters.module';
     AiUsageModule,
     AiAdaptersModule,
   ],
-  providers: [AiService, AiExtractorService, AiAnalyzerService, AiJobMatcherService],
-  exports: [AiService, AiExtractorService, AiAnalyzerService, AiJobMatcherService],
+  providers: [
+    AiService,
+    AiExtractorService,
+    AiAnalyzerService,
+    AiJobMatcherService,
+  ],
+  exports: [
+    AiService,
+    AiExtractorService,
+    AiAnalyzerService,
+    AiJobMatcherService,
+  ],
   controllers: [AiController],
 })
 export class AiModule {}

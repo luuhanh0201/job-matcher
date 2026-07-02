@@ -12,7 +12,7 @@ export function AiSectionTabs() {
   const pathname = usePathname();
 
   return (
-    <div className="flex gap-1 border-b border-(--gray-200)">
+    <div className="flex gap-1 border-b border-border">
       {TABS.map((tab) => {
         const isActive = pathname === tab.href;
         return (
@@ -21,8 +21,8 @@ export function AiSectionTabs() {
             href={tab.href}
             className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
               isActive
-                ? "border-(--primary-blue) text-(--primary-blue)"
-                : "border-transparent text-(--gray-600) hover:text-(--gray-900)"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             {tab.label}

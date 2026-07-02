@@ -23,7 +23,9 @@ export class MatchResultsService {
 
   async runMatchingForParsedCv(parsedCvId: string): Promise<void> {
     try {
-      const parsedCv = await this.parsedCvRepository.findOneBy({ id: parsedCvId });
+      const parsedCv = await this.parsedCvRepository.findOneBy({
+        id: parsedCvId,
+      });
       if (!parsedCv) {
         this.logger.warn(`ParsedCv ${parsedCvId} not found, skipping matching`);
         return;
@@ -78,10 +80,15 @@ export class MatchResultsService {
 
   private async scoreOneJob(job: JobPostEntity, parsedCv: ParsedCv) {
     try {
-      const scores = await this.aiJobMatcherService.matchJobWithCv(job, parsedCv);
+      const scores = await this.aiJobMatcherService.matchJobWithCv(
+        job,
+        parsedCv,
+      );
       return { job, scores };
     } catch (error) {
-      this.logger.warn(`AI matching failed for job ${job.id}: ${String(error)}`);
+      this.logger.warn(
+        `AI matching failed for job ${job.id}: ${String(error)}`,
+      );
       return {
         job,
         scores: {

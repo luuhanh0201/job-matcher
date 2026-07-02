@@ -1,12 +1,12 @@
 "use client";
 
 import { Bell, ChevronDown, Menu, MessageCircle, Search } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth, getInitials } from "@/context/auth-context";
-import Logo from "@/public/images/Logo.svg";
+import { Logo } from "@/components/logo";
 import { Button } from "../ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type CandidateHeaderProps = {
   onMenuClick: () => void;
@@ -32,11 +32,11 @@ export function CandidateHeader({ onMenuClick }: CandidateHeaderProps) {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center gap-2 border-b border-(--gray-200) bg-white px-3 shadow-sm sm:px-4">
+    <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center gap-2 border-b border-border bg-card px-3 shadow-sm sm:px-4">
       <button
         type="button"
         onClick={onMenuClick}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-(--gray-500) transition-colors hover:bg-(--gray-100) lg:hidden"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted lg:hidden"
         aria-label="Mở menu"
       >
         <Menu className="h-5 w-5" />
@@ -44,32 +44,29 @@ export function CandidateHeader({ onMenuClick }: CandidateHeaderProps) {
 
       {/* Logo */}
       <Link href="/" className="flex shrink-0 items-center gap-2">
-        <Image
-          src={Logo}
-          alt="Logo"
-          className="h-20 w-24 sm:h-24 sm:w-28"
-          priority
-        />
+        <Logo className="h-11 w-auto sm:h-12" priority />
       </Link>
 
       {/* Search */}
       <div className="relative mx-1 hidden min-w-0 max-w-md flex-1 md:flex lg:max-w-lg">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--gray-500)" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="search"
           placeholder="Tìm công việc, công ty..."
-          className="h-9 w-full rounded-full border-0 bg-(--gray-100) pl-9 pr-4 text-sm outline-none placeholder:text-(--gray-500) focus:ring-2 focus:ring-(--primary-blue)/30"
+          className="h-9 w-full rounded-full border-0 bg-muted pl-9 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30"
         />
       </div>
 
       <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+        <ThemeToggle />
+
         <button
           type="button"
           aria-label="Thông báo"
-          className="relative flex h-10 w-10 items-center justify-center rounded-full bg-(--gray-100) text-(--gray-600) transition-colors hover:bg-(--gray-200)"
+          className="relative flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-border"
         >
           <Bell className="h-5 w-5" />
-          <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
+          <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">
             1
           </span>
         </button>
@@ -77,7 +74,7 @@ export function CandidateHeader({ onMenuClick }: CandidateHeaderProps) {
         <button
           type="button"
           aria-label="Tin nhắn"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-(--gray-100) text-(--gray-600) transition-colors hover:bg-(--gray-200)"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-border"
         >
           <MessageCircle className="h-5 w-5" />
         </button>
@@ -86,17 +83,26 @@ export function CandidateHeader({ onMenuClick }: CandidateHeaderProps) {
           <button
             type="button"
             title={user.fullName}
-            className="flex h-10 items-center gap-1 rounded-full bg-(--gray-100) pl-1 pr-2 text-(--gray-700) transition-colors hover:bg-(--gray-200)"
+            className="flex h-10 items-center gap-1 rounded-full bg-muted pl-1 pr-2 text-foreground transition-colors hover:bg-border"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-(--primary-blue) text-xs font-black text-white">
-              {initials}
-            </span>
+            {user.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={user.avatar}
+                alt={user.fullName}
+                className="h-8 w-8 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground">
+                {initials}
+              </span>
+            )}
             <ChevronDown className="h-3.5 w-3.5" />
           </button>
         ) : (
           <Link
             href="/login?redirect=%2F"
-            className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-(--primary-blue) px-3 text-sm font-bold text-white hover:bg-(--blue-dark)"
+            className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-primary px-3 text-sm font-bold text-primary-foreground hover:bg-primary/90"
           >
             Đăng nhập
           </Link>
@@ -104,21 +110,21 @@ export function CandidateHeader({ onMenuClick }: CandidateHeaderProps) {
 
         {user ? (
           <Button
-            className="hidden items-center gap-2 bg-(--gray-100) px-3 py-5.5 transition-colors hover:bg-(--gray-200) lg:flex"
+            className="hidden items-center gap-2 bg-muted px-3 py-5.5 text-foreground transition-colors hover:bg-border lg:flex"
             onClick={handleApplyRecruiter}
           >
             <div className="text-left leading-tight">
               {user.role === "RECRUITER" ? (
                 <>
-                  <p className="text-[11px] text-(--gray-500)">Không gian tuyển dụng</p>
-                  <p className="text-[12px] font-extrabold text-(--gray-900)">
+                  <p className="text-[11px] text-muted-foreground">Không gian tuyển dụng</p>
+                  <p className="text-[12px] font-extrabold text-foreground">
                     Vào dashboard <span aria-hidden>»</span>
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="text-[11px] text-(--gray-500)">Bạn là nhà tuyển dụng?</p>
-                  <p className="text-[12px] font-extrabold text-(--gray-900)">
+                  <p className="text-[11px] text-muted-foreground">Bạn là nhà tuyển dụng?</p>
+                  <p className="text-[12px] font-extrabold text-foreground">
                     Đăng ký ngay <span aria-hidden>»</span>
                   </p>
                 </>

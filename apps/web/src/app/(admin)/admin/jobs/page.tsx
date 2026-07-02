@@ -18,10 +18,10 @@ export default function JobsPage() {
             {/* Header */}
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold text-(--gray-900)">Quản lý công việc</h1>
-                    <p className="text-sm text-(--gray-600)">Quản lý danh sách công việc trên hệ thống</p>
+                    <h1 className="text-2xl font-bold text-foreground">Quản lý công việc</h1>
+                    <p className="text-sm text-muted-foreground">Quản lý danh sách công việc trên hệ thống</p>
                 </div>
-                <Button className="w-full gap-2 sm:w-auto bg-(--primary-blue) text-white hover:bg-(--blue-dark)">
+                <Button className="w-full gap-2 sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
                     <Plus className="h-4 w-4" />
                     Thêm công việc
                 </Button>
@@ -30,42 +30,42 @@ export default function JobsPage() {
             {/* Search and Filters */}
             <div className="flex gap-2">
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--gray-500)" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <input
                         type="text"
                         placeholder="Tìm kiếm công việc..."
-                        className="h-9 w-full rounded-lg border border-(--gray-200) bg-white pl-9 pr-3 text-sm outline-none placeholder:text-(--gray-500) focus:border-(--primary-blue) focus:ring-2 focus:ring-(--primary-blue)/20"
+                        className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                     />
                 </div>
             </div>
 
             {/* Jobs Table */}
-            <Card className="border border-(--gray-200) bg-white shadow-sm">
+            <Card className="border border-border bg-card shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-(--gray-200) bg-(--gray-50)">
-                                <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">Tiêu đề</th>
-                                <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">Công ty</th>
-                                <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">Đã đăng</th>
-                                <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">Đơn ứng tuyển</th>
-                                <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">Trạng thái</th>
-                                <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">Hành động</th>
+                            <tr className="border-b border-border bg-muted">
+                                <th className="px-4 py-3 text-left font-semibold text-foreground">Tiêu đề</th>
+                                <th className="px-4 py-3 text-left font-semibold text-foreground">Công ty</th>
+                                <th className="px-4 py-3 text-left font-semibold text-foreground">Đã đăng</th>
+                                <th className="px-4 py-3 text-left font-semibold text-foreground">Đơn ứng tuyển</th>
+                                <th className="px-4 py-3 text-left font-semibold text-foreground">Trạng thái</th>
+                                <th className="px-4 py-3 text-left font-semibold text-foreground">Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
                             {jobs.map((job) => (
-                                <tr key={job.id} className="border-b border-(--gray-200) hover:bg-(--gray-50) transition-colors">
-                                    <td className="px-4 py-3 font-medium text-(--gray-900)">{job.title}</td>
-                                    <td className="px-4 py-3 text-(--gray-600)">{job.company}</td>
-                                    <td className="px-4 py-3 text-xs text-(--gray-500)">{job.posted}</td>
+                                <tr key={job.id} className="border-b border-border hover:bg-muted transition-colors">
+                                    <td className="px-4 py-3 font-medium text-foreground">{job.title}</td>
+                                    <td className="px-4 py-3 text-muted-foreground">{job.company}</td>
+                                    <td className="px-4 py-3 text-xs text-muted-foreground">{job.posted}</td>
                                     <td className="px-4 py-3">
-                                        <span className="font-semibold text-(--primary-blue)">{job.applications}</span>
+                                        <span className="font-semibold text-primary">{job.applications}</span>
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${job.status === "Active"
-                                                ? "bg-green-100 text-green-800"
-                                                : "bg-red-100 text-red-800"
+                                                ? "bg-success/15 text-success"
+                                                : "bg-destructive/15 text-destructive"
                                             }`}>
                                             {job.status}
                                         </span>
@@ -75,7 +75,7 @@ export default function JobsPage() {
                                             <Button variant="ghost" size="icon" className="h-7 w-7">
                                                 <Edit className="h-4 w-4" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-600 hover:bg-red-50">
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10">
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>

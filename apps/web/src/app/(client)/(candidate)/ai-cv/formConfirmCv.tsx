@@ -175,9 +175,9 @@ console.log(form)
     }
 
     return (
-        <Card className="border border-(--gray-200) bg-white/95">
+        <Card className="border border-border bg-card/95">
             <CardHeader>
-                <CardTitle className="text-(--gray-900)">Xác nhận lại thông tin</CardTitle>
+                <CardTitle className="text-foreground">Xác nhận lại thông tin</CardTitle>
                 <CardDescription>
                     Vui lòng kiểm tra và chỉnh sửa lại thông tin nếu có sai sót.
                 </CardDescription>
@@ -248,10 +248,10 @@ console.log(form)
                         </Button>
                     </div>
                     {educationItems.length === 0 ? (
-                        <p className="text-sm text-(--gray-500)">Chưa có dữ liệu học vấn.</p>
+                        <p className="text-sm text-muted-foreground">Chưa có dữ liệu học vấn.</p>
                     ) : (
                         educationItems.map((item, index) => (
-                            <div key={`education-${index}`} className="grid gap-2 rounded-xl border border-(--gray-200) p-3">
+                            <div key={`education-${index}`} className="grid gap-2 rounded-xl border border-border p-3">
                                 <div className="grid gap-2 sm:grid-cols-2">
                                     <Input
                                         placeholder="School"
@@ -294,10 +294,10 @@ console.log(form)
                         </Button>
                     </div>
                     {workExperienceItems.length === 0 ? (
-                        <p className="text-sm text-(--gray-500)">Chưa có dữ liệu.</p>
+                        <p className="text-sm text-muted-foreground">Chưa có dữ liệu.</p>
                     ) : (
                         workExperienceItems.map((item, index) => (
-                            <div key={`work-${index}`} className="grid gap-2 rounded-xl border border-(--gray-200) p-3">
+                            <div key={`work-${index}`} className="grid gap-2 rounded-xl border border-border p-3">
                                 <div className="grid gap-2 sm:grid-cols-2">
                                     <Input
                                         placeholder="Company"
@@ -355,7 +355,7 @@ console.log(form)
                     <Button
                         onClick={handleSave}
                         disabled={!canSave || saveLoading}
-                        className="w-full cursor-pointer rounded-full bg-(--primary-blue) px-5 text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-(--blue-dark) active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                        className="w-full cursor-pointer rounded-full bg-primary px-5 text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
                     >
                         {saveLoading ? (
                             <>

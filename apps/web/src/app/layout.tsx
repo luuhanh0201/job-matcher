@@ -6,6 +6,7 @@ import { AuthSessionInterceptor } from "@/components/layouts/auth-session-interc
 import { Toaster } from "@/components/ui/sonner";
 import Script from "next/script";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { ThemeProvider } from "@/components/theme-provider";
 
 // Dùng local font để tránh hang khi Docker không có kết nối internet
 const googleSans = localFont({
@@ -44,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("font-sans", googleSans.className)}>
+    <html lang="en" className={cn("font-sans", googleSans.className)} suppressHydrationWarning>
       <head>
         <meta name="google-adsense-account" content="ca-pub-6435352664997924" />
         <script
@@ -54,29 +55,31 @@ export default function RootLayout({
         />
       </head>
       <body className={`${googleSans.className}`}>
-      <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-        <AuthSessionInterceptor />
-        {children}
-        <Toaster position="top-right" />
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
+          <AuthSessionInterceptor />
+          {children}
+          <Toaster position="top-right" />
 
-        <Script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-DBDRP10LWJ"
-        />
+          <Script
+            async
+            src="https://www.googletagmanager.com/gtag/js?id=G-DBDRP10LWJ"
+          />
 
-        <Script id="google-analytics">
-          {`
-            window.dataLayer = window.dataLayer || [];
+          <Script id="google-analytics">
+            {`
+              window.dataLayer = window.dataLayer || [];
 
-            function gtag(){dataLayer.push(arguments);}
+              function gtag(){dataLayer.push(arguments);}
 
-            gtag('js', new Date());
+              gtag('js', new Date());
 
-            gtag('config', 'G-DBDRP10LWJ');
-          `}
+              gtag('config', 'G-DBDRP10LWJ');
+            `}
 
-        </Script>
-      </GoogleOAuthProvider>
+          </Script>
+        </GoogleOAuthProvider>
+      </ThemeProvider>
     </body>
   </html>
   );

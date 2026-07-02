@@ -41,10 +41,10 @@ export default function ReportsPage() {
             {/* Header */}
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold text-(--gray-900)">Báo cáo</h1>
-                    <p className="text-sm text-(--gray-600)">Tạo và tải xuống báo cáo từ hệ thống</p>
+                    <h1 className="text-2xl font-bold text-foreground">Báo cáo</h1>
+                    <p className="text-sm text-muted-foreground">Tạo và tải xuống báo cáo từ hệ thống</p>
                 </div>
-                <Button className="w-full gap-2 sm:w-auto bg-(--primary-blue) text-white hover:bg-(--blue-dark)">
+                <Button className="w-full gap-2 sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
                     <FileText className="h-4 w-4" />
                     Tạo báo cáo mới
                 </Button>
@@ -55,16 +55,16 @@ export default function ReportsPage() {
                 {reports.map((report) => (
                     <Card
                         key={report.id}
-                        className="border border-(--gray-200) bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+                        className="border border-border bg-card p-4 shadow-sm hover:shadow-md transition-shadow"
                     >
                         <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                             <div className="flex flex-1 items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-(--blue-light)">
-                                    <FileText className="h-5 w-5 text-(--primary-blue)" />
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                                    <FileText className="h-5 w-5 text-primary" />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="font-semibold text-(--gray-900)">{report.title}</h3>
-                                    <div className="mt-1 flex items-center gap-2 text-xs text-(--gray-500)">
+                                    <h3 className="font-semibold text-foreground">{report.title}</h3>
+                                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                                         <Calendar className="h-3.5 w-3.5" />
                                         <span>{report.date}</span>
                                         <span>•</span>
@@ -77,7 +77,7 @@ export default function ReportsPage() {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="gap-2 text-(--primary-blue) hover:bg-(--blue-light)"
+                                className="gap-2 text-primary hover:bg-primary/10"
                             >
                                 <Download className="h-4 w-4" />
                                 Tải xuống
@@ -89,7 +89,7 @@ export default function ReportsPage() {
 
             {/* Report Templates */}
             <div className="space-y-4">
-                <h2 className="text-lg font-bold text-(--gray-900)">Mẫu báo cáo</h2>
+                <h2 className="text-lg font-bold text-foreground">Mẫu báo cáo</h2>
                 <div className="grid gap-4 md:grid-cols-2">
                     {[
                         { name: "Báo cáo người dùng", description: "Thống kê chi tiết về người dùng" },
@@ -99,10 +99,10 @@ export default function ReportsPage() {
                     ].map((template) => (
                         <Card
                             key={template.name}
-                            className="border border-(--gray-200) bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+                            className="border border-border bg-card p-4 shadow-sm hover:shadow-md transition-shadow"
                         >
-                            <h3 className="font-semibold text-(--gray-900)">{template.name}</h3>
-                            <p className="mt-1 text-sm text-(--gray-600)">{template.description}</p>
+                            <h3 className="font-semibold text-foreground">{template.name}</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">{template.description}</p>
                             <Button size="sm" variant="outline" className="mt-3 w-full">
                                 Tạo báo cáo
                             </Button>

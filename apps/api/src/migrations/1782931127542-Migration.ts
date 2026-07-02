@@ -46,7 +46,9 @@ export class Migration1782931127542 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX "public"."IDX_ai_usage_logs_created_at"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_ai_usage_logs_created_at"`,
+    );
     await queryRunner.query(
       `ALTER TABLE "ai_usage_logs" DROP CONSTRAINT "FK_ai_usage_logs_provider_id"`,
     );

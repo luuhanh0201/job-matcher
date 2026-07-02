@@ -26,9 +26,7 @@ export class RolesGuard implements CanActivate {
     const user = request.user as { role?: UserRole } | undefined;
 
     if (!user?.role || !requiredRoles.includes(user.role)) {
-      throw new ForbiddenException(
-        'Bạn không có quyền thực hiện thao tác này',
-      );
+      throw new ForbiddenException('Bạn không có quyền thực hiện thao tác này');
     }
 
     return true;

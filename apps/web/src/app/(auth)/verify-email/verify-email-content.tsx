@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, XCircle, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FadeIn } from "@/components/motion/fade-in";
 import { verifyEmail, resendVerificationEmail } from "@/services/auth.service";
 import { toast } from "sonner";
 
@@ -70,30 +71,30 @@ export default function VerifyEmailContent() {
   };
 
   return (
-    <div className="flex flex-col items-center text-center space-y-6">
+    <FadeIn key={state} className="flex flex-col items-center text-center space-y-6">
       {/* Icon */}
       <div className="relative">
         {state === "loading" && (
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-(--primary-blue)/10">
-            <Loader2 className="h-10 w-10 animate-spin text-(--primary-blue)" />
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         )}
 
         {state === "success" && (
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle2 className="h-10 w-10 text-green-600" />
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
+            <CheckCircle2 className="h-10 w-10 text-success" />
           </div>
         )}
 
         {state === "already-verified" && (
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-100">
-            <CheckCircle2 className="h-10 w-10 text-blue-600" />
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+            <CheckCircle2 className="h-10 w-10 text-primary" />
           </div>
         )}
 
         {state === "error" && (
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
-            <XCircle className="h-10 w-10 text-red-600" />
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10">
+            <XCircle className="h-10 w-10 text-destructive" />
           </div>
         )}
       </div>
@@ -107,7 +108,7 @@ export default function VerifyEmailContent() {
           {state === "error" && "Xác minh thất bại"}
         </h1>
 
-        <p className="text-base text-(--gray-600)">
+        <p className="text-base text-muted-foreground">
           {state === "loading" && "Vui lòng chờ trong giây lát."}
           {state === "success" && "Email của bạn đã được xác minh thành công."}
           {state === "already-verified" && "Tài khoản đã được xác minh từ trước."}
@@ -118,7 +119,7 @@ export default function VerifyEmailContent() {
       {/* Actions */}
       <div className="w-full space-y-3">
         {state === "success" && (
-          <p className="text-sm text-(--gray-500)">
+          <p className="text-sm text-muted-foreground">
             Đang chuyển hướng đến trang đăng nhập...
           </p>
         )}
@@ -126,7 +127,7 @@ export default function VerifyEmailContent() {
         {(state === "already-verified" || state === "success") && (
           <Button
             asChild
-            className="w-full h-12 rounded-2xl bg-linear-to-r from-(--primary-blue) to-(--accent-purple) text-base font-black text-white shadow-xl shadow-blue-200/70 hover:opacity-95"
+            className="w-full h-12 rounded-2xl bg-linear-to-r from-primary to-accent text-base font-black text-primary-foreground shadow-xl shadow-primary/30 hover:opacity-95"
           >
             <Link href="/login">
               Đăng nhập ngay
@@ -139,7 +140,7 @@ export default function VerifyEmailContent() {
             <Button
               onClick={handleResendEmail}
               disabled={isResending}
-              className="w-full h-12 rounded-2xl bg-linear-to-r from-(--primary-blue) to-(--accent-purple) text-base font-black text-white shadow-xl shadow-blue-200/70 hover:opacity-95"
+              className="w-full h-12 rounded-2xl bg-linear-to-r from-primary to-accent text-base font-black text-primary-foreground shadow-xl shadow-primary/30 hover:opacity-95"
             >
               {isResending ? (
                 <>
@@ -157,7 +158,7 @@ export default function VerifyEmailContent() {
             <Button
               asChild
               variant="outline"
-              className="w-full h-12 rounded-2xl border-(--gray-200) text-base font-bold"
+              className="w-full h-12 rounded-2xl border-border text-base font-bold"
             >
               <Link href="/register">
                 Quay lại đăng ký
@@ -168,12 +169,12 @@ export default function VerifyEmailContent() {
       </div>
 
       {/* Footer */}
-      <p className="text-sm text-(--gray-500)">
+      <p className="text-sm text-muted-foreground">
         Cần hỗ trợ?{" "}
-        <Link href="/contact" className="font-bold text-(--primary-blue) hover:text-(--blue-dark)">
+        <Link href="/contact" className="font-bold text-primary hover:text-primary/80">
           Liên hệ chúng tôi
         </Link>
       </p>
-    </div>
+    </FadeIn>
   );
 }

@@ -66,10 +66,10 @@ function isInterviewExpired(interview: InterviewProfile) {
 }
 
 function getStatusClass(status: InterviewStatus) {
-  if (status === "ACCEPTED") return "bg-emerald-100 text-emerald-700";
-  if (status === "DECLINED") return "bg-rose-100 text-rose-700";
-  if (status === "CANCELLED") return "bg-gray-200 text-gray-700";
-  return "bg-amber-100 text-amber-700";
+  if (status === "ACCEPTED") return "bg-success/15 text-success";
+  if (status === "DECLINED") return "bg-destructive/15 text-destructive";
+  if (status === "CANCELLED") return "bg-muted text-muted-foreground";
+  return "bg-warning/15 text-warning";
 }
 
 export default function RecruiterInterviewsPage() {
@@ -199,7 +199,7 @@ export default function RecruiterInterviewsPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-60 items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-(--gray-500)" />
+        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -207,10 +207,10 @@ export default function RecruiterInterviewsPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-2xl font-black text-(--gray-900)">
+        <h1 className="text-2xl font-black text-foreground">
           Lịch phỏng vấn
         </h1>
-        <p className="mt-1 text-sm text-(--gray-500)">
+        <p className="mt-1 text-sm text-muted-foreground">
           Theo dõi lịch hẹn, cập nhật thông tin và hủy lịch khi cần.
         </p>
       </header>
@@ -221,24 +221,24 @@ export default function RecruiterInterviewsPage() {
         <StatCard
           label="Đã xác nhận"
           value={stats.accepted}
-          className="text-emerald-600"
+          className="text-success"
         />
         <StatCard
           label="Quá hạn"
           value={stats.expired}
-          className="text-rose-600"
+          className="text-destructive"
         />
         <StatCard
           label="Đã hủy"
           value={stats.cancelled}
-          className="text-(--gray-500)"
+          className="text-muted-foreground"
         />
       </section>
 
       {interviews.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-(--gray-200) bg-white p-8 text-center shadow-sm">
-          <CalendarRange className="mx-auto h-9 w-9 text-(--primary-blue)" />
-          <p className="mt-3 text-sm font-bold text-(--gray-700)">
+        <section className="rounded-2xl border border-dashed border-border bg-card p-8 text-center shadow-sm">
+          <CalendarRange className="mx-auto h-9 w-9 text-primary" />
+          <p className="mt-3 text-sm font-bold text-foreground">
             Chưa có lịch phỏng vấn
           </p>
         </section>
@@ -252,11 +252,11 @@ export default function RecruiterInterviewsPage() {
             return (
               <article
                 key={interview.id}
-                className="rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm"
+                className="rounded-2xl border border-border bg-card p-4 shadow-sm"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex min-w-0 gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-(--blue-light) text-(--primary-blue)">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-primary">
                       {interview.candidate.avatar ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -270,7 +270,7 @@ export default function RecruiterInterviewsPage() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate text-sm font-black text-(--gray-900)">
+                        <p className="truncate text-sm font-black text-foreground">
                           {interview.candidate.fullName}
                         </p>
                         <span
@@ -279,16 +279,16 @@ export default function RecruiterInterviewsPage() {
                           {INTERVIEW_STATUS_LABEL[interview.status]}
                         </span>
                         {isExpired && interview.status === "PENDING" ? (
-                          <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-700">
+                          <span className="rounded-full bg-destructive/15 px-2.5 py-1 text-xs font-bold text-destructive">
                             Quá hạn xác nhận
                           </span>
                         ) : null}
                       </div>
-                      <p className="mt-1 text-xs font-medium text-(--gray-500)">
+                      <p className="mt-1 text-xs font-medium text-muted-foreground">
                         {interview.job.title} ·{" "}
                         {interview.job.company?.name || "Chưa cập nhật công ty"}
                       </p>
-                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-(--gray-600)">
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
                           <Mail className="h-3.5 w-3.5" />
                           {interview.candidate.email}
@@ -320,7 +320,7 @@ export default function RecruiterInterviewsPage() {
                         cancellingInterviewId === interview.id
                       }
                       onClick={() => void handleCancelInterview(interview)}
-                      className="h-9 gap-2 rounded-xl px-3 text-xs font-bold text-rose-600"
+                      className="h-9 gap-2 rounded-xl px-3 text-xs font-bold text-destructive"
                     >
                       {cancellingInterviewId === interview.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -332,7 +332,7 @@ export default function RecruiterInterviewsPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-2 text-sm text-(--gray-600) md:grid-cols-2 xl:grid-cols-4">
+                <div className="mt-4 grid gap-2 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-4">
                   <InfoBlock
                     icon={CalendarRange}
                     label="Thời gian"
@@ -357,8 +357,8 @@ export default function RecruiterInterviewsPage() {
                 </div>
 
                 {interview.note ? (
-                  <div className="mt-3 flex gap-2 rounded-xl bg-(--gray-100)/60 p-3 text-sm text-(--gray-700)">
-                    <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-(--gray-400)" />
+                  <div className="mt-3 flex gap-2 rounded-xl bg-muted/60 p-3 text-sm text-foreground">
+                    <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                     <p className="whitespace-pre-line">{interview.note}</p>
                   </div>
                 ) : null}
@@ -390,15 +390,15 @@ export default function RecruiterInterviewsPage() {
 function StatCard({
   label,
   value,
-  className = "text-(--gray-900)",
+  className = "text-foreground",
 }: {
   label: string;
   value: number;
   className?: string;
 }) {
   return (
-    <article className="rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-(--gray-500)">
+    <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <p className={`mt-2 text-2xl font-black ${className}`}>{value}</p>
@@ -419,17 +419,17 @@ function InfoBlock({
 }) {
   const content = (
     <>
-      <Icon className="h-4 w-4 shrink-0 text-(--gray-400)" />
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       <span className="min-w-0">
-        <span className="block text-xs font-bold uppercase text-(--gray-400)">
+        <span className="block text-xs font-bold uppercase text-muted-foreground">
           {label}
         </span>
-        <span className="block truncate text-sm font-bold text-(--gray-700)">
+        <span className="block truncate text-sm font-bold text-foreground">
           {value}
         </span>
       </span>
       {href ? (
-        <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-(--primary-blue)" />
+        <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-primary" />
       ) : null}
     </>
   );
@@ -440,7 +440,7 @@ function InfoBlock({
         href={href}
         target="_blank"
         rel="noreferrer"
-        className="flex min-w-0 items-center gap-2 rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 py-2 hover:bg-(--blue-light)/60"
+        className="flex min-w-0 items-center gap-2 rounded-xl border border-border bg-muted/50 px-3 py-2 hover:bg-primary/10"
       >
         {content}
       </a>
@@ -448,7 +448,7 @@ function InfoBlock({
   }
 
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 py-2">
+    <div className="flex min-w-0 items-center gap-2 rounded-xl border border-border bg-muted/50 px-3 py-2">
       {content}
     </div>
   );
@@ -471,20 +471,20 @@ function InterviewEditModal({
 }) {
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/50 px-4 py-6">
-      <section className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-xl">
+      <section className="w-full max-w-xl rounded-2xl bg-card p-5 shadow-xl">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-black text-(--gray-900)">
+            <h2 className="text-lg font-black text-foreground">
               Sửa lịch phỏng vấn
             </h2>
-            <p className="mt-1 text-sm font-medium text-(--gray-500)">
+            <p className="mt-1 text-sm font-medium text-muted-foreground">
               {interview.candidate.fullName} · {interview.job.title}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-100)"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-muted"
           >
             <X className="h-4 w-4" />
           </button>
@@ -492,18 +492,18 @@ function InterviewEditModal({
 
         <div className="mt-5 grid gap-4">
           <label className="space-y-2">
-            <span className="text-sm font-bold text-(--gray-700)">
+            <span className="text-sm font-bold text-foreground">
               Thời gian phỏng vấn
             </span>
             <input
               type="datetime-local"
               value={form.scheduledAt}
               onChange={(event) => onChange("scheduledAt", event.target.value)}
-              className="h-11 w-full rounded-xl border border-(--gray-200) px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-11 w-full rounded-xl border border-border px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-bold text-(--gray-700)">
+            <span className="text-sm font-bold text-foreground">
               Thời lượng
             </span>
             <input
@@ -514,36 +514,36 @@ function InterviewEditModal({
               onChange={(event) =>
                 onChange("durationMinutes", event.target.value)
               }
-              className="h-11 w-full rounded-xl border border-(--gray-200) px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-11 w-full rounded-xl border border-border px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-bold text-(--gray-700)">
+            <span className="text-sm font-bold text-foreground">
               Link phỏng vấn
             </span>
             <input
               value={form.meetingUrl}
               onChange={(event) => onChange("meetingUrl", event.target.value)}
-              className="h-11 w-full rounded-xl border border-(--gray-200) px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-11 w-full rounded-xl border border-border px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-bold text-(--gray-700)">
+            <span className="text-sm font-bold text-foreground">
               Địa điểm
             </span>
             <input
               value={form.location}
               onChange={(event) => onChange("location", event.target.value)}
-              className="h-11 w-full rounded-xl border border-(--gray-200) px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-11 w-full rounded-xl border border-border px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-bold text-(--gray-700)">Ghi chú</span>
+            <span className="text-sm font-bold text-foreground">Ghi chú</span>
             <textarea
               rows={4}
               value={form.note}
               onChange={(event) => onChange("note", event.target.value)}
-              className="w-full resize-none rounded-xl border border-(--gray-200) px-3 py-2 text-sm font-medium outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="w-full resize-none rounded-xl border border-border px-3 py-2 text-sm font-medium outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </label>
         </div>
@@ -561,7 +561,7 @@ function InterviewEditModal({
             type="button"
             disabled={isSubmitting}
             onClick={onSubmit}
-            className="h-10 gap-2 rounded-xl bg-(--primary-blue) px-4 font-bold text-white hover:bg-(--blue-dark)"
+            className="h-10 gap-2 rounded-xl bg-primary px-4 font-bold text-primary-foreground hover:bg-primary/90"
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

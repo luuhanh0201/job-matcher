@@ -35,9 +35,20 @@ export class AuthFacebookService {
   ) {
     const payload = await this.validateFacebookToken(token);
 
-    const user = await this.userService.findByFacebookId(payload.id);
-    if (user) {
-      return this.authService.login(user, meta);
+    const linkedUser = await this.userService.findByFacebookId(payload.id);
+    if (linkedUser) {
+      return this.authService.login(linkedUser, meta);
+    }
+
+    if (payload.email) {
+      const existingUser = await this.userService.findByEmail(payload.email);
+      if (existingUser) {
+        const linked = await this.userService.linkFacebookAccount(
+          existingUser.id,
+          payload.id,
+        );
+        return this.authService.login(linked, meta);
+      }
     }
 
     const email = payload.email || `fb_${payload.id}@placeholder.local`;

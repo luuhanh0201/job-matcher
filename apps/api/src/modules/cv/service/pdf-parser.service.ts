@@ -35,9 +35,7 @@ export class PdfParserService {
     }
 
     if (!isPdfMagicBytes(file.buffer)) {
-      throw new BadRequestException(
-        'Nội dung tệp không phải là PDF hợp lệ.',
-      );
+      throw new BadRequestException('Nội dung tệp không phải là PDF hợp lệ.');
     }
   }
 

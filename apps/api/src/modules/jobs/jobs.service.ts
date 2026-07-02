@@ -149,7 +149,9 @@ export class JobsService {
       throw new BadRequestException('Tin tuyển dụng không tồn tại');
     }
     if (!job.company?.createdBy?.id || job.company.createdBy.id !== user.id) {
-      throw new ForbiddenException('Bạn không có quyền chỉnh sửa tin tuyển dụng này');
+      throw new ForbiddenException(
+        'Bạn không có quyền chỉnh sửa tin tuyển dụng này',
+      );
     }
     if (
       dto.salaryType === SalaryType.RANGE ||

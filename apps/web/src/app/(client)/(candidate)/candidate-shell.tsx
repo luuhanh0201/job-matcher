@@ -109,7 +109,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className="min-h-screen bg-(--gray-100)"
+      className="min-h-screen bg-background"
       onClickCapture={(e) => {
         const target = e.target as HTMLElement | null;
         const interactive = target?.closest("a, button, input, textarea, select, [role='button']");
@@ -154,18 +154,18 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
 
       {isReadonlyHome && showReadonlyNotice ? (
         <div className="fixed bottom-4 right-4 z-60 w-[min(92vw,420px)]" data-readonly-allow="true">
-          <div className="rounded-2xl border border-(--gray-200) bg-white/95 p-4 shadow-xl backdrop-blur-sm">
+          <div className="rounded-2xl border border-border bg-card/95 p-4 shadow-xl backdrop-blur-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-base font-black text-(--gray-900)">Bạn đang ở chế độ xem</h2>
-                <p className="mt-1 text-sm text-(--gray-500)">
+                <h2 className="text-base font-black text-foreground">Bạn đang ở chế độ xem</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Vui lòng đăng nhập để trải nghiệm đầy đủ tính năng của Job Matcher
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowReadonlyNotice(false)}
-                className="rounded-lg px-2 py-1 text-(--gray-500) hover:bg-(--gray-100)"
+                className="rounded-lg px-2 py-1 text-muted-foreground hover:bg-muted"
               >
                 Đóng
               </button>
@@ -173,7 +173,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
             <Link
               href="/login?redirect=%2F"
               data-readonly-allow="true"
-              className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-(--primary-blue) px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-(--blue-dark)"
+              className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Đăng nhập ngay
             </Link>
@@ -186,7 +186,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
           className="fixed inset-0 z-70 flex items-center justify-center bg-black/35 p-4 backdrop-blur-[2px]"
           data-readonly-allow="true"
         >
-          <div className="w-full max-w-xl rounded-2xl border border-(--accent-orange)/30 bg-white px-5 py-5 text-(--gray-900) shadow-2xl sm:px-6 sm:py-6">
+          <div className="w-full max-w-xl rounded-2xl border border-warning/30 bg-card px-5 py-5 text-foreground shadow-2xl sm:px-6 sm:py-6">
             <p className="text-base font-semibold sm:text-lg">
               Vui lòng đăng nhập để sử dụng tính năng này. Tự động chuyển sau {countdownSeconds} giây.
             </p>
@@ -195,7 +195,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
                 href="/login?redirect=%2F"
                 data-readonly-allow="true"
                 onClick={() => clearRedirectTimers()}
-                className="inline-flex items-center justify-center rounded-lg bg-(--primary-blue) px-4 py-2 text-sm font-bold text-white hover:bg-(--blue-dark)"
+                className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
               >
                 Đăng nhập ngay
               </Link>
@@ -203,7 +203,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
                 type="button"
                 data-readonly-allow="true"
                 onClick={dismissInteractionNotice}
-                className="inline-flex items-center justify-center rounded-lg border border-(--gray-200) px-4 py-2 text-sm font-semibold text-(--gray-900) hover:bg-(--gray-100)"
+                className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
               >
                 Bỏ qua
               </button>

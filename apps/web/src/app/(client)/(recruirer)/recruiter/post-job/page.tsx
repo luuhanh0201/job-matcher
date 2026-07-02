@@ -194,8 +194,8 @@ export default function RecruiterPostJobPage() {
     return (
       <div className="flex min-h-60 items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-(--gray-200) border-t-(--primary-blue)" />
-          <p className="text-sm font-medium text-(--gray-500)">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-border border-t-primary" />
+          <p className="text-sm font-medium text-muted-foreground">
             Đang kiểm tra hồ sơ công ty...
           </p>
         </div>
@@ -207,27 +207,27 @@ export default function RecruiterPostJobPage() {
     return (
       <div className="space-y-5">
         <header>
-          <h1 className="text-2xl font-black text-(--gray-900)">
+          <h1 className="text-2xl font-black text-foreground">
             Đăng tin tuyển dụng
           </h1>
-          <p className="mt-1 text-sm text-(--gray-500)">
+          <p className="mt-1 text-sm text-muted-foreground">
             Tạo tin tuyển dụng theo hồ sơ công ty đã đăng ký.
           </p>
         </header>
 
-        <section className="rounded-2xl border border-(--gray-200) bg-white p-6 text-center shadow-sm">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-(--blue-light) text-(--primary-blue)">
+        <section className="rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Building2 className="h-7 w-7" />
           </div>
-          <h2 className="mt-4 text-lg font-black text-(--gray-900)">
+          <h2 className="mt-4 text-lg font-black text-foreground">
             Chưa có hồ sơ công ty
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm font-medium text-(--gray-500)">
+          <p className="mx-auto mt-2 max-w-md text-sm font-medium text-muted-foreground">
             {companyRequirementMessage ||
               "Vui lòng đăng ký hồ sơ công ty trước khi đăng tuyển dụng"}
           </p>
           <Link href="/recruiter/company/profile">
-            <Button className="mt-5 h-10 rounded-xl bg-(--primary-blue) px-4 font-bold text-white hover:bg-(--blue-dark)">
+            <Button className="mt-5 h-10 rounded-xl bg-primary px-4 font-bold text-primary-foreground hover:bg-primary/90">
               Tạo hồ sơ công ty
             </Button>
           </Link>
@@ -277,20 +277,20 @@ export default function RecruiterPostJobPage() {
     <div className="space-y-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-(--gray-900)">
+          <h1 className="text-2xl font-black text-foreground">
             Đăng tin tuyển dụng
           </h1>
-          <p className="mt-1 text-sm text-(--gray-500)">
+          <p className="mt-1 text-sm text-muted-foreground">
             Tạo tin tuyển dụng theo hồ sơ công ty đã đăng ký.
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-xl border border-(--primary-blue)/20 bg-(--blue-light) px-3 py-2 text-sm font-bold text-(--primary-blue)">
+        <div className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-bold text-primary">
           <Sparkles className="h-4 w-4" />
           {form.status === "OPEN" ? "Đăng ngay" : "Lưu nháp"}
         </div>
       </header>
 
-      <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
           <FormSection title="Công ty đăng tuyển" icon={Building2}>
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -300,7 +300,7 @@ export default function RecruiterPostJobPage() {
                   value={form.companyId}
                   onChange={(event) => setField("companyId", event.target.value)}
                   disabled={isLoadingCompanies || companies.length === 0}
-                  className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-medium text-(--gray-900) outline-none transition-colors disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm font-medium text-foreground outline-none transition-colors disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <option value="">
                     {isLoadingCompanies ? "Đang tải..." : "Chọn công ty"}
@@ -313,16 +313,16 @@ export default function RecruiterPostJobPage() {
                 </select>
               </Field>
 
-              <div className="rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-4 py-3">
+              <div className="rounded-xl border border-border bg-muted/50 px-4 py-3">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-(--blue-light) text-(--primary-blue)">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <MapPin className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-(--gray-900)">
+                    <p className="text-sm font-bold text-foreground">
                       {selectedCompany?.name || "Chưa chọn công ty"}
                     </p>
-                    <p className="mt-1 text-xs font-medium text-(--gray-500)">
+                    <p className="mt-1 text-xs font-medium text-muted-foreground">
                       {[
                         selectedCompany?.location?.address,
                         selectedCompany?.location?.wardName,
@@ -345,7 +345,7 @@ export default function RecruiterPostJobPage() {
                   value={form.title}
                   onChange={(event) => setField("title", event.target.value)}
                   placeholder="VD: Frontend Developer"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
               <Field label="Bộ phận" htmlFor="department" required>
@@ -356,7 +356,7 @@ export default function RecruiterPostJobPage() {
                     setField("department", event.target.value)
                   }
                   placeholder="VD: Engineering"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
               <SelectField
@@ -391,7 +391,7 @@ export default function RecruiterPostJobPage() {
                   value={form.quantity}
                   onChange={(event) => setField("quantity", event.target.value)}
                   placeholder="VD: 2"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
             </div>
@@ -416,7 +416,7 @@ export default function RecruiterPostJobPage() {
                   onChange={(event) =>
                     setField("currency", event.target.value as Currency)
                   }
-                  className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-medium text-(--gray-900) outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm font-medium text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   {CURRENCY_OPTIONS.map((currency) => (
                     <option key={currency} value={currency}>
@@ -442,7 +442,7 @@ export default function RecruiterPostJobPage() {
                   onChange={(event) => setField("salaryMin", event.target.value)}
                   disabled={form.salaryType === "NEGOTIABLE"}
                   placeholder="VD: 12000000"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
               <Field
@@ -458,12 +458,12 @@ export default function RecruiterPostJobPage() {
                   onChange={(event) => setField("salaryMax", event.target.value)}
                   disabled={form.salaryType !== "RANGE"}
                   placeholder="VD: 25000000"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
               <Field label="Hạn ứng tuyển" htmlFor="expiredAt" required>
                 <div className="relative">
-                  <CalendarClock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--gray-500)" />
+                  <CalendarClock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="expiredAt"
                     type="datetime-local"
@@ -471,7 +471,7 @@ export default function RecruiterPostJobPage() {
                     onChange={(event) =>
                       setField("expiredAt", event.target.value)
                     }
-                    className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                    className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                   />
                 </div>
               </Field>
@@ -485,7 +485,7 @@ export default function RecruiterPostJobPage() {
                       event.target.value as Exclude<JobPostStatus, "CLOSED">,
                     )
                   }
-                  className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-medium text-(--gray-900) outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm font-medium text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <option value="DRAFT">Lưu nháp</option>
                   <option value="OPEN">Đăng ngay</option>
@@ -536,7 +536,7 @@ export default function RecruiterPostJobPage() {
                 value={form.skillsText}
                 onChange={(event) => setField("skillsText", event.target.value)}
                 placeholder="React, Next.js, TypeScript"
-                className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                className="h-11 rounded-xl border-border bg-muted/50"
               />
             </Field>
           </FormSection>
@@ -545,7 +545,7 @@ export default function RecruiterPostJobPage() {
             <Button
               type="submit"
               disabled={isSubmitting || companies.length === 0}
-              className="h-11 gap-2 rounded-xl bg-(--primary-blue) px-5 font-bold text-white hover:bg-(--blue-dark)"
+              className="h-11 gap-2 rounded-xl bg-primary px-5 font-bold text-primary-foreground hover:bg-primary/90"
             >
               {isSubmitting ? (
                 <CircleDashed className="h-4 w-4 animate-spin" />
@@ -571,9 +571,9 @@ function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-4 border-t border-(--gray-200) pt-5 first:border-t-0 first:pt-0">
-      <h2 className="flex items-center gap-2 text-base font-black text-(--gray-900)">
-        <Icon className="h-5 w-5 text-(--primary-blue)" />
+    <section className="space-y-4 border-t border-border pt-5 first:border-t-0 first:pt-0">
+      <h2 className="flex items-center gap-2 text-base font-black text-foreground">
+        <Icon className="h-5 w-5 text-primary" />
         {title}
       </h2>
       {children}
@@ -624,7 +624,7 @@ function SelectField({
         id={htmlFor}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-medium text-(--gray-900) outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm font-medium text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -658,7 +658,7 @@ function TextAreaField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="min-h-32 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="min-h-32 w-full rounded-xl border border-border bg-muted/50 px-3 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
       />
     </Field>
   );

@@ -23,9 +23,9 @@ const STATUS_LABEL: Record<JobPostStatus, string> = {
 };
 
 function getStatusClass(status: JobPostStatus) {
-  if (status === "OPEN") return "bg-emerald-100 text-emerald-700";
-  if (status === "DRAFT") return "bg-amber-100 text-amber-700";
-  return "bg-gray-200 text-gray-700";
+  if (status === "OPEN") return "bg-success/15 text-success";
+  if (status === "DRAFT") return "bg-warning/15 text-warning";
+  return "bg-muted text-muted-foreground";
 }
 
 function formatDate(value?: string | null) {
@@ -90,47 +90,47 @@ export default function RecruiterManageJobsPage() {
     <div className="space-y-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-(--gray-900)">
+          <h1 className="text-2xl font-black text-foreground">
             Quản lý tin tuyển dụng
           </h1>
-          <p className="mt-1 text-sm text-(--gray-500)">
+          <p className="mt-1 text-sm text-muted-foreground">
             Theo dõi trạng thái đăng tuyển và hạn nộp của từng vị trí.
           </p>
         </div>
         <Link href="/recruiter/post-job">
-          <Button className="h-10 gap-2 rounded-xl bg-(--primary-blue) px-4 font-bold text-white hover:bg-(--blue-dark)">
+          <Button className="h-10 gap-2 rounded-xl bg-primary px-4 font-bold text-primary-foreground hover:bg-primary/90">
             <Plus className="h-4 w-4" />
             Đăng tin
           </Button>
         </Link>
       </header>
 
-      <section className="rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm">
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
         <div className="relative max-w-xl">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--gray-500)" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Tìm theo vị trí, phòng ban, công ty..."
-            className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+            className="h-11 rounded-xl border-border bg-muted/50 pl-10"
           />
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-(--gray-200) bg-white shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         {isLoading ? (
           <div className="flex min-h-52 items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-(--gray-500)" />
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : filteredJobs.length === 0 ? (
-          <div className="flex min-h-52 flex-col items-center justify-center gap-3 text-(--gray-500)">
+          <div className="flex min-h-52 flex-col items-center justify-center gap-3 text-muted-foreground">
             <SearchX className="h-10 w-10 opacity-50" />
             <p className="text-sm font-bold">Chưa có tin tuyển dụng phù hợp</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-(--gray-100) text-left text-(--gray-600)">
+              <thead className="bg-muted text-left text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Vị trí</th>
                   <th className="px-4 py-3 font-semibold">Công ty</th>
@@ -142,14 +142,14 @@ export default function RecruiterManageJobsPage() {
               </thead>
               <tbody>
                 {filteredJobs.map((job) => (
-                  <tr key={job.id} className="border-t border-(--gray-200)">
+                  <tr key={job.id} className="border-t border-border">
                     <td className="px-4 py-3">
-                      <p className="font-bold text-(--gray-900)">{job.title}</p>
-                      <p className="mt-0.5 text-xs text-(--gray-500)">
+                      <p className="font-bold text-foreground">{job.title}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
                         {job.department}
                       </p>
                     </td>
-                    <td className="px-4 py-3 font-medium text-(--gray-600)">
+                    <td className="px-4 py-3 font-medium text-muted-foreground">
                       {job.company?.name || "Chưa cập nhật"}
                     </td>
                     <td className="px-4 py-3">
@@ -159,10 +159,10 @@ export default function RecruiterManageJobsPage() {
                         {STATUS_LABEL[job.status]}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-medium text-(--gray-600)">
+                    <td className="px-4 py-3 font-medium text-muted-foreground">
                       {formatSalary(job)}
                     </td>
-                    <td className="px-4 py-3 text-(--gray-600)">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {formatDate(job.expiredAt)}
                     </td>
                     <td className="px-4 py-3">
@@ -186,26 +186,26 @@ export default function RecruiterManageJobsPage() {
       </section>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <article className="rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase text-(--gray-500)">
+        <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">
             Tin cần gia hạn
           </p>
-          <p className="mt-2 text-sm font-bold text-(--gray-900)">
+          <p className="mt-2 text-sm font-bold text-foreground">
             {expiringSoonCount} vị trí sắp hết hạn trong 7 ngày
           </p>
-          <div className="mt-3 inline-flex items-center gap-1 text-xs text-(--gray-500)">
+          <div className="mt-3 inline-flex items-center gap-1 text-xs text-muted-foreground">
             <CalendarDays className="h-4 w-4" />
             Theo dõi hạn nộp để không bỏ lỡ ứng viên phù hợp
           </div>
         </article>
-        <article className="rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase text-(--gray-500)">
+        <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">
             Tổng tin tuyển dụng
           </p>
-          <p className="mt-2 text-sm font-bold text-(--gray-900)">
+          <p className="mt-2 text-sm font-bold text-foreground">
             {jobs.length} tin trong hệ thống
           </p>
-          <p className="mt-3 text-xs text-(--gray-500)">
+          <p className="mt-3 text-xs text-muted-foreground">
             Bao gồm tin nháp, đang tuyển và đã đóng.
           </p>
         </article>

@@ -1,7 +1,7 @@
 import {
   ConflictException,
   Injectable,
-  UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { RecruiterEntity } from './entity/recruiter.entity';
@@ -11,6 +11,7 @@ import { UserRole } from '@/common/enum/index.enum';
 import { CreateRecruiterProfileDto } from './dto/recruiters-profile.repository';
 import { RecruiterResponseDto } from './dto/recruiter-response.dto';
 import { MailService } from '../mail/mail.service';
+import { UploadCloudinaryService } from '../upload-cloudinary/upload-cloudinary.service';
 import { UpdateRecruiterProfileDto } from './dto/update-recruiter-profile.dto';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class RecruitersService {
     private readonly recruiterRepository: Repository<RecruiterEntity>,
     private readonly dataSource: DataSource,
     private readonly mailService: MailService,
+    private readonly cloudinaryService: UploadCloudinaryService,
   ) {}
 
   async createRecruiterProfile(
@@ -32,7 +34,7 @@ export class RecruitersService {
 
       const user = await userRepository.findOne({ where: { id } });
       if (!user) {
-        throw new UnauthorizedException('Người dùng không tồn tại');
+        throw new NotFoundException('Người dùng không tồn tại');
       }
 
       const existingProfile = await recruiterRepository.findOne({
@@ -75,18 +77,36 @@ export class RecruitersService {
       relations: ['user'],
     });
     if (!profile) {
-      throw new UnauthorizedException('Hồ sơ nhà tuyển dụng không tồn tại');
+      throw new NotFoundException('Hồ sơ nhà tuyển dụng không tồn tại');
     }
     return {
       id: profile.id,
       fullName: profile.user.fullName,
       email: profile.user.email,
+      avatar: profile.user.avatar ?? null,
       contactPhone: profile.contactPhone as string,
       contactEmail: profile.contactEmail,
       isVerified: profile.isVerified,
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     };
+  }
+
+  async updateRecruiterAvatar(
+    userId: string,
+    avatar: Express.Multer.File,
+  ): Promise<RecruiterResponseDto> {
+    const userRepository = this.dataSource.getRepository(User);
+    const user = await userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Người dùng không tồn tại');
+    }
+
+    const uploadResult = await this.cloudinaryService.uploadImage(avatar);
+    user.avatar = uploadResult.secure_url;
+    await userRepository.save(user);
+
+    return this.getRecruiterProfile(userId);
   }
 
   async updateRecruiterProfile(
@@ -99,12 +119,12 @@ export class RecruitersService {
 
       const profile = await recruiterRepository.findOne({ where: { userId } });
       if (!profile) {
-        throw new UnauthorizedException('Hồ sơ nhà tuyển dụng không tồn tại');
+        throw new NotFoundException('Hồ sơ nhà tuyển dụng không tồn tại');
       }
 
       const user = await userRepository.findOne({ where: { id: userId } });
       if (!user) {
-        throw new UnauthorizedException('Người dùng không tồn tại');
+        throw new NotFoundException('Người dùng không tồn tại');
       }
 
       if (updateRecruiterProfileDto.fullName) {

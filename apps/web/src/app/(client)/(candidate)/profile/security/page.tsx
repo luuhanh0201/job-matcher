@@ -25,7 +25,7 @@ function PasswordField({
   const [show, setShow] = useState(false);
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-bold text-(--gray-700)">
+      <label htmlFor={id} className="text-sm font-bold text-foreground">
         {label}
       </label>
       <div className="relative">
@@ -36,12 +36,12 @@ function PasswordField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-4 pr-11 text-sm font-medium text-(--gray-900) outline-none placeholder:text-(--gray-400) disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="h-11 w-full rounded-xl border border-border bg-muted/50 px-4 pr-11 text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
         <button
           type="button"
           onClick={() => setShow((v) => !v)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-(--gray-400) hover:text-(--gray-700)"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           tabIndex={-1}
         >
           {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -99,13 +99,13 @@ export default function ProfileSecurityPage() {
         </p>
       </div>
 
-      <section className="rounded-2xl border border-(--gray-200) bg-white p-6 shadow-sm">
-        <h2 className="flex items-center gap-2 text-base font-black text-(--gray-900)">
-          <KeyRound className="h-5 w-5 text-(--primary-blue)" />
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="flex items-center gap-2 text-base font-black text-foreground">
+          <KeyRound className="h-5 w-5 text-primary" />
           {isSocialOnly ? "Đặt mật khẩu" : "Đổi mật khẩu"}
         </h2>
         {isSocialOnly && (
-          <p className="mt-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm text-blue-700">
+          <p className="mt-2 rounded-xl bg-primary/10 px-4 py-2.5 text-sm text-primary">
             Tài khoản của bạn đăng nhập qua {user?.provider}. Bạn có thể đặt mật khẩu để đăng nhập bằng email trong tương lai.
           </p>
         )}
@@ -140,7 +140,7 @@ export default function ProfileSecurityPage() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="mt-2 h-11 w-full rounded-xl bg-(--primary-blue) font-bold text-white hover:bg-(--blue-dark) sm:w-auto sm:px-8"
+            className="mt-2 h-11 w-full rounded-xl bg-primary font-bold text-primary-foreground hover:bg-primary/90 sm:w-auto sm:px-8"
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

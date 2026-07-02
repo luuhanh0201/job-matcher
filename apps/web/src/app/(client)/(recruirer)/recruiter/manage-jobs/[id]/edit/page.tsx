@@ -146,7 +146,7 @@ export default function EditJobPage() {
   if (isLoading || !form) {
     return (
       <div className="flex min-h-60 items-center justify-center">
-        <div className="h-9 w-9 animate-spin rounded-full border-4 border-(--gray-200) border-t-(--primary-blue)" />
+        <div className="h-9 w-9 animate-spin rounded-full border-4 border-border border-t-primary" />
       </div>
     );
   }
@@ -189,15 +189,15 @@ export default function EditJobPage() {
       <header>
         <Link
           href={`/recruiter/manage-jobs/${id}`}
-          className="inline-flex items-center gap-2 text-sm font-bold text-(--primary-blue) hover:underline"
+          className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline"
         >
           <ArrowLeft className="h-4 w-4" />
           Quay lại chi tiết
         </Link>
-        <h1 className="mt-3 text-2xl font-black text-(--gray-900)">Chỉnh sửa tin tuyển dụng</h1>
+        <h1 className="mt-3 text-2xl font-black text-foreground">Chỉnh sửa tin tuyển dụng</h1>
       </header>
 
-      <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
           <FormSection title="Thông tin cơ bản" icon={BriefcaseBusiness}>
             <div className="grid gap-4 lg:grid-cols-2">
@@ -207,7 +207,7 @@ export default function EditJobPage() {
                   value={form.title}
                   onChange={(e) => setField("title", e.target.value)}
                   placeholder="VD: Frontend Developer"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                   disabled={isSubmitting}
                 />
               </Field>
@@ -217,7 +217,7 @@ export default function EditJobPage() {
                   value={form.department}
                   onChange={(e) => setField("department", e.target.value)}
                   placeholder="VD: Engineering"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                   disabled={isSubmitting}
                 />
               </Field>
@@ -254,7 +254,7 @@ export default function EditJobPage() {
                   value={form.quantity}
                   onChange={(e) => setField("quantity", e.target.value)}
                   placeholder="VD: 2"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                   disabled={isSubmitting}
                 />
               </Field>
@@ -278,7 +278,7 @@ export default function EditJobPage() {
                   value={form.currency}
                   onChange={(e) => setField("currency", e.target.value as Currency)}
                   disabled={isSubmitting}
-                  className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-medium text-(--gray-900) outline-none transition-colors disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm font-medium text-foreground outline-none transition-colors disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   {CURRENCY_OPTIONS.map((c) => (
                     <option key={c} value={c}>{c}</option>
@@ -298,7 +298,7 @@ export default function EditJobPage() {
                   onChange={(e) => setField("salaryMin", e.target.value)}
                   disabled={form.salaryType === "NEGOTIABLE" || isSubmitting}
                   placeholder="VD: 12000000"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
               <Field label="Lương tối đa" htmlFor="salaryMax" required={form.salaryType === "RANGE"}>
@@ -310,19 +310,19 @@ export default function EditJobPage() {
                   onChange={(e) => setField("salaryMax", e.target.value)}
                   disabled={form.salaryType !== "RANGE" || isSubmitting}
                   placeholder="VD: 25000000"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
               <Field label="Hạn ứng tuyển" htmlFor="expiredAt" required>
                 <div className="relative">
-                  <CalendarClock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--gray-500)" />
+                  <CalendarClock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="expiredAt"
                     type="datetime-local"
                     value={form.expiredAt}
                     onChange={(e) => setField("expiredAt", e.target.value)}
                     disabled={isSubmitting}
-                    className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                    className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                   />
                 </div>
               </Field>
@@ -375,7 +375,7 @@ export default function EditJobPage() {
                 value={form.skillsText}
                 onChange={(e) => setField("skillsText", e.target.value)}
                 placeholder="React, Next.js, TypeScript (phân cách bởi dấu phẩy)"
-                className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                className="h-11 rounded-xl border-border bg-muted/50"
                 disabled={isSubmitting}
               />
             </Field>
@@ -390,7 +390,7 @@ export default function EditJobPage() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="h-11 gap-2 rounded-xl bg-(--primary-blue) px-5 font-bold text-white hover:bg-(--blue-dark)"
+              className="h-11 gap-2 rounded-xl bg-primary px-5 font-bold text-primary-foreground hover:bg-primary/90"
             >
               {isSubmitting ? (
                 <CircleDashed className="h-4 w-4 animate-spin" />
@@ -408,9 +408,9 @@ export default function EditJobPage() {
 
 function FormSection({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
   return (
-    <section className="space-y-4 border-t border-(--gray-200) pt-5 first:border-t-0 first:pt-0">
-      <h2 className="flex items-center gap-2 text-base font-black text-(--gray-900)">
-        <Icon className="h-5 w-5 text-(--primary-blue)" />
+    <section className="space-y-4 border-t border-border pt-5 first:border-t-0 first:pt-0">
+      <h2 className="flex items-center gap-2 text-base font-black text-foreground">
+        <Icon className="h-5 w-5 text-primary" />
         {title}
       </h2>
       {children}
@@ -446,7 +446,7 @@ function SelectField({ label, htmlFor, required, value, onChange, options, disab
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-medium text-(--gray-900) outline-none transition-colors disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm font-medium text-foreground outline-none transition-colors disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
@@ -473,7 +473,7 @@ function TextAreaField({ label, htmlFor, required, value, onChange, placeholder,
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="min-h-32 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="min-h-32 w-full rounded-xl border border-border bg-muted/50 px-3 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
       />
     </Field>
   );

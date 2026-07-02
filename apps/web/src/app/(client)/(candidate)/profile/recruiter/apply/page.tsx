@@ -128,8 +128,8 @@ export default function ApplyRecruiterPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-(--gray-200) border-t-(--primary-blue)" />
-          <p className="text-sm font-medium text-(--gray-500)">Đang tải thông tin...</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-border border-t-primary" />
+          <p className="text-sm font-medium text-muted-foreground">Đang tải thông tin...</p>
         </div>
       </div>
     );
@@ -137,7 +137,7 @@ export default function ApplyRecruiterPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-(--primary-blue) via-[#1663d6] to-[#0b2454] px-6 py-7 text-white shadow-lg sm:px-8">
+      <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-primary via-primary/90 to-accent px-6 py-7 text-primary-foreground shadow-lg sm:px-8">
         <div className="relative z-10 max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/70">
             Recruiter onboarding
@@ -153,10 +153,10 @@ export default function ApplyRecruiterPage() {
         <div className="absolute bottom-0 left-1/2 h-28 w-28 -translate-x-1/2 rounded-full bg-cyan-300/15 blur-2xl" />
       </section>
 
-      <Card className="rounded-3xl border border-(--gray-200) bg-white/95 py-0 shadow-sm">
-        <CardHeader className="border-b border-(--gray-200) py-5">
-          <CardTitle className="flex items-center gap-2 text-(--gray-900)">
-            <Building2 className="h-5 w-5 text-(--primary-blue)" />
+      <Card className="rounded-3xl border border-border bg-card/95 py-0 shadow-sm">
+        <CardHeader className="border-b border-border py-5">
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Building2 className="h-5 w-5 text-primary" />
             Thông tin nhà tuyển dụng
           </CardTitle>
           <CardDescription>
@@ -173,7 +173,7 @@ export default function ApplyRecruiterPage() {
                   className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${
                     touchedFields.contactPhone && fieldErrors.contactPhone
                       ? "text-red-500"
-                      : "text-(--gray-500)"
+                      : "text-muted-foreground"
                   }`}
                 />
                 <Input
@@ -183,7 +183,7 @@ export default function ApplyRecruiterPage() {
                   onChange={(event) => handlePhoneChange(event.target.value)}
                   onBlur={() => handleFieldBlur("contactPhone")}
                   placeholder="Nhập số điện thoại liên hệ"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                   aria-invalid={Boolean(touchedFields.contactPhone && fieldErrors.contactPhone)}
                   required
                 />
@@ -191,7 +191,7 @@ export default function ApplyRecruiterPage() {
               {touchedFields.contactPhone && fieldErrors.contactPhone ? (
                 <p className="text-sm font-medium text-red-500">{fieldErrors.contactPhone}</p>
               ) : (
-                <p className="text-xs text-(--gray-500)">
+                <p className="text-xs text-muted-foreground">
                   Gợi ý: nhập số điện thoại đang dùng để nhận liên hệ tuyển dụng.
                 </p>
               )}
@@ -204,7 +204,7 @@ export default function ApplyRecruiterPage() {
                   className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${
                     touchedFields.contactEmail && fieldErrors.contactEmail
                       ? "text-red-500"
-                      : "text-(--gray-500)"
+                      : "text-muted-foreground"
                   }`}
                 />
                 <Input
@@ -214,27 +214,27 @@ export default function ApplyRecruiterPage() {
                   onChange={(event) => handleEmailChange(event.target.value)}
                   onBlur={() => handleFieldBlur("contactEmail")}
                   placeholder="Nhập email liên hệ"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                   aria-invalid={Boolean(touchedFields.contactEmail && fieldErrors.contactEmail)}
                 />
               </div>
               {touchedFields.contactEmail && fieldErrors.contactEmail ? (
                 <p className="text-sm font-medium text-red-500">{fieldErrors.contactEmail}</p>
               ) : (
-                <p className="text-xs text-(--gray-500)">
+                <p className="text-xs text-muted-foreground">
                   Nếu để trống, backend sẽ dùng email tài khoản hiện tại.
                 </p>
               )}
             </div>
 
-            <div className="flex flex-col-reverse gap-3 border-t border-(--gray-200) pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-(--gray-500)">
+            <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
                 Sau khi tạo hồ sơ, bạn có thể bắt đầu đăng tuyển và quản lý ứng viên phù hợp.
               </p>
               <Button
                 type="submit"
                 size="lg"
-                className="h-11 rounded-xl bg-(--primary-blue) px-5 font-bold text-white hover:bg-(--blue-dark)"
+                className="h-11 rounded-xl bg-primary px-5 font-bold text-primary-foreground hover:bg-primary/90"
                 disabled={isSubmitting || !isFormValid}
               >
                 {isSubmitting ? (

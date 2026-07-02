@@ -185,19 +185,19 @@ export default function AiCvPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="border border-(--gray-200) bg-white/90 shadow-none">
+      <Card className="border border-border bg-card/90 shadow-none">
         <CardContent className="space-y-4 px-4 py-4 sm:px-6 sm:py-6">
-          <div className="rounded-3xl border border-(--gray-200) bg-linear-to-r from-(--blue-light) via-white to-(--blue-light)/60 p-4 sm:p-5">
+          <div className="rounded-3xl border border-border bg-linear-to-r from-primary/10 via-card to-primary/10 p-4 sm:p-5">
             <div className="mb-4 flex flex-col items-start justify-between gap-4 lg:flex-row">
               <div className="max-w-2xl space-y-2">
-                <span className="inline-flex items-center rounded-full bg-(--accent-purple)/10 px-3 py-1 text-xs font-bold tracking-wide text-(--accent-purple)">
+                <span className="inline-flex items-center rounded-full bg-accent/10 px-3 py-1 text-xs font-bold tracking-wide text-accent">
                   <Sparkles className="mr-1 h-3.5 w-3.5" /> AI CV Analyzer
                 </span>
-                <h1 className="text-2xl leading-tight font-black text-(--gray-900) sm:text-3xl">
+                <h1 className="text-2xl leading-tight font-black text-foreground sm:text-3xl">
                   Tìm công việc phù hợp hơn với{" "}
-                  <span className="text-(--accent-purple)">Job Matcher AI</span>
+                  <span className="text-accent">Job Matcher AI</span>
                 </h1>
-                <p className="text-sm text-(--gray-500)">
+                <p className="text-sm text-muted-foreground">
                   Tải CV PDF lên, hệ thống sẽ trích xuất kỹ năng, phân tích điểm mạnh/yếu và
                   gợi ý các công việc phù hợp nhất với hồ sơ của bạn.
                 </p>
@@ -206,7 +206,7 @@ export default function AiCvPage() {
 
             </div>
 
-            <div className="space-y-4 rounded-2xl border border-dashed border-(--primary-blue)/35 bg-white px-4 py-4 sm:px-5">
+            <div className="space-y-4 rounded-2xl border border-dashed border-primary/35 bg-card px-4 py-4 sm:px-5">
               <Input
                 ref={fileInputRef}
                 id="cv-file"
@@ -226,18 +226,18 @@ export default function AiCvPage() {
                     openFilePicker();
                   }
                 }}
-                className="group flex min-h-37 w-full flex-col items-start justify-between gap-4 rounded-2xl border-2 border-dashed border-(--primary-blue)/30 bg-(--blue-light)/35 px-4 py-5 transition-all duration-200 hover:border-(--primary-blue)/60 hover:bg-(--blue-light)/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-blue)/40 sm:flex-row sm:items-center"
+                className="group flex min-h-37 w-full flex-col items-start justify-between gap-4 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 px-4 py-5 transition-all duration-200 hover:border-primary/60 hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:flex-row sm:items-center"
               >
                 <div className="flex items-start gap-3 sm:items-center">
-                  <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white shadow-sm transition-transform duration-200 group-hover:scale-[1.02]">
-                    <FileText className="h-8 w-8 text-(--primary-blue)" />
+                  <div className="grid h-16 w-16 place-items-center rounded-2xl bg-card shadow-sm transition-transform duration-200 group-hover:scale-[1.02]">
+                    <FileText className="h-8 w-8 text-primary" />
                   </div>
                   <div>
-                    <p className="font-bold text-(--gray-900)">Kéo thả CV PDF hoặc chọn file</p>
-                    <p className="text-sm text-(--gray-500)">
+                    <p className="font-bold text-foreground">Kéo thả CV PDF hoặc chọn file</p>
+                    <p className="text-sm text-muted-foreground">
                       Chỉ hỗ trợ PDF - tối đa 5MB - phân tích kỹ năng, kinh nghiệm và gợi ý job trong vài bước.
                     </p>
-                    <p className="mt-1 text-xs font-semibold text-(--primary-blue)">
+                    <p className="mt-1 text-xs font-semibold text-primary">
                       {file?.name ? `Đã chọn: ${file.name}` : "Bấm vào bất kỳ vị trí nào trong khung để chọn file"}
                     </p>
                   </div>
@@ -253,7 +253,7 @@ export default function AiCvPage() {
                       void handleUpload();
                     }}
                     disabled={uploadLoading || pollLoading}
-                    className="h-10 w-full rounded-full bg-linear-to-r from-(--accent-purple) to-(--primary-blue) px-6 py-6 text-[16px] font-bold text-white disabled:cursor-not-allowed transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 active:scale-[0.98]  disabled:opacity-70 sm:w-auto sm:px-12"
+                    className="h-10 w-full rounded-full bg-linear-to-r from-accent to-primary px-6 py-6 text-[16px] font-bold text-primary-foreground disabled:cursor-not-allowed transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 active:scale-[0.98]  disabled:opacity-70 sm:w-auto sm:px-12"
                   >
                     {uploadLoading || pollLoading ? (
                       <>
@@ -268,7 +268,7 @@ export default function AiCvPage() {
               </div>
 
               {apiLoadingText ? (
-                <p className="flex items-center gap-2 text-xs font-medium text-(--gray-500)">
+                <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <CircleDashed className="h-3.5 w-3.5 animate-spin" />
                   <span>{apiLoadingText}</span>
                 </p>
@@ -291,26 +291,26 @@ export default function AiCvPage() {
                   <div
                     key={step.id}
                     className={`rounded-2xl border px-3 py-3 transition-colors ${isDone
-                      ? "border-(--accent-green)/40 bg-(--accent-green)/10"
+                      ? "border-success/40 bg-success/10"
                       : isActive
-                        ? "border-(--accent-purple)/40 bg-(--accent-purple)/10"
-                        : "border-(--gray-200) bg-white"
+                        ? "border-accent/40 bg-accent/10"
+                        : "border-border bg-card"
                       }`}
                   >
                     <div className="mb-1 flex items-center gap-2">
                       <span
                         className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${isDone
-                          ? "bg-(--accent-green) text-white"
+                          ? "bg-success text-success-foreground"
                           : isActive
-                            ? "bg-(--accent-purple) text-white"
-                            : "bg-(--gray-200) text-(--gray-500)"
+                            ? "bg-accent text-accent-foreground"
+                            : "bg-muted text-muted-foreground"
                           }`}
                       >
                         {isDone ? <Check className="h-3.5 w-3.5" /> : step.id}
                       </span>
-                      <p className="font-bold text-(--gray-900)">{step.title}</p>
+                      <p className="font-bold text-foreground">{step.title}</p>
                     </div>
-                    <p className="text-xs text-(--gray-500)">{step.subtitle}</p>
+                    <p className="text-xs text-muted-foreground">{step.subtitle}</p>
                   </div>
                 );
               })}

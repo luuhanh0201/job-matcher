@@ -5,11 +5,13 @@ import { RecruiterEntity } from './entity/recruiter.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from '../user/user.module';
 import { MailModule } from '../mail/mail.module';
+import { UploadCloudinaryModule } from '../upload-cloudinary/upload-cloudinary.module';
 
 @Module({
   imports: [
     UserModule,
     MailModule,
+    UploadCloudinaryModule,
     TypeOrmModule.forFeature([RecruiterEntity]),
   ],
   controllers: [RecruitersController],

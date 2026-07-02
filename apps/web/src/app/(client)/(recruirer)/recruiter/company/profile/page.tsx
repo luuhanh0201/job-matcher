@@ -240,33 +240,33 @@ export default function RecruiterCompanyProfilePage() {
     <div className="space-y-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-(--gray-900)">
+          <h1 className="text-2xl font-black text-foreground">
             Hồ sơ công ty
           </h1>
-          <p className="mt-1 text-sm text-(--gray-500)">
+          <p className="mt-1 text-sm text-muted-foreground">
             Cập nhật thông tin thương hiệu tuyển dụng để thu hút ứng viên phù
             hợp hơn.
           </p>
         </div>
         {createdCompany ? (
-          <div className="inline-flex items-center gap-2 rounded-xl border border-(--accent-green)/30 bg-(--accent-green)/10 px-3 py-2 text-sm font-bold text-(--gray-900)">
-            <CheckCircle2 className="h-4 w-4 text-(--accent-green)" />
+          <div className="inline-flex items-center gap-2 rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-sm font-bold text-foreground">
+            <CheckCircle2 className="h-4 w-4 text-success" />
             Đã tạo hồ sơ
           </div>
         ) : null}
       </header>
 
       {createdCompany ? (
-        <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-(--blue-light) text-(--primary-blue)">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Building2 className="h-8 w-8" />
             </div>
             <div>
-              <p className="text-lg font-black text-(--gray-900)">
+              <p className="text-lg font-black text-foreground">
                 {createdCompany.name}
               </p>
-              <p className="text-sm text-(--gray-500)">
+              <p className="text-sm text-muted-foreground">
                 {createdCompany.companyType || "Chưa cập nhật lĩnh vực"} ·{" "}
                 {createdCompany.companySize} nhân sự
               </p>
@@ -304,7 +304,7 @@ export default function RecruiterCompanyProfilePage() {
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
           <FormSection title="Thông tin cơ bản" icon={Building2}>
             <div className="grid gap-4 lg:grid-cols-2">
@@ -314,7 +314,7 @@ export default function RecruiterCompanyProfilePage() {
                   value={form.name}
                   onChange={(event) => setField("name", event.target.value)}
                   placeholder="VD: Job Matcher Co., Ltd."
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
               <Field label="Tên viết tắt" htmlFor="shortName">
@@ -325,7 +325,7 @@ export default function RecruiterCompanyProfilePage() {
                     setField("shortName", event.target.value)
                   }
                   placeholder="VD: JM"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
               <Field label="Quy mô công ty" htmlFor="companySize" required>
@@ -335,7 +335,7 @@ export default function RecruiterCompanyProfilePage() {
                   onChange={(event) =>
                     setField("companySize", event.target.value as CompanySize)
                   }
-                  className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-medium text-(--gray-900) outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm font-medium text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   {COMPANY_SIZE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -352,7 +352,7 @@ export default function RecruiterCompanyProfilePage() {
                     setField("companyType", event.target.value)
                   }
                   placeholder="VD: Công nghệ thông tin"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
             </div>
@@ -367,7 +367,7 @@ export default function RecruiterCompanyProfilePage() {
                   value={form.email}
                   onChange={(event) => setField("email", event.target.value)}
                   placeholder="contact@example.com"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                 />
               </IconField>
               <IconField icon={Phone} label="Số điện thoại" htmlFor="phone">
@@ -377,7 +377,7 @@ export default function RecruiterCompanyProfilePage() {
                   value={form.phone}
                   onChange={(event) => setField("phone", event.target.value)}
                   placeholder="VD: 0901234567"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                 />
               </IconField>
               <IconField icon={ReceiptText} label="Mã số thuế" htmlFor="taxCode">
@@ -386,7 +386,7 @@ export default function RecruiterCompanyProfilePage() {
                   value={form.taxCode}
                   onChange={(event) => setField("taxCode", event.target.value)}
                   placeholder="Nhập mã số thuế"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                 />
               </IconField>
               <IconField icon={Globe} label="Website" htmlFor="website">
@@ -395,7 +395,7 @@ export default function RecruiterCompanyProfilePage() {
                   value={form.website}
                   onChange={(event) => setField("website", event.target.value)}
                   placeholder="https://example.com"
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                 />
               </IconField>
             </div>
@@ -415,7 +415,7 @@ export default function RecruiterCompanyProfilePage() {
                     setField("provinceCode", event.target.value)
                   }
                   disabled={isLoadingProvinces}
-                  className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-medium text-(--gray-900) outline-none transition-colors disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm font-medium text-foreground outline-none transition-colors disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <option value="">
                     {isLoadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành phố"}
@@ -437,7 +437,7 @@ export default function RecruiterCompanyProfilePage() {
                   value={form.wardCode}
                   onChange={(event) => setField("wardCode", event.target.value)}
                   disabled={!form.provinceCode || isLoadingWards}
-                  className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-medium text-(--gray-900) outline-none transition-colors disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm font-medium text-foreground outline-none transition-colors disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <option value="">
                     {isLoadingWards ? "Đang tải..." : "Chọn phường/xã"}
@@ -457,12 +457,12 @@ export default function RecruiterCompanyProfilePage() {
                 value={form.address}
                 onChange={(event) => setField("address", event.target.value)}
                 placeholder="Số nhà, tên đường, tòa nhà..."
-                className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                className="h-11 rounded-xl border-border bg-muted/50"
               />
             </Field>
 
             {selectedProvince || selectedWard || form.address ? (
-              <p className="rounded-xl border border-(--gray-200) bg-(--gray-100)/60 px-3 py-2 text-sm font-medium text-(--gray-700)">
+              <p className="rounded-xl border border-border bg-muted/60 px-3 py-2 text-sm font-medium text-foreground">
                 {[form.address, selectedWard?.name, selectedProvince?.name]
                   .filter(Boolean)
                   .join(", ")}
@@ -480,7 +480,7 @@ export default function RecruiterCompanyProfilePage() {
                     setField("linkedinUrl", event.target.value)
                   }
                   placeholder="https://linkedin.com/company/..."
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                 />
               </IconField>
               <IconField icon={LinkIcon} label="Facebook" htmlFor="facebookUrl">
@@ -491,12 +491,12 @@ export default function RecruiterCompanyProfilePage() {
                     setField("facebookUrl", event.target.value)
                   }
                   placeholder="https://facebook.com/..."
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                 />
               </IconField>
               <Field label="Logo công ty" htmlFor="logoFile">
-                <div className="flex flex-col gap-3 rounded-xl border border-dashed border-(--gray-200) bg-(--gray-100)/40 p-3 sm:flex-row sm:items-center">
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-(--gray-200) bg-white text-(--gray-500)">
+                <div className="flex flex-col gap-3 rounded-xl border border-dashed border-border bg-muted/40 p-3 sm:flex-row sm:items-center">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-card text-muted-foreground">
                     {logoPreviewUrl ? (
                       <Image
                         src={logoPreviewUrl}
@@ -512,16 +512,16 @@ export default function RecruiterCompanyProfilePage() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-(--gray-900)">
+                    <p className="text-sm font-bold text-foreground">
                       {logoFile?.name || "Chưa chọn logo"}
                     </p>
-                    <p className="mt-1 text-xs text-(--gray-500)">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Chọn file PNG, JPG hoặc WebP để xem trước logo công ty.
                     </p>
                     <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                       <label
                         htmlFor="logoFile"
-                        className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-(--gray-200) bg-white px-4 text-sm font-bold text-(--gray-900) transition-colors hover:bg-(--gray-100)"
+                        className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold text-foreground transition-colors hover:bg-muted"
                       >
                         <Upload className="h-4 w-4" />
                         Chọn logo
@@ -560,7 +560,7 @@ export default function RecruiterCompanyProfilePage() {
                   setField("description", event.target.value)
                 }
                 placeholder="Mô tả ngắn về công ty, môi trường làm việc và định hướng tuyển dụng"
-                className="min-h-32 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="min-h-32 w-full rounded-xl border border-border bg-muted/50 px-3 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               />
             </Field>
           </FormSection>
@@ -569,7 +569,7 @@ export default function RecruiterCompanyProfilePage() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="h-11 gap-2 rounded-xl bg-(--primary-blue) px-5 font-bold text-white hover:bg-(--blue-dark)"
+              className="h-11 gap-2 rounded-xl bg-primary px-5 font-bold text-primary-foreground hover:bg-primary/90"
             >
               {isSubmitting ? (
                 <CircleDashed className="h-4 w-4 animate-spin" />
@@ -595,9 +595,9 @@ function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-4 border-t border-(--gray-200) pt-5 first:border-t-0 first:pt-0">
-      <h2 className="flex items-center gap-2 text-base font-black text-(--gray-900)">
-        <Icon className="h-5 w-5 text-(--primary-blue)" />
+    <section className="space-y-4 border-t border-border pt-5 first:border-t-0 first:pt-0">
+      <h2 className="flex items-center gap-2 text-base font-black text-foreground">
+        <Icon className="h-5 w-5 text-primary" />
         {title}
       </h2>
       {children}
@@ -641,7 +641,7 @@ function IconField({
   return (
     <Field label={label} htmlFor={htmlFor}>
       <div className="relative">
-        <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--gray-500)" />
+        <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         {children}
       </div>
     </Field>
@@ -658,11 +658,11 @@ function ProfileField({
   value: string;
 }) {
   return (
-    <article className="rounded-xl border border-(--gray-200) p-3">
-      <p className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-(--gray-500)">
+    <article className="rounded-xl border border-border p-3">
+      <p className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         <Icon className="h-4 w-4" /> {label}
       </p>
-      <p className="mt-1 text-sm font-bold text-(--gray-900)">
+      <p className="mt-1 text-sm font-bold text-foreground">
         {value || "Chưa cập nhật"}
       </p>
     </article>

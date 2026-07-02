@@ -47,7 +47,10 @@ export class GeminiAdapter implements AiProviderAdapter {
     return this.toResult(result);
   }
 
-  private buildModel(options: AiAdapterCallOptions, systemInstruction?: string) {
+  private buildModel(
+    options: AiAdapterCallOptions,
+    systemInstruction?: string,
+  ) {
     const client = new GoogleGenerativeAI(options.apiKey);
     return client.getGenerativeModel({
       model: options.model,

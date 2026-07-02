@@ -4,6 +4,7 @@ export type AuthProfile = {
   id: string;
   email: string;
   fullName: string;
+  avatar: string | null;
   provider: string | null;
   role: UserRole;
 };

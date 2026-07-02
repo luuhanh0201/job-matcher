@@ -2,11 +2,16 @@ import {
   Body,
   Controller,
   Get,
+  HttpStatus,
+  ParseFilePipeBuilder,
   Patch,
   Post,
   Request,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { RecruitersService } from './recruiters.service';
 import { JwtAuthGuard } from '../auth/Guards/jwt-auth.guard';
 import { User } from '../user/entities/user.entity';
@@ -37,6 +42,25 @@ export class RecruitersController {
       req?.user?.id,
     );
     return profile;
+  }
+
+  @Patch('profile/avatar')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('avatar'))
+  async updateRecruiterAvatar(
+    @Request() req: Request & { user: User },
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({ fileType: /^image\/(png|jpeg|webp)$/ })
+        .addMaxSizeValidator({ maxSize: 5 * 1024 * 1024 })
+        .build({
+          fileIsRequired: true,
+          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        }),
+    )
+    avatar: Express.Multer.File,
+  ) {
+    return this.recruitersService.updateRecruiterAvatar(req?.user?.id, avatar);
   }
 
   @Patch('profile')

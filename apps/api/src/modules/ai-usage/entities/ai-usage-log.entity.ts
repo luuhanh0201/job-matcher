@@ -1,4 +1,7 @@
-import { AiProviderEntity, AiProviderVendor } from '@/modules/ai-providers/entities/ai-provider.entity';
+import {
+  AiProviderEntity,
+  AiProviderVendor,
+} from '@/modules/ai-providers/entities/ai-provider.entity';
 import {
   Column,
   CreateDateColumn,

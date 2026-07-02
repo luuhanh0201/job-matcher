@@ -6,15 +6,15 @@ const ROLE_CONFIG: Record<
 > = {
   CANDIDATE: {
     label: "Ứng viên",
-    className: "bg-(--blue-light) text-(--primary-blue)",
+    className: "bg-primary/10 text-primary",
   },
   RECRUITER: {
     label: "Nhà tuyển dụng",
-    className: "bg-(--accent-green)/10 text-(--accent-green)",
+    className: "bg-success/10 text-success",
   },
   ADMIN: {
     label: "Quản trị viên",
-    className: "bg-(--accent-purple)/10 text-(--accent-purple)",
+    className: "bg-accent/10 text-accent",
   },
 };
 

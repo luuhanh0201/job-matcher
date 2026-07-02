@@ -42,20 +42,20 @@ function formatDate(value?: string | null) {
 }
 
 function getInterviewStatusClass(status: InterviewStatus) {
-  if (status === "ACCEPTED") return "bg-emerald-100 text-emerald-700";
-  if (status === "DECLINED") return "bg-rose-100 text-rose-700";
-  if (status === "CANCELLED") return "bg-gray-200 text-gray-700";
-  return "bg-amber-100 text-amber-700";
+  if (status === "ACCEPTED") return "bg-success/15 text-success";
+  if (status === "DECLINED") return "bg-destructive/15 text-destructive";
+  if (status === "CANCELLED") return "bg-muted text-muted-foreground";
+  return "bg-warning/15 text-warning";
 }
 
 function getApplicationStatusClass(status: JobApplicationStatus) {
   if (status === "SHORTLISTED" || status === "HIRED") {
-    return "bg-emerald-100 text-emerald-700";
+    return "bg-success/15 text-success";
   }
-  if (status === "REJECTED") return "bg-rose-100 text-rose-700";
-  if (status === "INTERVIEW") return "bg-blue-100 text-blue-700";
-  if (status === "VIEWED") return "bg-violet-100 text-violet-700";
-  return "bg-amber-100 text-amber-700";
+  if (status === "REJECTED") return "bg-destructive/15 text-destructive";
+  if (status === "INTERVIEW") return "bg-primary/15 text-primary";
+  if (status === "VIEWED") return "bg-accent/15 text-accent";
+  return "bg-warning/15 text-warning";
 }
 
 function isInterviewExpired(interview: InterviewProfile) {
@@ -149,7 +149,7 @@ export default function CandidateApplicationsPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-60 items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-(--gray-500)" />
+        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -157,18 +157,18 @@ export default function CandidateApplicationsPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-2xl font-black text-(--gray-900)">
+        <h1 className="text-2xl font-black text-foreground">
           Việc đã ứng tuyển
         </h1>
-        <p className="mt-1 text-sm text-(--gray-500)">
+        <p className="mt-1 text-sm text-muted-foreground">
           Theo dõi trạng thái hồ sơ và xác nhận lịch phỏng vấn.
         </p>
       </header>
 
       {applications.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-(--gray-200) bg-white p-8 text-center shadow-sm">
-          <BriefcaseBusiness className="mx-auto h-9 w-9 text-(--primary-blue)" />
-          <p className="mt-3 text-sm font-bold text-(--gray-700)">
+        <section className="rounded-2xl border border-dashed border-border bg-card p-8 text-center shadow-sm">
+          <BriefcaseBusiness className="mx-auto h-9 w-9 text-primary" />
+          <p className="mt-3 text-sm font-bold text-foreground">
             Bạn chưa ứng tuyển công việc nào
           </p>
         </section>
@@ -181,22 +181,22 @@ export default function CandidateApplicationsPage() {
             return (
               <article
                 key={application.id}
-                className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm"
+                className="rounded-2xl border border-border bg-card p-5 shadow-sm"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-base font-black text-(--gray-900)">
+                      <h2 className="text-base font-black text-foreground">
                         {application.job.title}
                       </h2>
-                      <span className="rounded-full bg-(--blue-light) px-2.5 py-1 text-xs font-bold text-(--primary-blue)">
+                      <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
                         {JOB_APPLICATION_STATUS_LABEL[application.status]}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm font-bold text-(--gray-600)">
+                    <p className="mt-2 text-sm font-bold text-muted-foreground">
                       {application.job.company?.name || "Chưa cập nhật công ty"}
                     </p>
-                    <p className="mt-2 flex items-center gap-2 text-sm font-medium text-(--gray-500)">
+                    <p className="mt-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
                       <CalendarClock className="h-4 w-4" />
                       Ứng tuyển: {formatDate(application.createdAt)}
                     </p>
@@ -213,12 +213,12 @@ export default function CandidateApplicationsPage() {
                       return (
                         <div
                           key={interview.id}
-                          className="rounded-xl border border-(--gray-200) bg-(--gray-100)/50 p-4"
+                          className="rounded-xl border border-border bg-muted/50 p-4"
                         >
                           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <p className="text-sm font-black text-(--gray-900)">
+                                <p className="text-sm font-black text-foreground">
                                   Lịch phỏng vấn
                                 </p>
                                 <span
@@ -227,7 +227,7 @@ export default function CandidateApplicationsPage() {
                                   {INTERVIEW_STATUS_LABEL[interview.status]}
                                 </span>
                                 {isExpired && interview.status === "PENDING" ? (
-                                  <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-700">
+                                  <span className="rounded-full bg-destructive/15 px-2.5 py-1 text-xs font-bold text-destructive">
                                     Quá hạn xác nhận
                                   </span>
                                 ) : null}
@@ -257,8 +257,8 @@ export default function CandidateApplicationsPage() {
                               </div>
 
                               {interview.note ? (
-                                <div className="mt-3 flex gap-2 rounded-xl bg-white/70 p-3 text-sm text-(--gray-700)">
-                                  <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-(--gray-400)" />
+                                <div className="mt-3 flex gap-2 rounded-xl bg-card/70 p-3 text-sm text-foreground">
+                                  <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                                   <p className="whitespace-pre-line">
                                     {interview.note}
                                   </p>
@@ -274,7 +274,7 @@ export default function CandidateApplicationsPage() {
                                   onClick={() =>
                                     handleRespondInterview(interview, "ACCEPTED")
                                   }
-                                  className="h-10 gap-2 rounded-xl bg-emerald-600 px-4 font-bold text-white hover:bg-emerald-700"
+                                  className="h-10 gap-2 rounded-xl bg-success px-4 font-bold text-success-foreground hover:bg-success/90"
                                 >
                                   <CheckCircle2 className="h-4 w-4" />
                                   Xác nhận
@@ -286,7 +286,7 @@ export default function CandidateApplicationsPage() {
                                   onClick={() =>
                                     handleRespondInterview(interview, "DECLINED")
                                   }
-                                  className="h-10 gap-2 rounded-xl font-bold text-rose-600"
+                                  className="h-10 gap-2 rounded-xl font-bold text-destructive"
                                 >
                                   <XCircle className="h-4 w-4" />
                                   Từ chối
@@ -314,26 +314,26 @@ export default function CandidateApplicationsPage() {
 
 function StatusHistory({ logs }: { logs: JobApplicationStatusLog[] }) {
   return (
-    <section className="mt-4 rounded-xl border border-(--gray-200) bg-(--gray-100)/40 p-4">
-      <div className="flex items-center gap-2 text-sm font-black text-(--gray-900)">
-        <ClipboardList className="h-4 w-4 text-(--primary-blue)" />
+    <section className="mt-4 rounded-xl border border-border bg-muted/40 p-4">
+      <div className="flex items-center gap-2 text-sm font-black text-foreground">
+        <ClipboardList className="h-4 w-4 text-primary" />
         Lịch sử trạng thái
       </div>
 
       {logs.length === 0 ? (
-        <p className="mt-3 text-sm font-medium text-(--gray-500)">
+        <p className="mt-3 text-sm font-medium text-muted-foreground">
           Chưa có lịch sử thay đổi.
         </p>
       ) : (
         <ol className="mt-3 space-y-3">
           {logs.map((log) => (
             <li key={log.id} className="flex gap-3">
-              <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-(--primary-blue)" />
+              <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
               <div className="min-w-0">
-                <p className="text-sm font-bold text-(--gray-800)">
+                <p className="text-sm font-bold text-foreground">
                   {log.content}
                 </p>
-                <p className="mt-1 text-xs font-medium text-(--gray-500)">
+                <p className="mt-1 text-xs font-medium text-muted-foreground">
                   {formatDate(log.createdAt)} ·{" "}
                   {log.changedBy?.fullName || "Không xác định"}
                 </p>
@@ -345,7 +345,7 @@ function StatusHistory({ logs }: { logs: JobApplicationStatusLog[] }) {
                       >
                         {JOB_APPLICATION_STATUS_LABEL[log.fromStatus]}
                       </span>
-                      <span className="text-(--gray-400)">→</span>
+                      <span className="text-muted-foreground">→</span>
                     </>
                   ) : null}
                   <span
@@ -376,17 +376,17 @@ function InterviewInfoBlock({
 }) {
   const content = (
     <>
-      <Icon className="h-4 w-4 shrink-0 text-(--gray-400)" />
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       <span className="min-w-0">
-        <span className="block text-xs font-bold uppercase text-(--gray-400)">
+        <span className="block text-xs font-bold uppercase text-muted-foreground">
           {label}
         </span>
-        <span className="block truncate text-sm font-bold text-(--gray-700)">
+        <span className="block truncate text-sm font-bold text-foreground">
           {value}
         </span>
       </span>
       {href ? (
-        <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-(--primary-blue)" />
+        <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-primary" />
       ) : null}
     </>
   );
@@ -397,7 +397,7 @@ function InterviewInfoBlock({
         href={href}
         target="_blank"
         rel="noreferrer"
-        className="flex min-w-0 items-center gap-2 rounded-xl border border-(--gray-200) bg-white/70 px-3 py-2 hover:bg-(--blue-light)/60"
+        className="flex min-w-0 items-center gap-2 rounded-xl border border-border bg-card/70 px-3 py-2 hover:bg-primary/10/60"
       >
         {content}
       </a>
@@ -405,7 +405,7 @@ function InterviewInfoBlock({
   }
 
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-xl border border-(--gray-200) bg-white/70 px-3 py-2">
+    <div className="flex min-w-0 items-center gap-2 rounded-xl border border-border bg-card/70 px-3 py-2">
       {content}
     </div>
   );

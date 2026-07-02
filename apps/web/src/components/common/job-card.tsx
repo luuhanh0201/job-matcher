@@ -32,12 +32,12 @@ function getInitials(company: string) {
 }
 
 const COMPANY_COLORS = [
-  "bg-blue-100 text-blue-700",
-  "bg-purple-100 text-purple-700",
-  "bg-emerald-100 text-emerald-700",
-  "bg-orange-100 text-orange-700",
-  "bg-rose-100 text-rose-700",
-  "bg-teal-100 text-teal-700",
+  "bg-blue-500/15 text-blue-600",
+  "bg-purple-500/15 text-purple-600",
+  "bg-emerald-500/15 text-emerald-600",
+  "bg-orange-500/15 text-orange-600",
+  "bg-rose-500/15 text-rose-600",
+  "bg-teal-500/15 text-teal-600",
 ];
 
 function getCompanyColor(company: string) {
@@ -53,7 +53,7 @@ export function JobCard({ job }: { job: Job }) {
   return (
     <Link
       href={`/jobs/${job.id}`}
-      className="group block rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm transition-all hover:border-(--primary-blue)/30 hover:shadow-md sm:p-5"
+      className="group block rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:border-primary/30 hover:shadow-md sm:p-5"
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div
@@ -76,20 +76,20 @@ export function JobCard({ job }: { job: Job }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <h3 className="line-clamp-2 text-base font-bold text-(--gray-900) group-hover:text-(--primary-blue)">
+              <h3 className="line-clamp-2 text-base font-bold text-foreground group-hover:text-primary">
                 {job.title}
               </h3>
-              <p className="mt-0.5 text-sm font-medium text-(--gray-500)">{job.company}</p>
+              <p className="mt-0.5 text-sm font-medium text-muted-foreground">{job.company}</p>
             </div>
             {job.status === "OPEN" && (
-              <span className="shrink-0 rounded-full bg-(--accent-green)/10 px-2.5 py-0.5 text-xs font-bold text-(--accent-green)">
+              <span className="shrink-0 rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-bold text-success">
                 Đang tuyển
               </span>
             )}
           </div>
 
           {/* Meta row */}
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-(--gray-500) sm:gap-x-4">
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground sm:gap-x-4">
             <span className="flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5" />
               {job.location}
@@ -110,11 +110,11 @@ export function JobCard({ job }: { job: Job }) {
 
           {/* Department badge */}
           <div className="mt-3 flex items-center gap-2">
-            <span className="rounded-full bg-(--blue-light) px-3 py-1 text-xs font-semibold text-(--primary-blue)">
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               {job.department}
             </span>
             {job.publishedAt && (
-              <span className="flex items-center gap-1 text-xs text-(--gray-500)">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 {new Date(job.publishedAt).toLocaleDateString("vi-VN")}
               </span>

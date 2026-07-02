@@ -35,10 +35,10 @@ const VENDOR_OPTIONS: { value: AiProviderVendor; label: string }[] = [
 ];
 
 const VENDOR_BADGE_CLASS: Record<AiProviderVendor, string> = {
-  ANTHROPIC: "bg-orange-100 text-orange-700",
-  OPENAI: "bg-emerald-100 text-emerald-700",
-  GEMINI: "bg-indigo-100 text-indigo-700",
-  GROQ: "bg-rose-100 text-rose-700",
+  ANTHROPIC: "bg-orange-500/15 text-orange-600",
+  OPENAI: "bg-emerald-500/15 text-emerald-600",
+  GEMINI: "bg-indigo-500/15 text-indigo-600",
+  GROQ: "bg-rose-500/15 text-rose-600",
 };
 
 type FormState = {
@@ -184,16 +184,16 @@ export default function AdminAiProvidersPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div className="space-y-1">
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-(--gray-900)">
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
             <BsRobot className="h-6 w-6 text-indigo-600" />
             Quản lý AI
           </h1>
-          <p className="text-sm text-(--gray-600)">
+          <p className="text-sm text-muted-foreground">
             Thêm nhà cung cấp AI bằng API key và chọn 1 AI đang dùng cho toàn hệ thống.
           </p>
         </div>
         <Button
-          className="w-full gap-2 sm:w-auto bg-(--primary-blue) text-white hover:bg-(--blue-dark)"
+          className="w-full gap-2 sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
           onClick={() => setShowForm((prev) => !prev)}
         >
           <Plus className="h-4 w-4" />
@@ -204,8 +204,8 @@ export default function AdminAiProvidersPage() {
       <AiSectionTabs />
 
       {showForm && (
-        <Card className="border border-(--gray-200) bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold text-(--gray-900)">Thêm AI Provider</h3>
+        <Card className="border border-border bg-card p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-bold text-foreground">Thêm AI Provider</h3>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="ai-name">Tên gợi nhớ</Label>
@@ -223,7 +223,7 @@ export default function AdminAiProvidersPage() {
                 id="ai-vendor"
                 value={form.vendor}
                 onChange={(e) => setForm((prev) => ({ ...prev, vendor: e.target.value as AiProviderVendor }))}
-                className="h-8 w-full rounded-lg border border-(--gray-200) bg-white px-2.5 text-sm outline-none focus:border-(--primary-blue) focus:ring-2 focus:ring-(--primary-blue)/20"
+                className="h-8 w-full rounded-lg border border-border bg-card px-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               >
                 {VENDOR_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -268,18 +268,18 @@ export default function AdminAiProvidersPage() {
                 <button
                   type="button"
                   onClick={() => setShowApiKey((prev) => !prev)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-(--gray-500) hover:text-(--gray-700)"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="text-xs text-(--gray-500)">
+              <p className="text-xs text-muted-foreground">
                 API key được mã hoá trước khi lưu, không thể xem lại sau khi lưu. Hệ thống sẽ tự kiểm tra kết nối ngay sau khi lưu.
               </p>
             </div>
 
             <div className="flex items-center gap-2 sm:col-span-2">
-              <Button type="submit" disabled={isSubmitting} className="bg-(--primary-blue) text-white hover:bg-(--blue-dark)">
+              <Button type="submit" disabled={isSubmitting} className="bg-primary text-primary-foreground hover:bg-primary/90">
                 {isSubmitting ? "Đang lưu..." : "Lưu AI Provider"}
               </Button>
               <Button type="button" variant="outline" onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}>
@@ -290,48 +290,48 @@ export default function AdminAiProvidersPage() {
         </Card>
       )}
 
-      <Card className="border border-(--gray-200) bg-white shadow-sm">
+      <Card className="border border-border bg-card shadow-sm">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-(--gray-200) border-t-(--primary-blue)" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
           </div>
         ) : providers.length === 0 ? (
-          <div className="py-12 text-center text-sm text-(--gray-500)">
+          <div className="py-12 text-center text-sm text-muted-foreground">
             Chưa có AI Provider nào. Bấm &quot;Thêm AI&quot; để bắt đầu.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-(--gray-200) bg-(--gray-50)">
-                  <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">Tên</th>
-                  <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">Nhà cung cấp</th>
-                  <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">Model</th>
-                  <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">API key</th>
-                  <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">Trạng thái</th>
-                  <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">Kết nối</th>
-                  <th className="px-4 py-3 text-left font-semibold text-(--gray-900)">Hành động</th>
+                <tr className="border-b border-border bg-muted">
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">Tên</th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">Nhà cung cấp</th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">Model</th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">API key</th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">Trạng thái</th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">Kết nối</th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">Hành động</th>
                 </tr>
               </thead>
               <tbody>
                 {providers.map((provider) => (
-                  <tr key={provider.id} className="border-b border-(--gray-200) transition-colors hover:bg-(--gray-50)">
-                    <td className="px-4 py-3 font-medium text-(--gray-900)">{provider.name}</td>
+                  <tr key={provider.id} className="border-b border-border transition-colors hover:bg-muted">
+                    <td className="px-4 py-3 font-medium text-foreground">{provider.name}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${VENDOR_BADGE_CLASS[provider.vendor]}`}>
                         {provider.vendor}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-(--gray-600)">{provider.model}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-(--gray-500)">{provider.maskedApiKey}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{provider.model}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{provider.maskedApiKey}</td>
                     <td className="px-4 py-3">
                       {provider.isActive ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-medium text-success">
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           Đang dùng
                         </span>
                       ) : (
-                        <span className="inline-flex rounded-full bg-(--gray-100) px-2 py-1 text-xs font-medium text-(--gray-600)">
+                        <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
                           Chưa kích hoạt
                         </span>
                       )}
@@ -339,7 +339,7 @@ export default function AdminAiProvidersPage() {
                     <td className="px-4 py-3">
                       {provider.lastCheckStatus === "SUCCESS" && (
                         <span
-                          className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800"
+                          className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-medium text-success"
                           title={provider.lastCheckedAt ? new Date(provider.lastCheckedAt).toLocaleString("vi-VN") : ""}
                         >
                           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -348,7 +348,7 @@ export default function AdminAiProvidersPage() {
                       )}
                       {provider.lastCheckStatus === "FAILED" && (
                         <span
-                          className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
+                          className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-1 text-xs font-medium text-destructive"
                           title={provider.lastCheckMessage ?? ""}
                         >
                           <XCircle className="h-3.5 w-3.5" />
@@ -356,12 +356,12 @@ export default function AdminAiProvidersPage() {
                         </span>
                       )}
                       {provider.lastCheckStatus === "UNKNOWN" && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-(--gray-100) px-2 py-1 text-xs font-medium text-(--gray-600)">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
                           <HelpCircle className="h-3.5 w-3.5" />
                           Chưa kiểm tra
                         </span>
                       )}
-                      <div className="mt-1 text-[10px] text-(--gray-400)">
+                      <div className="mt-1 text-[10px] text-muted-foreground">
                         {formatRelativeTime(provider.lastCheckedAt)}
                       </div>
                     </td>
@@ -391,7 +391,7 @@ export default function AdminAiProvidersPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="h-7 w-7 text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40"
                           disabled={provider.isActive || pendingActionId === provider.id}
                           title={provider.isActive ? "Không thể xoá AI Provider đang dùng" : "Xoá"}
                           onClick={() => handleDelete(provider)}

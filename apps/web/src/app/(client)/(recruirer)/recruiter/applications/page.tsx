@@ -53,18 +53,18 @@ function toDateTimeLocalValue(value: Date) {
 
 function getStatusClass(status: JobApplicationStatus) {
   if (status === "SHORTLISTED" || status === "HIRED") {
-    return "bg-emerald-100 text-emerald-700";
+    return "bg-success/15 text-success";
   }
   if (status === "REJECTED") {
-    return "bg-rose-100 text-rose-700";
+    return "bg-destructive/15 text-destructive";
   }
   if (status === "INTERVIEW") {
-    return "bg-blue-100 text-blue-700";
+    return "bg-primary/15 text-primary";
   }
   if (status === "VIEWED") {
-    return "bg-violet-100 text-violet-700";
+    return "bg-accent/15 text-accent";
   }
-  return "bg-amber-100 text-amber-700";
+  return "bg-warning/15 text-warning";
 }
 
 export default function RecruiterApplicationsPage() {
@@ -301,7 +301,7 @@ export default function RecruiterApplicationsPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-60 items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-(--gray-500)" />
+        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -310,10 +310,10 @@ export default function RecruiterApplicationsPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black text-(--gray-900)">
+          <h1 className="text-2xl font-black text-foreground">
             Quản lý ứng viên
           </h1>
-          <p className="mt-1 text-sm text-(--gray-500)">
+          <p className="mt-1 text-sm text-muted-foreground">
             Danh sách ứng viên đã ứng tuyển vào các tin tuyển dụng của bạn.
           </p>
         </div>
@@ -325,24 +325,24 @@ export default function RecruiterApplicationsPage() {
         <StatCard
           label="Phù hợp"
           value={stats.shortlisted}
-          className="text-emerald-600"
+          className="text-success"
         />
         <StatCard
           label="Từ chối"
           value={stats.rejected}
-          className="text-rose-600"
+          className="text-destructive"
         />
       </section>
 
       {applications.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-(--gray-200) bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-(--blue-light) text-(--primary-blue)">
+        <section className="rounded-2xl border border-dashed border-border bg-card p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <UserRound className="h-6 w-6" />
           </div>
-          <h2 className="mt-4 text-base font-black text-(--gray-900)">
+          <h2 className="mt-4 text-base font-black text-foreground">
             Chưa có ứng viên
           </h2>
-          <p className="mt-2 text-sm font-medium text-(--gray-500)">
+          <p className="mt-2 text-sm font-medium text-muted-foreground">
             Khi candidate ứng tuyển, hồ sơ sẽ tự động xuất hiện tại đây.
           </p>
         </section>
@@ -351,11 +351,11 @@ export default function RecruiterApplicationsPage() {
           {applications.map((application) => (
             <article
               key={application.id}
-              className="relative rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm"
+              className="relative rounded-2xl border border-border bg-card p-5 shadow-sm"
             >
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
                 <div className="flex min-w-0 gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-(--blue-light) text-(--primary-blue)">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-primary">
                     {application.candidate.avatar ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -370,7 +370,7 @@ export default function RecruiterApplicationsPage() {
 
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="truncate text-base font-black text-(--gray-900)">
+                      <h2 className="truncate text-base font-black text-foreground">
                         {application.candidate.fullName}
                       </h2>
                       <span
@@ -380,7 +380,7 @@ export default function RecruiterApplicationsPage() {
                       </span>
                     </div>
 
-                    <div className="mt-3 grid gap-2 text-sm text-(--gray-600) md:grid-cols-2">
+                    <div className="mt-3 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
                       <InfoLine
                         icon={BriefcaseBusiness}
                         value={application.job.title}
@@ -400,8 +400,8 @@ export default function RecruiterApplicationsPage() {
                       />
                     </div>
                     {isLoadingStatusChange === application.id ? (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/70">
-                        <Loader2 className="h-5 w-5 animate-spin text-(--primary-blue)" />
+                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-card/70">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
                       </div>
                     ) : (
                       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -413,7 +413,7 @@ export default function RecruiterApplicationsPage() {
                             event.target.value as JobApplicationStatus,
                           )
                         }
-                        className="h-10 rounded-xl border border-(--gray-200) bg-white px-3 text-sm font-bold text-(--gray-900) outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                        className="h-10 rounded-xl border border-border bg-card px-3 text-sm font-bold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                       >
                         {Object.entries(JOB_APPLICATION_STATUS_LABEL).map(
                           ([status, label]) => (
@@ -427,7 +427,7 @@ export default function RecruiterApplicationsPage() {
                           <Button
                             type="button"
                             onClick={() => openInterviewForm(application)}
-                            className="h-10 gap-2 rounded-xl bg-(--primary-blue) px-4 font-bold text-white hover:bg-(--blue-dark)"
+                            className="h-10 gap-2 rounded-xl bg-primary px-4 font-bold text-primary-foreground hover:bg-primary/90"
                           >
                             <CalendarPlus className="h-4 w-4" />
                             Mời phỏng vấn
@@ -463,7 +463,7 @@ export default function RecruiterApplicationsPage() {
                       type="button"
                       variant="outline"
                       onClick={() => handleViewCv(application)}
-                      className="h-10 w-full gap-2 rounded-xl font-bold text-(--gray-600) lg:w-36"
+                      className="h-10 w-full gap-2 rounded-xl font-bold text-muted-foreground lg:w-36"
                     >
                       <Eye className="h-4 w-4" />
                       Tìm CV
@@ -473,12 +473,12 @@ export default function RecruiterApplicationsPage() {
               </div>
 
               {application.coverLetter ? (
-                <div className="mt-4 rounded-xl bg-(--gray-100)/60 p-4">
-                  <p className="flex items-center gap-2 text-sm font-black text-(--gray-900)">
-                    <FileText className="h-4 w-4 text-(--primary-blue)" />
+                <div className="mt-4 rounded-xl bg-muted/60 p-4">
+                  <p className="flex items-center gap-2 text-sm font-black text-foreground">
+                    <FileText className="h-4 w-4 text-primary" />
                     Thư ứng tuyển
                   </p>
-                  <p className="mt-2 whitespace-pre-line text-sm leading-6 text-(--gray-700)">
+                  <p className="mt-2 whitespace-pre-line text-sm leading-6 text-foreground">
                     {application.coverLetter}
                   </p>
                 </div>
@@ -494,8 +494,8 @@ export default function RecruiterApplicationsPage() {
 
       {isLoadingProfile ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
-          <div className="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 text-sm font-bold text-(--gray-700) shadow-lg">
-            <Loader2 className="h-5 w-5 animate-spin text-(--primary-blue)" />
+          <div className="flex items-center gap-3 rounded-2xl bg-card px-5 py-4 text-sm font-bold text-foreground shadow-lg">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
             Đang tải hồ sơ ứng viên...
           </div>
         </div>
@@ -503,8 +503,8 @@ export default function RecruiterApplicationsPage() {
 
       {isLoadingCvPreview ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 px-4">
-          <div className="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 text-sm font-bold text-(--gray-700) shadow-lg">
-            <Loader2 className="h-5 w-5 animate-spin text-(--primary-blue)" />
+          <div className="flex items-center gap-3 rounded-2xl bg-card px-5 py-4 text-sm font-bold text-foreground shadow-lg">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
             Đang mở CV PDF...
           </div>
         </div>
@@ -554,15 +554,15 @@ export default function RecruiterApplicationsPage() {
 function StatCard({
   label,
   value,
-  className = "text-(--gray-900)",
+  className = "text-foreground",
 }: {
   label: string;
   value: number;
   className?: string;
 }) {
   return (
-    <article className="rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-(--gray-500)">
+    <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <p className={`mt-2 text-2xl font-black ${className}`}>{value}</p>
@@ -572,26 +572,26 @@ function StatCard({
 
 function StatusHistory({ logs }: { logs: JobApplicationStatusLog[] }) {
   return (
-    <section className="mt-4 rounded-xl border border-(--gray-200) bg-(--gray-100)/40 p-4">
-      <div className="flex items-center gap-2 text-sm font-black text-(--gray-900)">
-        <ClipboardList className="h-4 w-4 text-(--primary-blue)" />
+    <section className="mt-4 rounded-xl border border-border bg-muted/40 p-4">
+      <div className="flex items-center gap-2 text-sm font-black text-foreground">
+        <ClipboardList className="h-4 w-4 text-primary" />
         Lịch sử trạng thái
       </div>
 
       {logs.length === 0 ? (
-        <p className="mt-3 text-sm font-medium text-(--gray-500)">
+        <p className="mt-3 text-sm font-medium text-muted-foreground">
           Chưa có lịch sử thay đổi.
         </p>
       ) : (
         <ol className="mt-3 space-y-3">
           {logs.map((log) => (
             <li key={log.id} className="flex gap-3">
-              <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-(--primary-blue)" />
+              <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
               <div className="min-w-0">
-                <p className="text-sm font-bold text-(--gray-800)">
+                <p className="text-sm font-bold text-foreground">
                   {log.content}
                 </p>
-                <p className="mt-1 text-xs font-medium text-(--gray-500)">
+                <p className="mt-1 text-xs font-medium text-muted-foreground">
                   {formatDate(log.createdAt)} ·{" "}
                   {log.changedBy?.fullName || "Không xác định"}
                 </p>
@@ -603,7 +603,7 @@ function StatusHistory({ logs }: { logs: JobApplicationStatusLog[] }) {
                       >
                         {JOB_APPLICATION_STATUS_LABEL[log.fromStatus]}
                       </span>
-                      <span className="text-(--gray-400)">→</span>
+                      <span className="text-muted-foreground">→</span>
                     </>
                   ) : null}
                   <span
@@ -637,10 +637,10 @@ function CandidateProfileModal({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 px-4 py-6">
-      <section className="mx-auto max-w-5xl rounded-2xl bg-white shadow-xl">
-        <header className="flex items-start justify-between gap-4 border-b border-(--gray-200) p-5">
+      <section className="mx-auto max-w-5xl rounded-2xl bg-card shadow-xl">
+        <header className="flex items-start justify-between gap-4 border-b border-border p-5">
           <div className="flex min-w-0 gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-(--blue-light) text-(--primary-blue)">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-primary">
               {profile.user.avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -653,13 +653,13 @@ function CandidateProfileModal({
               )}
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-xl font-black text-(--gray-900)">
+              <h2 className="truncate text-xl font-black text-foreground">
                 {profile.user.fullName}
               </h2>
-              <p className="mt-1 text-sm font-bold text-(--gray-600)">
+              <p className="mt-1 text-sm font-bold text-muted-foreground">
                 {profileData?.currentTitle || "Chưa cập nhật vị trí"}
               </p>
-              <div className="mt-3 flex flex-wrap gap-2 text-sm text-(--gray-600)">
+              <div className="mt-3 flex flex-wrap gap-2 text-sm text-muted-foreground">
                 <InfoPill icon={Mail} value={profile.user.email} />
                 <InfoPill
                   icon={Phone}
@@ -675,7 +675,7 @@ function CandidateProfileModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-100)"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-muted"
           >
             <X className="h-4 w-4" />
           </button>
@@ -703,28 +703,28 @@ function CandidateProfileModal({
           </div>
 
           <aside className="space-y-5">
-            <section className="rounded-2xl border border-(--gray-200) bg-white p-4">
-              <h3 className="text-sm font-black text-(--gray-900)">Kỹ năng</h3>
+            <section className="rounded-2xl border border-border bg-card p-4">
+              <h3 className="text-sm font-black text-foreground">Kỹ năng</h3>
               <div className="mt-3 flex flex-wrap gap-2">
                 {skills.length > 0 ? (
                   skills.map((skill) => (
                     <span
                       key={skill}
-                      className="rounded-full bg-(--blue-light) px-3 py-1 text-xs font-bold text-(--primary-blue)"
+                      className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary"
                     >
                       {skill}
                     </span>
                   ))
                 ) : (
-                  <p className="text-sm font-medium text-(--gray-500)">
+                  <p className="text-sm font-medium text-muted-foreground">
                     Chưa cập nhật kỹ năng
                   </p>
                 )}
               </div>
             </section>
 
-            <section className="rounded-2xl border border-(--gray-200) bg-white p-4">
-              <h3 className="text-sm font-black text-(--gray-900)">Liên kết</h3>
+            <section className="rounded-2xl border border-border bg-card p-4">
+              <h3 className="text-sm font-black text-foreground">Liên kết</h3>
               <div className="mt-3 space-y-2 text-sm">
                 <InfoPill
                   icon={Globe}
@@ -741,8 +741,8 @@ function CandidateProfileModal({
               </div>
             </section>
 
-            <section className="rounded-2xl border border-(--gray-200) bg-white p-4">
-              <h3 className="text-sm font-black text-(--gray-900)">CV PDF</h3>
+            <section className="rounded-2xl border border-border bg-card p-4">
+              <h3 className="text-sm font-black text-foreground">CV PDF</h3>
               <div className="mt-3 space-y-2">
                 {cvs.length > 0 ? (
                   cvs.map((cv) => (
@@ -750,21 +750,21 @@ function CandidateProfileModal({
                       key={cv.id}
                       type="button"
                       onClick={() => onViewCv(cv)}
-                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 py-2 text-left hover:bg-(--blue-light)/50"
+                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2 text-left hover:bg-primary/10"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate text-sm font-black text-(--gray-900)">
+                        <span className="block truncate text-sm font-black text-foreground">
                           {cv.fileName || "CV PDF"}
                         </span>
-                        <span className="text-xs font-medium text-(--gray-500)">
+                        <span className="text-xs font-medium text-muted-foreground">
                           {formatDate(cv.createdAt)}
                         </span>
                       </span>
-                      <Eye className="h-4 w-4 shrink-0 text-(--primary-blue)" />
+                      <Eye className="h-4 w-4 shrink-0 text-primary" />
                     </button>
                   ))
                 ) : (
-                  <p className="rounded-xl bg-(--gray-100)/60 p-3 text-sm font-medium text-(--gray-500)">
+                  <p className="rounded-xl bg-muted/60 p-3 text-sm font-medium text-muted-foreground">
                     Ứng viên chưa upload CV PDF.
                   </p>
                 )}
@@ -788,20 +788,20 @@ function CvPreviewModal({
 }) {
   return (
     <div className="fixed inset-0 z-[60] bg-black/55 px-4 py-6">
-      <section className="mx-auto flex h-full max-w-6xl flex-col rounded-2xl bg-white shadow-xl">
-        <header className="flex items-center justify-between gap-4 border-b border-(--gray-200) px-5 py-4">
+      <section className="mx-auto flex h-full max-w-6xl flex-col rounded-2xl bg-card shadow-xl">
+        <header className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
           <div className="min-w-0">
-            <h2 className="truncate text-base font-black text-(--gray-900)">
+            <h2 className="truncate text-base font-black text-foreground">
               {title}
             </h2>
-            <p className="mt-1 text-xs font-medium text-(--gray-500)">
+            <p className="mt-1 text-xs font-medium text-muted-foreground">
               Xem trực tiếp CV PDF
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-100)"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-muted"
           >
             <X className="h-4 w-4" />
           </button>
@@ -839,20 +839,20 @@ function InterviewFormModal({
 }) {
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/50 px-4 py-6">
-      <section className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-xl">
+      <section className="w-full max-w-xl rounded-2xl bg-card p-5 shadow-xl">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-black text-(--gray-900)">
+            <h2 className="text-lg font-black text-foreground">
               Mời phỏng vấn
             </h2>
-            <p className="mt-1 text-sm font-medium text-(--gray-500)">
+            <p className="mt-1 text-sm font-medium text-muted-foreground">
               {application.candidate.fullName} · {application.job.title}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-100)"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-muted"
           >
             <X className="h-4 w-4" />
           </button>
@@ -860,18 +860,18 @@ function InterviewFormModal({
 
         <div className="mt-5 grid gap-4">
           <label className="space-y-2">
-            <span className="text-sm font-bold text-(--gray-700)">
+            <span className="text-sm font-bold text-foreground">
               Thời gian phỏng vấn
             </span>
             <input
               type="datetime-local"
               value={form.scheduledAt}
               onChange={(event) => onChange("scheduledAt", event.target.value)}
-              className="h-11 w-full rounded-xl border border-(--gray-200) px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-11 w-full rounded-xl border border-border px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-bold text-(--gray-700)">
+            <span className="text-sm font-bold text-foreground">
               Thời lượng
             </span>
             <input
@@ -882,36 +882,36 @@ function InterviewFormModal({
               onChange={(event) =>
                 onChange("durationMinutes", event.target.value)
               }
-              className="h-11 w-full rounded-xl border border-(--gray-200) px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-11 w-full rounded-xl border border-border px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-bold text-(--gray-700)">
+            <span className="text-sm font-bold text-foreground">
               Link phỏng vấn
             </span>
             <input
               value={form.meetingUrl}
               onChange={(event) => onChange("meetingUrl", event.target.value)}
-              className="h-11 w-full rounded-xl border border-(--gray-200) px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-11 w-full rounded-xl border border-border px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-bold text-(--gray-700)">
+            <span className="text-sm font-bold text-foreground">
               Địa điểm
             </span>
             <input
               value={form.location}
               onChange={(event) => onChange("location", event.target.value)}
-              className="h-11 w-full rounded-xl border border-(--gray-200) px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-11 w-full rounded-xl border border-border px-3 text-sm font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-bold text-(--gray-700)">Ghi chú</span>
+            <span className="text-sm font-bold text-foreground">Ghi chú</span>
             <textarea
               rows={4}
               value={form.note}
               onChange={(event) => onChange("note", event.target.value)}
-              className="w-full resize-none rounded-xl border border-(--gray-200) px-3 py-2 text-sm font-medium outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="w-full resize-none rounded-xl border border-border px-3 py-2 text-sm font-medium outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </label>
         </div>
@@ -929,7 +929,7 @@ function InterviewFormModal({
             type="button"
             disabled={isSubmitting}
             onClick={onSubmit}
-            className="h-10 gap-2 rounded-xl bg-(--primary-blue) px-4 font-bold text-white hover:bg-(--blue-dark)"
+            className="h-10 gap-2 rounded-xl bg-primary px-4 font-bold text-primary-foreground hover:bg-primary/90"
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -952,9 +952,9 @@ function ProfileSection({
   content?: string | null;
 }) {
   return (
-    <section className="rounded-2xl border border-(--gray-200) bg-white p-4">
-      <h3 className="text-sm font-black text-(--gray-900)">{title}</h3>
-      <p className="mt-3 whitespace-pre-line text-sm leading-6 text-(--gray-700)">
+    <section className="rounded-2xl border border-border bg-card p-4">
+      <h3 className="text-sm font-black text-foreground">{title}</h3>
+      <p className="mt-3 whitespace-pre-line text-sm leading-6 text-foreground">
         {content || "Chưa cập nhật"}
       </p>
     </section>
@@ -969,8 +969,8 @@ function InfoPill({
   value: string;
 }) {
   return (
-    <span className="flex min-w-0 items-center gap-2 rounded-xl bg-(--gray-100)/70 px-3 py-2">
-      <Icon className="h-4 w-4 shrink-0 text-(--gray-400)" />
+    <span className="flex min-w-0 items-center gap-2 rounded-xl bg-muted/70 px-3 py-2">
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       <span className="truncate font-medium">{value}</span>
     </span>
   );
@@ -987,7 +987,7 @@ function InfoLine({
 }) {
   const content = (
     <>
-      <Icon className="h-4 w-4 shrink-0 text-(--gray-400)" />
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       <span className="truncate font-medium">{value}</span>
     </>
   );
@@ -996,7 +996,7 @@ function InfoLine({
     return (
       <Link
         href={href}
-        className="flex min-w-0 items-center gap-2 font-bold text-(--primary-blue) hover:underline"
+        className="flex min-w-0 items-center gap-2 font-bold text-primary hover:underline"
       >
         {content}
       </Link>

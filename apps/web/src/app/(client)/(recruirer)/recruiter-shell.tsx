@@ -27,10 +27,10 @@ export function RecruiterShell({ children }: { children: React.ReactNode }) {
 
   if (isLoading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-(--gray-100)">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-(--gray-200) border-t-(--primary-blue)" />
-          <p className="text-sm font-medium text-(--gray-500)">Đang tải...</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-border border-t-primary" />
+          <p className="text-sm font-medium text-muted-foreground">Đang tải...</p>
         </div>
       </div>
     );
@@ -38,17 +38,17 @@ export function RecruiterShell({ children }: { children: React.ReactNode }) {
 
   if (user.role !== "RECRUITER") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-(--gray-100)">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-(--gray-200) border-t-(--primary-blue)" />
-          <p className="text-sm font-medium text-(--gray-500)">Đang chuyển hướng...</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-border border-t-primary" />
+          <p className="text-sm font-medium text-muted-foreground">Đang chuyển hướng...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-(--gray-100)">
+    <div className="min-h-screen bg-background">
       <CandidateHeader onMenuClick={() => setMobileMenuOpen(true)} />
       <CandidateSidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
       <button

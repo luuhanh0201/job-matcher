@@ -19,32 +19,32 @@ import type { MatchResult } from "@/types/match-result";
 function ScoreBar({ score, label }: { score: number; label: string }) {
   const color =
     score >= 80
-      ? "bg-emerald-500"
+      ? "bg-success"
       : score >= 60
-        ? "bg-blue-500"
+        ? "bg-primary"
         : score >= 40
-          ? "bg-amber-500"
-          : "bg-rose-500";
+          ? "bg-warning"
+          : "bg-destructive";
 
   return (
     <div className="flex items-center gap-3">
-      <span className="w-28 shrink-0 text-xs font-medium text-(--gray-500)">{label}</span>
-      <div className="h-2 flex-1 rounded-full bg-(--gray-100)">
+      <span className="w-28 shrink-0 text-xs font-medium text-muted-foreground">{label}</span>
+      <div className="h-2 flex-1 rounded-full bg-muted">
         <div
           className={`h-2 rounded-full transition-all ${color}`}
           style={{ width: `${score}%` }}
         />
       </div>
-      <span className="w-8 text-right text-xs font-bold text-(--gray-700)">{score}</span>
+      <span className="w-8 text-right text-xs font-bold text-foreground">{score}</span>
     </div>
   );
 }
 
 function getScoreLabel(score: number) {
-  if (score >= 80) return { text: "Rất phù hợp", cls: "bg-emerald-100 text-emerald-700" };
-  if (score >= 60) return { text: "Phù hợp", cls: "bg-blue-100 text-blue-700" };
-  if (score >= 40) return { text: "Tương đối", cls: "bg-amber-100 text-amber-700" };
-  return { text: "Ít phù hợp", cls: "bg-rose-100 text-rose-700" };
+  if (score >= 80) return { text: "Rất phù hợp", cls: "bg-success/15 text-success" };
+  if (score >= 60) return { text: "Phù hợp", cls: "bg-primary/15 text-primary" };
+  if (score >= 40) return { text: "Tương đối", cls: "bg-warning/15 text-warning" };
+  return { text: "Ít phù hợp", cls: "bg-destructive/15 text-destructive" };
 }
 
 function formatSalary(result: MatchResult["job"]) {
@@ -60,29 +60,29 @@ function MatchCard({ match }: { match: MatchResult }) {
   const badge = getScoreLabel(match.overallScore);
 
   return (
-    <article className="rounded-2xl border border-(--gray-200) bg-white shadow-sm">
+    <article className="rounded-2xl border border-border bg-card shadow-sm">
       <div className="p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-black text-(--gray-900)">{match.job.title}</h3>
+              <h3 className="text-base font-black text-foreground">{match.job.title}</h3>
               <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${badge.cls}`}>
                 {badge.text}
               </span>
             </div>
-            <p className="mt-1 text-sm font-medium text-(--gray-500)">
+            <p className="mt-1 text-sm font-medium text-muted-foreground">
               {match.job.department} · {match.job.jobType} · {match.job.workMode}
             </p>
-            <p className="mt-1 text-sm font-bold text-(--primary-blue)">
+            <p className="mt-1 text-sm font-bold text-primary">
               {formatSalary(match.job)}
             </p>
           </div>
 
-          <div className="flex shrink-0 flex-col items-center justify-center rounded-2xl border border-(--gray-200) bg-(--blue-light) px-6 py-3 text-center">
-            <span className="text-3xl font-black text-(--primary-blue)">
+          <div className="flex shrink-0 flex-col items-center justify-center rounded-2xl border border-border bg-primary/10 px-6 py-3 text-center">
+            <span className="text-3xl font-black text-primary">
               {match.overallScore}
             </span>
-            <span className="text-xs font-bold text-(--primary-blue)">/ 100</span>
+            <span className="text-xs font-bold text-primary">/ 100</span>
           </div>
         </div>
 
@@ -94,14 +94,14 @@ function MatchCard({ match }: { match: MatchResult }) {
         </div>
 
         {match.explanation && (
-          <p className="mt-4 rounded-xl bg-(--gray-100)/60 p-3 text-sm leading-6 text-(--gray-700)">
+          <p className="mt-4 rounded-xl bg-muted/60 p-3 text-sm leading-6 text-foreground">
             {match.explanation}
           </p>
         )}
 
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="mt-3 flex items-center gap-1 text-xs font-bold text-(--primary-blue) hover:underline"
+          className="mt-3 flex items-center gap-1 text-xs font-bold text-primary hover:underline"
         >
           {expanded ? (
             <>
@@ -117,7 +117,7 @@ function MatchCard({ match }: { match: MatchResult }) {
         {expanded && (
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <div>
-              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-success">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Kỹ năng phù hợp ({match.matchedSkills.length})
               </div>
@@ -126,18 +126,18 @@ function MatchCard({ match }: { match: MatchResult }) {
                   match.matchedSkills.map((s) => (
                     <span
                       key={s}
-                      className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700"
+                      className="rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-medium text-success"
                     >
                       {s}
                     </span>
                   ))
                 ) : (
-                  <span className="text-xs text-(--gray-400)">Không có</span>
+                  <span className="text-xs text-muted-foreground">Không có</span>
                 )}
               </div>
             </div>
             <div>
-              <div className="flex items-center gap-1.5 text-xs font-bold text-rose-600">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-destructive">
                 <XCircle className="h-3.5 w-3.5" />
                 Kỹ năng còn thiếu ({match.missingSkills.length})
               </div>
@@ -146,13 +146,13 @@ function MatchCard({ match }: { match: MatchResult }) {
                   match.missingSkills.map((s) => (
                     <span
                       key={s}
-                      className="rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-medium text-rose-600"
+                      className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive"
                     >
                       {s}
                     </span>
                   ))
                 ) : (
-                  <span className="text-xs text-(--gray-400)">Không có</span>
+                  <span className="text-xs text-muted-foreground">Không có</span>
                 )}
               </div>
             </div>
@@ -189,30 +189,30 @@ export default function JobMatchesPage() {
 
       {isLoading ? (
         <div className="flex min-h-60 items-center justify-center">
-          <Loader2 className="h-7 w-7 animate-spin text-(--gray-500)" />
+          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
         </div>
       ) : matches.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-(--gray-300) py-16 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-(--blue-light)">
-            <Sparkles className="h-7 w-7 text-(--primary-blue)" />
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border py-16 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+            <Sparkles className="h-7 w-7 text-primary" />
           </div>
           <div>
-            <p className="text-base font-black text-(--gray-700)">
+            <p className="text-base font-black text-foreground">
               Chưa có kết quả phân tích
             </p>
-            <p className="mt-1 text-sm text-(--gray-500)">
+            <p className="mt-1 text-sm text-muted-foreground">
               Upload CV và để AI phân tích để xem công việc phù hợp với bạn.
             </p>
           </div>
           <div className="flex flex-col items-center gap-2">
             <Link
               href="/profile/me"
-              className="inline-flex items-center gap-2 rounded-xl bg-(--primary-blue) px-5 py-2.5 text-sm font-bold text-white hover:bg-(--blue-dark)"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
             >
               <BriefcaseBusiness className="h-4 w-4" />
               Đi đến trang AI-CV
             </Link>
-            <div className="flex items-center gap-1.5 text-xs text-amber-600">
+            <div className="flex items-center gap-1.5 text-xs text-warning">
               <AlertCircle className="h-3.5 w-3.5" />
               Kết quả sẽ xuất hiện tự động sau khi CV được phân tích
             </div>
@@ -220,7 +220,7 @@ export default function JobMatchesPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm font-medium text-(--gray-500)">
+          <p className="text-sm font-medium text-muted-foreground">
             {matches.length} công việc phù hợp, sắp xếp theo điểm giảm dần
           </p>
           {matches.map((match) => (

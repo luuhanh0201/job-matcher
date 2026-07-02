@@ -199,23 +199,23 @@ export function CandidateJobList({ category = "all" }: { category?: JobCategory 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-(--gray-900)">{config.title}</h1>
-        <p className="mt-1 text-sm text-(--gray-500)">
+        <h1 className="text-2xl font-bold text-foreground">{config.title}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           {loading ? "Đang tải..." : `${filteredJobs.length} vị trí phù hợp`}
         </p>
       </div>
 
-      <div className="rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--gray-500)" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Tìm theo vị trí, công ty, địa điểm, kỹ năng..."
-            className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+            className="h-11 rounded-xl border-border bg-muted/50 pl-10"
           />
         </div>
-        <p className="mt-3 text-xs font-medium text-(--gray-500)">
+        <p className="mt-3 text-xs font-medium text-muted-foreground">
           {config.description}
         </p>
       </div>
@@ -225,14 +225,14 @@ export function CandidateJobList({ category = "all" }: { category?: JobCategory 
           {Array.from({ length: PAGE_SIZE }).map((_, index) => (
             <div
               key={index}
-              className="h-36 animate-pulse rounded-2xl border border-(--gray-200) bg-white"
+              className="h-36 animate-pulse rounded-2xl border border-border bg-card"
             />
           ))}
         </div>
       )}
 
       {!loading && visibleJobs.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-3 py-20 text-(--gray-500)">
+        <div className="flex flex-col items-center justify-center gap-3 py-20 text-muted-foreground">
           <SearchX className="h-10 w-10 opacity-40" />
           <p className="font-medium">Không tìm thấy việc làm phù hợp</p>
         </div>
@@ -248,7 +248,7 @@ export function CandidateJobList({ category = "all" }: { category?: JobCategory 
 
       {!loading && (
         <div ref={sentinelRef} className="flex justify-center py-4">
-          {hasMore && <Loader2 className="h-5 w-5 animate-spin text-(--gray-500)" />}
+          {hasMore && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
         </div>
       )}
     </div>

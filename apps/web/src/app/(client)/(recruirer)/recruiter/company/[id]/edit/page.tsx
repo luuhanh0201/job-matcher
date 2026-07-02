@@ -291,8 +291,8 @@ export default function RecruiterCompanyEditPage() {
     return (
       <div className="flex min-h-60 items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-(--gray-200) border-t-(--primary-blue)" />
-          <p className="text-sm font-medium text-(--gray-500)">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-border border-t-primary" />
+          <p className="text-sm font-medium text-muted-foreground">
             Đang tải thông tin công ty...
           </p>
         </div>
@@ -306,25 +306,25 @@ export default function RecruiterCompanyEditPage() {
         <div>
           <Link
             href={`/recruiter/company/${params.id}`}
-            className="inline-flex items-center gap-2 text-sm font-bold text-(--primary-blue) hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline"
           >
             <ArrowLeft className="h-4 w-4" />
             Quay lại chi tiết
           </Link>
-          <h1 className="mt-3 text-2xl font-black text-(--gray-900)">
+          <h1 className="mt-3 text-2xl font-black text-foreground">
             Sửa hồ sơ công ty
           </h1>
-          <p className="mt-1 text-sm text-(--gray-500)">
+          <p className="mt-1 text-sm text-muted-foreground">
             Cập nhật thông tin doanh nghiệp dùng cho tuyển dụng.
           </p>
         </div>
       </header>
 
-      <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
           <FormSection title="Logo công ty" icon={Building2}>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="group relative h-24 w-24 overflow-hidden rounded-2xl border border-(--gray-200) bg-(--blue-light)">
+              <div className="group relative h-24 w-24 overflow-hidden rounded-2xl border border-border bg-primary/10">
                 {logoPreviewUrl || company?.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -334,7 +334,7 @@ export default function RecruiterCompanyEditPage() {
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
-                    <Building2 className="h-10 w-10 text-(--primary-blue)" />
+                    <Building2 className="h-10 w-10 text-primary" />
                   </div>
                 )}
                 <label
@@ -358,10 +358,10 @@ export default function RecruiterCompanyEditPage() {
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-bold text-(--gray-900)">
+                <p className="text-sm font-bold text-foreground">
                   {form.name || "Logo công ty"}
                 </p>
-                <p className="text-sm text-(--gray-500)">
+                <p className="text-sm text-muted-foreground">
                   PNG, JPG, WEBP. Tối đa 5MB.
                 </p>
               </div>
@@ -375,7 +375,7 @@ export default function RecruiterCompanyEditPage() {
                   id="name"
                   value={form.name}
                   onChange={(event) => setField("name", event.target.value)}
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
               <Field label="Tên viết tắt" htmlFor="shortName">
@@ -385,7 +385,7 @@ export default function RecruiterCompanyEditPage() {
                   onChange={(event) =>
                     setField("shortName", event.target.value)
                   }
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
               <Field label="Quy mô công ty" htmlFor="companySize" required>
@@ -395,7 +395,7 @@ export default function RecruiterCompanyEditPage() {
                   onChange={(event) =>
                     setField("companySize", event.target.value as CompanySize)
                   }
-                  className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-medium text-(--gray-900) outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm font-medium text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   {COMPANY_SIZE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -411,7 +411,7 @@ export default function RecruiterCompanyEditPage() {
                   onChange={(event) =>
                     setField("companyType", event.target.value)
                   }
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                  className="h-11 rounded-xl border-border bg-muted/50"
                 />
               </Field>
             </div>
@@ -425,7 +425,7 @@ export default function RecruiterCompanyEditPage() {
                   type="email"
                   value={form.email}
                   onChange={(event) => setField("email", event.target.value)}
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                 />
               </IconField>
               <IconField icon={Phone} label="Số điện thoại" htmlFor="phone">
@@ -433,7 +433,7 @@ export default function RecruiterCompanyEditPage() {
                   id="phone"
                   value={form.phone}
                   onChange={(event) => setField("phone", event.target.value)}
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                 />
               </IconField>
               <IconField icon={ReceiptText} label="Mã số thuế" htmlFor="taxCode">
@@ -441,7 +441,7 @@ export default function RecruiterCompanyEditPage() {
                   id="taxCode"
                   value={form.taxCode}
                   onChange={(event) => setField("taxCode", event.target.value)}
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                 />
               </IconField>
               <IconField icon={Globe} label="Website" htmlFor="website">
@@ -449,7 +449,7 @@ export default function RecruiterCompanyEditPage() {
                   id="website"
                   value={form.website}
                   onChange={(event) => setField("website", event.target.value)}
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                 />
               </IconField>
             </div>
@@ -463,7 +463,7 @@ export default function RecruiterCompanyEditPage() {
                   value={form.provinceCode}
                   onChange={(event) => handleProvinceChange(event.target.value)}
                   disabled={isLoadingProvinces}
-                  className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-medium text-(--gray-900) outline-none disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm font-medium text-foreground outline-none disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <option value="">
                     {isLoadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành phố"}
@@ -485,7 +485,7 @@ export default function RecruiterCompanyEditPage() {
                   value={form.wardCode}
                   onChange={(event) => setField("wardCode", event.target.value)}
                   disabled={!form.provinceCode || isLoadingWards}
-                  className="h-11 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 text-sm font-medium text-(--gray-900) outline-none disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="h-11 w-full rounded-xl border border-border bg-muted/50 px-3 text-sm font-medium text-foreground outline-none disabled:opacity-60 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <option value="">
                     {isLoadingWards ? "Đang tải..." : "Chọn phường/xã"}
@@ -504,12 +504,12 @@ export default function RecruiterCompanyEditPage() {
                 id="address"
                 value={form.address}
                 onChange={(event) => setField("address", event.target.value)}
-                className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50"
+                className="h-11 rounded-xl border-border bg-muted/50"
               />
             </Field>
 
             {selectedProvince || selectedWard || form.address ? (
-              <p className="rounded-xl border border-(--gray-200) bg-(--gray-100)/60 px-3 py-2 text-sm font-medium text-(--gray-700)">
+              <p className="rounded-xl border border-border bg-muted/60 px-3 py-2 text-sm font-medium text-foreground">
                 {[form.address, selectedWard?.name, selectedProvince?.name]
                   .filter(Boolean)
                   .join(", ")}
@@ -526,7 +526,7 @@ export default function RecruiterCompanyEditPage() {
                   onChange={(event) =>
                     setField("linkedinUrl", event.target.value)
                   }
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                 />
               </IconField>
               <IconField icon={LinkIcon} label="Facebook" htmlFor="facebookUrl">
@@ -536,7 +536,7 @@ export default function RecruiterCompanyEditPage() {
                   onChange={(event) =>
                     setField("facebookUrl", event.target.value)
                   }
-                  className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/50 pl-10"
+                  className="h-11 rounded-xl border-border bg-muted/50 pl-10"
                 />
               </IconField>
             </div>
@@ -550,7 +550,7 @@ export default function RecruiterCompanyEditPage() {
                 onChange={(event) =>
                   setField("description", event.target.value)
                 }
-                className="min-h-32 w-full rounded-xl border border-(--gray-200) bg-(--gray-100)/50 px-3 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="min-h-32 w-full rounded-xl border border-border bg-muted/50 px-3 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               />
             </Field>
           </FormSection>
@@ -559,7 +559,7 @@ export default function RecruiterCompanyEditPage() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="h-11 gap-2 rounded-xl bg-(--primary-blue) px-5 font-bold text-white hover:bg-(--blue-dark)"
+              className="h-11 gap-2 rounded-xl bg-primary px-5 font-bold text-primary-foreground hover:bg-primary/90"
             >
               {isSubmitting ? (
                 <CircleDashed className="h-4 w-4 animate-spin" />
@@ -585,9 +585,9 @@ function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-4 border-t border-(--gray-200) pt-5 first:border-t-0 first:pt-0">
-      <h2 className="flex items-center gap-2 text-base font-black text-(--gray-900)">
-        <Icon className="h-5 w-5 text-(--primary-blue)" />
+    <section className="space-y-4 border-t border-border pt-5 first:border-t-0 first:pt-0">
+      <h2 className="flex items-center gap-2 text-base font-black text-foreground">
+        <Icon className="h-5 w-5 text-primary" />
         {title}
       </h2>
       {children}
@@ -631,7 +631,7 @@ function IconField({
   return (
     <Field label={label} htmlFor={htmlFor}>
       <div className="relative">
-        <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--gray-500)" />
+        <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         {children}
       </div>
     </Field>

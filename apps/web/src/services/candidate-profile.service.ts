@@ -30,6 +30,20 @@ export async function updateMyCandidateProfile(
   );
 }
 
+export async function updateMyCandidateAvatar(avatarFile: File) {
+  const formData = new FormData();
+  formData.append("avatar", avatarFile);
+
+  return protectedFetchJson<CandidateProfile>(
+    "/candidate-profiles/me/avatar",
+    {
+      method: "PATCH",
+      body: formData,
+    },
+    "Không thể cập nhật ảnh đại diện",
+  );
+}
+
 export async function getCandidateProfile(userId: string) {
   return protectedFetchJson<CandidateProfile>(
     `/candidate-profiles/${userId}`,

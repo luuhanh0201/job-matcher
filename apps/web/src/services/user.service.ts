@@ -29,6 +29,20 @@ export async function getProfileRecruiter(){
   );
 }
 
+export async function updateRecruiterAvatar(avatarFile: File) {
+  const formData = new FormData();
+  formData.append("avatar", avatarFile);
+
+  return protectedFetchJson<RecruiterProfile>(
+    "/recruiters/profile/avatar",
+    {
+      method: "PATCH",
+      body: formData,
+    },
+    "Không thể cập nhật ảnh đại diện",
+  );
+}
+
 export async function updateProfileRecruiter(payload: UpdateRecruiterProfilePayload) {
   return protectedFetchJson<RecruiterProfile>(
     "/recruiters/profile",

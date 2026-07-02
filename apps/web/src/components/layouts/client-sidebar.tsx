@@ -47,7 +47,7 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
 
   return (
     <aside
-      className={`fixed left-0 top-14 z-50 flex h-[calc(100vh-3.5rem)] w-72 flex-col overflow-y-auto border-r border-(--gray-200) bg-white px-3 py-4 shadow-xl transition-transform duration-300 ease-out lg:w-60 ${
+      className={`fixed left-0 top-14 z-50 flex h-[calc(100vh-3.5rem)] w-72 flex-col overflow-y-auto border-r border-border bg-card px-3 py-4 shadow-xl transition-transform duration-300 ease-out lg:w-60 ${
         mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       }`}
       aria-hidden={!mobileOpen}
@@ -56,7 +56,7 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
         type="button"
         onClick={onClose}
         aria-label="Đóng menu"
-        className="mb-3 flex h-10 w-10 items-center justify-center self-end rounded-lg text-(--gray-500) transition-colors hover:bg-(--gray-100) lg:hidden"
+        className="mb-3 flex h-10 w-10 items-center justify-center self-end rounded-lg text-muted-foreground transition-colors hover:bg-muted lg:hidden"
       >
         <X className="h-5 w-5" />
       </button>
@@ -66,14 +66,23 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
         <Link
           href={profileHref}
           onClick={onClose}
-          className="mb-3 flex flex-col items-center gap-2 rounded-2xl border border-(--gray-200) px-4 py-5 transition-colors hover:bg-(--gray-100)"
+          className="mb-3 flex flex-col items-center gap-2 rounded-2xl border border-border px-4 py-5 transition-colors hover:bg-muted"
         >
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-(--primary-blue) text-lg font-black text-white">
-            {initials}
-          </div>
+          {user.avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.avatar}
+              alt={user.fullName}
+              className="h-14 w-14 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-lg font-black text-primary-foreground">
+              {initials}
+            </div>
+          )}
           <div className="text-center">
-            <p className="text-sm font-bold text-(--gray-900)">{user.fullName}</p>
-            <p className="text-xs text-(--gray-500)">{user?.provider ? "" : user.email}</p>
+            <p className="text-sm font-bold text-foreground">{user.fullName}</p>
+            <p className="text-xs text-muted-foreground">{user?.provider ? "" : user.email}</p>
             {user.role && (
               <div className="mt-1.5 flex justify-center">
                 <RoleBadge role={user.role} />
@@ -82,13 +91,13 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
           </div>
         </Link>
       ) : (
-        <div className="mb-3 rounded-2xl border border-(--gray-200) px-4 py-5 text-center">
-          <p className="text-sm font-semibold text-(--gray-900)">Bạn chưa đăng nhập</p>
-          <p className="mt-1 text-xs text-(--gray-500)">Đăng nhập ngay</p>
+        <div className="mb-3 rounded-2xl border border-border px-4 py-5 text-center">
+          <p className="text-sm font-semibold text-foreground">Bạn chưa đăng nhập</p>
+          <p className="mt-1 text-xs text-muted-foreground">Đăng nhập ngay</p>
           <Link
             href="/login?redirect=%2F"
             onClick={onClose}
-            className="mt-3 inline-flex items-center justify-center rounded-xl bg-(--primary-blue) px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-(--blue-dark)"
+            className="mt-3 inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Đăng nhập
           </Link>
@@ -129,8 +138,8 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
                 onClick={onClose}
                 className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold leading-none transition-all ${
                   isActive
-                    ? "bg-linear-to-r from-(--primary-blue) to-(--accent-purple) text-white shadow-md"
-                    : "bg-linear-to-r from-(--primary-blue)/10 to-(--accent-purple)/10 text-(--accent-purple) hover:from-(--primary-blue)/20 hover:to-(--accent-purple)/20"
+                    ? "bg-linear-to-r from-primary to-accent text-primary-foreground shadow-md"
+                    : "bg-linear-to-r from-primary/10 to-accent/10 text-accent hover:from-primary/20 hover:to-accent/20"
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -149,18 +158,18 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
               onClick={onClose}
               className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium leading-none transition-colors ${
                 isActive
-                  ? "bg-(--blue-light) font-semibold text-(--primary-blue)"
-                  : "text-(--gray-900) hover:bg-(--gray-100)"
+                  ? "bg-primary/10 font-semibold text-primary"
+                  : "text-foreground hover:bg-muted"
               }`}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <Icon
-                  className={`h-4.5 w-4.5 shrink-0 ${isActive ? "text-(--primary-blue)" : "text-(--gray-500)"}`}
+                  className={`h-4.5 w-4.5 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"}`}
                 />
                 <span className="truncate">{label}</span>
               </div>
               {badge ? (
-                <span className="shrink-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-(--accent-orange) px-1 text-[11px] font-bold text-white">
+                <span className="shrink-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1 text-[11px] font-bold text-warning-foreground">
                   {badge}
                 </span>
               ) : null}
@@ -176,7 +185,7 @@ export function CandidateSidebar({ mobileOpen, onClose }: CandidateSidebarProps)
             logout();
             onClose();
           }}
-          className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
+          className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
         >
           <LogOut className="h-4.5 w-4.5 shrink-0" />
           Đăng xuất
@@ -208,13 +217,13 @@ function DropdownItem({
         onClick={() => setOpen(!open)}
         className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium leading-none transition-colors ${
           isActive
-            ? "bg-(--blue-light) font-semibold text-(--primary-blue)"
-            : "text-(--gray-900) hover:bg-(--gray-100)"
+            ? "bg-primary/10 font-semibold text-primary"
+            : "text-foreground hover:bg-muted"
         }`}
       >
         <div className="flex items-center gap-3 min-w-0">
           <Icon
-            className={`h-4.5 w-4.5 shrink-0 ${isActive ? "text-(--primary-blue)" : "text-(--gray-500)"}`}
+            className={`h-4.5 w-4.5 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"}`}
           />
           <span className="truncate">{item.label}</span>
         </div>
@@ -237,8 +246,8 @@ function DropdownItem({
                 onClick={onClose}
                 className={`rounded-lg px-3 py-2 text-sm leading-none transition-colors ${
                   childActive
-                    ? "bg-(--blue-light) font-semibold text-(--primary-blue)"
-                    : "text-(--gray-600) hover:bg-(--gray-100)"
+                    ? "bg-primary/10 font-semibold text-primary"
+                    : "text-muted-foreground hover:bg-muted"
                 }`}
               >
                 {child.label}

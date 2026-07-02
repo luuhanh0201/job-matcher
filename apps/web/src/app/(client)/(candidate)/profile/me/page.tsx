@@ -4,6 +4,8 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   BriefcaseBusiness,
   CalendarClock,
+  Camera,
+  CircleDashed,
   Code,
   Eye,
   FileText,
@@ -21,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   getMyCandidateProfile,
+  updateMyCandidateAvatar,
   updateMyCandidateProfile,
 } from "@/services/candidate-profile.service";
 import {
@@ -28,6 +31,8 @@ import {
   getCvPreviewObjectUrl,
   uploadCvFile,
 } from "@/services/cv.service";
+import { avatarFileSchema } from "@/schemas/candidate-profile.schema";
+import { useAuth } from "@/context/auth-context";
 import type {
   CandidateProfile,
   CandidateProfilePayload,
@@ -129,6 +134,7 @@ function toPayload(form: ProfileForm): CandidateProfilePayload {
 }
 
 export default function ProfilePage() {
+  const { refreshProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<ProfileForm>(EMPTY_FORM);
   const [cvs, setCvs] = useState<CvRecord[]>([]);
@@ -142,6 +148,16 @@ export default function ProfilePage() {
     title: string;
     url: string;
   } | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+  const [isAvatarSubmitting, setIsAvatarSubmitting] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewUrl) {
+        URL.revokeObjectURL(avatarPreviewUrl);
+      }
+    };
+  }, [avatarPreviewUrl]);
 
   useEffect(() => {
     Promise.all([getMyCandidateProfile(), getCvList()])
@@ -233,6 +249,57 @@ export default function ProfilePage() {
     }
   };
 
+  const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    const validationResult = avatarFileSchema.safeParse(file);
+    if (!validationResult.success) {
+      toast.error(
+        validationResult.error.issues[0]?.message || "Ảnh đại diện không hợp lệ",
+      );
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreviewUrl((current) => {
+      if (current) {
+        URL.revokeObjectURL(current);
+      }
+      return previewUrl;
+    });
+    setIsAvatarSubmitting(true);
+
+    try {
+      const updatedProfile = await updateMyCandidateAvatar(file);
+      setForm(toForm(updatedProfile));
+      setAvatarPreviewUrl((current) => {
+        if (current) {
+          URL.revokeObjectURL(current);
+        }
+        return "";
+      });
+      await refreshProfile().catch(() => null);
+      toast.success("Đã cập nhật ảnh đại diện");
+    } catch (error) {
+      setAvatarPreviewUrl((current) => {
+        if (current) {
+          URL.revokeObjectURL(current);
+        }
+        return "";
+      });
+      toast.error(
+        error instanceof Error ? error.message : "Không thể cập nhật ảnh đại diện",
+      );
+    } finally {
+      setIsAvatarSubmitting(false);
+    }
+  };
+
   const handleUploadCv = async () => {
     if (!selectedFile) {
       toast.error("Vui lòng chọn file PDF trước khi upload");
@@ -259,33 +326,52 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <div className="flex min-h-60 items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-(--gray-500)" />
+        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      <header className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
+      <header className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-(--blue-light) text-(--primary-blue)">
-              {form.avatar ? (
+            <div className="group relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-primary">
+              {avatarPreviewUrl || form.avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={form.avatar}
+                  src={avatarPreviewUrl || form.avatar}
                   alt={form.fullName}
                   className="h-full w-full object-cover"
                 />
               ) : (
                 <UserRound className="h-8 w-8" />
               )}
+              <label
+                htmlFor="candidateAvatar"
+                className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/55 opacity-0 transition-opacity group-hover:opacity-100"
+                aria-label="Đổi ảnh đại diện"
+              >
+                {isAvatarSubmitting ? (
+                  <CircleDashed className="h-5 w-5 animate-spin text-white" />
+                ) : (
+                  <Camera className="h-5 w-5 text-white" />
+                )}
+              </label>
+              <input
+                id="candidateAvatar"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="sr-only"
+                disabled={isAvatarSubmitting}
+                onChange={handleAvatarChange}
+              />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-(--gray-900)">
+              <h1 className="text-2xl font-black text-foreground">
                 Hồ sơ ứng viên
               </h1>
-              <p className="mt-1 text-sm font-medium text-(--gray-500)">
+              <p className="mt-1 text-sm font-medium text-muted-foreground">
                 Cập nhật thông tin cá nhân và quản lý CV ứng tuyển của bạn.
               </p>
             </div>
@@ -294,7 +380,7 @@ export default function ProfilePage() {
           <Button
             disabled={isSaving}
             onClick={handleSaveProfile}
-            className="h-11 gap-2 rounded-xl bg-(--primary-blue) px-5 font-bold text-white hover:bg-(--blue-dark)"
+            className="h-11 gap-2 rounded-xl bg-primary px-5 font-bold text-primary-foreground hover:bg-primary/90"
           >
             {isSaving ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -308,8 +394,8 @@ export default function ProfilePage() {
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="space-y-5">
-          <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
-            <h2 className="text-base font-black text-(--gray-900)">
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="text-base font-black text-foreground">
               Thông tin cá nhân
             </h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -324,13 +410,6 @@ export default function ProfilePage() {
                 <Input
                   value={form.phone}
                   onChange={(event) => updateField("phone", event.target.value)}
-                  className="h-11 rounded-xl"
-                />
-              </Field>
-              <Field label="Avatar URL">
-                <Input
-                  value={form.avatar}
-                  onChange={(event) => updateField("avatar", event.target.value)}
                   className="h-11 rounded-xl"
                 />
               </Field>
@@ -390,8 +469,8 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
-            <h2 className="text-base font-black text-(--gray-900)">
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="text-base font-black text-foreground">
               Năng lực và kinh nghiệm
             </h2>
             <div className="mt-4 grid gap-4">
@@ -429,26 +508,26 @@ export default function ProfilePage() {
         </div>
 
         <aside className="space-y-5">
-          <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
-            <h2 className="flex items-center gap-2 text-base font-black text-(--gray-900)">
-              <FileUp className="h-5 w-5 text-(--primary-blue)" />
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="flex items-center gap-2 text-base font-black text-foreground">
+              <FileUp className="h-5 w-5 text-primary" />
               Upload CV
             </h2>
-            <div className="mt-4 rounded-2xl border-2 border-dashed border-(--primary-blue)/30 bg-(--blue-light)/30 p-4">
+            <div className="mt-4 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/10 p-4">
               <Input
                 ref={fileInputRef}
                 type="file"
                 accept="application/pdf"
                 onChange={handleSelectFile}
-                className="h-11 rounded-xl bg-white"
+                className="h-11 rounded-xl bg-card"
               />
-              <p className="mt-2 text-xs font-medium text-(--gray-500)">
+              <p className="mt-2 text-xs font-medium text-muted-foreground">
                 Chỉ hỗ trợ PDF, tối đa 5MB.
               </p>
               <Button
                 disabled={isUploading}
                 onClick={handleUploadCv}
-                className="mt-4 h-10 w-full gap-2 rounded-xl bg-(--primary-blue) font-bold text-white hover:bg-(--blue-dark)"
+                className="mt-4 h-10 w-full gap-2 rounded-xl bg-primary font-bold text-primary-foreground hover:bg-primary/90"
               >
                 {isUploading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -460,20 +539,20 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
-            <h2 className="flex items-center gap-2 text-base font-black text-(--gray-900)">
-              <FileText className="h-5 w-5 text-(--primary-blue)" />
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="flex items-center gap-2 text-base font-black text-foreground">
+              <FileText className="h-5 w-5 text-primary" />
               CV của bạn
             </h2>
             <div className="mt-4 space-y-3">
               {cvs.length > 0 ? (
                 <>
-                  <div className="overflow-hidden rounded-xl border border-(--gray-200) bg-(--gray-100)/50">
-                    <div className="border-b border-(--gray-200) px-3 py-2">
-                      <p className="truncate text-sm font-black text-(--gray-900)">
+                  <div className="overflow-hidden rounded-xl border border-border bg-muted/50">
+                    <div className="border-b border-border px-3 py-2">
+                      <p className="truncate text-sm font-black text-foreground">
                         {cvPreview?.title || cvs[0]?.fileName || "CV PDF"}
                       </p>
-                      <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-(--gray-500)">
+                      <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                         <CalendarClock className="h-3.5 w-3.5" />
                         {formatDate(
                           cvs.find((cv) => cv.id === cvPreview?.cvId)
@@ -481,10 +560,10 @@ export default function ProfilePage() {
                         )}
                       </p>
                     </div>
-                    <div className="relative h-80 bg-white">
+                    <div className="relative h-80 bg-card">
                       {isLoadingCvPreview ? (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white">
-                          <Loader2 className="h-6 w-6 animate-spin text-(--primary-blue)" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-card">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
                         </div>
                       ) : cvPreview?.url ? (
                         <iframe
@@ -493,7 +572,7 @@ export default function ProfilePage() {
                           className="h-full w-full"
                         />
                       ) : (
-                        <div className="flex h-full items-center justify-center p-4 text-center text-sm font-medium text-(--gray-500)">
+                        <div className="flex h-full items-center justify-center p-4 text-center text-sm font-medium text-muted-foreground">
                           Không thể hiển thị CV trực tiếp.
                         </div>
                       )}
@@ -509,34 +588,34 @@ export default function ProfilePage() {
                           onClick={() => openCvPreview(cv)}
                           className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left text-sm transition ${
                             cvPreview?.cvId === cv.id
-                              ? "border-(--primary-blue) bg-(--blue-light)"
-                              : "border-(--gray-200) bg-(--gray-100)/50 hover:bg-(--blue-light)/50"
+                              ? "border-primary bg-primary/10"
+                              : "border-border bg-muted/50 hover:bg-primary/10"
                           }`}
                         >
                           <span className="min-w-0">
-                            <span className="block truncate font-black text-(--gray-900)">
+                            <span className="block truncate font-black text-foreground">
                               {cv.fileName || "CV PDF"}
                             </span>
-                            <span className="text-xs font-medium text-(--gray-500)">
+                            <span className="text-xs font-medium text-muted-foreground">
                               {formatDate(cv.createdAt)}
                             </span>
                           </span>
-                          <Eye className="h-4 w-4 shrink-0 text-(--primary-blue)" />
+                          <Eye className="h-4 w-4 shrink-0 text-primary" />
                         </button>
                       ))}
                     </div>
                   ) : null}
                 </>
               ) : (
-                <p className="rounded-xl bg-(--gray-100)/60 p-4 text-sm font-medium text-(--gray-500)">
+                <p className="rounded-xl bg-muted/60 p-4 text-sm font-medium text-muted-foreground">
                   Bạn chưa upload CV nào.
                 </p>
               )}
             </div>
           </section>
 
-          <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
-            <h2 className="text-base font-black text-(--gray-900)">
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="text-base font-black text-foreground">
               Xem nhanh
             </h2>
             <div className="mt-4 space-y-3 text-sm">
@@ -552,7 +631,7 @@ export default function ProfilePage() {
                 {skillPreview.slice(0, 12).map((skill) => (
                   <span
                     key={skill}
-                    className="rounded-full bg-(--blue-light) px-3 py-1 text-xs font-bold text-(--primary-blue)"
+                    className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary"
                   >
                     {skill}
                   </span>
@@ -575,7 +654,7 @@ function Field({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-(--gray-700)">{label}</span>
+      <span className="text-sm font-bold text-foreground">{label}</span>
       {children}
     </label>
   );
@@ -596,15 +675,15 @@ function TextAreaField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-(--gray-700)">{label}</span>
+      <span className="text-sm font-bold text-foreground">{label}</span>
       <textarea
         value={value}
         rows={rows}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full resize-none rounded-xl border border-(--gray-200) bg-white px-3 py-2 text-sm font-medium text-(--gray-900) outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
       />
-      <span className="block text-xs font-medium text-(--gray-500)">
+      <span className="block text-xs font-medium text-muted-foreground">
         Nhập nhiều mục bằng dấu phẩy.
       </span>
     </label>
@@ -619,9 +698,9 @@ function InfoLine({
   value: string;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-xl bg-(--gray-100)/60 px-3 py-2">
-      <Icon className="h-4 w-4 shrink-0 text-(--gray-400)" />
-      <span className="truncate font-bold text-(--gray-700)">{value}</span>
+    <div className="flex min-w-0 items-center gap-2 rounded-xl bg-muted/60 px-3 py-2">
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <span className="truncate font-bold text-foreground">{value}</span>
     </div>
   );
 }

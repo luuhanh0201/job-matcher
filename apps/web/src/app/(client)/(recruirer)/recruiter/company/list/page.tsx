@@ -36,28 +36,28 @@ export default function RecruiterCompanyListPage() {
     <div className="space-y-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-(--gray-900)">
+          <h1 className="text-2xl font-black text-foreground">
             Danh sách công ty
           </h1>
-          <p className="mt-1 text-sm text-(--gray-500)">
+          <p className="mt-1 text-sm text-muted-foreground">
             Quản lý các công ty bạn đã đăng ký để sử dụng trong tin tuyển dụng.
           </p>
         </div>
         <Link href="/recruiter/company/profile">
-          <Button className="h-10 gap-2 rounded-xl bg-(--primary-blue) px-4 font-bold text-white hover:bg-(--blue-dark)">
+          <Button className="h-10 gap-2 rounded-xl bg-primary px-4 font-bold text-primary-foreground hover:bg-primary/90">
             <Plus className="h-4 w-4" />
             Tạo công ty
           </Button>
         </Link>
       </header>
 
-      <section className="rounded-2xl border border-(--gray-200) bg-white p-4 shadow-sm sm:p-5">
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative w-full lg:max-w-md">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--gray-500)" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Tìm theo tên công ty, lĩnh vực, địa chỉ..."
-              className="h-11 rounded-xl border-(--gray-200) bg-(--gray-100)/60 pl-10"
+              className="h-11 rounded-xl border-border bg-muted/60 pl-10"
             />
           </div>
           <div className="grid grid-cols-2 gap-2 text-sm sm:flex sm:items-center">
@@ -71,17 +71,17 @@ export default function RecruiterCompanyListPage() {
 
         <div className="mt-5 grid gap-3">
           {loading ? (
-            <div className="rounded-2xl border border-(--gray-200) bg-(--gray-100)/50 p-5 text-sm font-medium text-(--gray-500)">
+            <div className="rounded-2xl border border-border bg-muted/50 p-5 text-sm font-medium text-muted-foreground">
               Đang tải danh sách công ty...
             </div>
           ) : null}
 
           {!loading && companies.length === 0 ? (
-            <Link href="/recruiter/company/profile" className="rounded-2xl border border-dashed border-(--gray-300) p-6 text-center">
-              <p className="text-sm font-bold text-(--gray-900)">
+            <Link href="/recruiter/company/profile" className="rounded-2xl border border-dashed border-border p-6 text-center">
+              <p className="text-sm font-bold text-foreground">
                 Chưa có công ty nào
               </p>
-              <p className="mt-1 text-sm text-(--gray-500)">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Tạo hồ sơ công ty đầu tiên để bắt đầu đăng tuyển.
               </p>
             </Link>
@@ -90,10 +90,10 @@ export default function RecruiterCompanyListPage() {
           {companies.map((company) => (
             <article
               key={company.id}
-              className="rounded-2xl border border-(--gray-200) p-4 transition-colors hover:border-(--primary-blue)/35 hover:bg-(--blue-light)/25"
+              className="rounded-2xl border border-border p-4 transition-colors hover:border-primary/35 hover:bg-primary/10"
             >
               <div className="grid gap-4 lg:grid-cols-[3.5rem_minmax(0,1fr)_8.5rem] lg:items-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-(--blue-light) text-(--primary-blue)">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   {company.logoUrl ? (
                     // Logo URLs can come from user uploads/external hosts, so avoid next/image host restrictions here.
                     // eslint-disable-next-line @next/next/no-img-element
@@ -113,21 +113,21 @@ export default function RecruiterCompanyListPage() {
                 <div className="min-w-0">
                   <div className="grid min-h-12 gap-1 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-start">
                     <div className="min-w-0">
-                      <h2 className="truncate text-base font-black text-(--gray-900)">
+                      <h2 className="truncate text-base font-black text-foreground">
                         {company.name}
                       </h2>
-                      <p className="mt-1 truncate text-sm font-medium text-(--gray-500)">
+                      <p className="mt-1 truncate text-sm font-medium text-muted-foreground">
                         {company.companyType || "Chưa cập nhật lĩnh vực"}
                       </p>
                     </div>
                     
                     {company.isVerified ? (
-                      <span className="inline-flex h-7 w-28 items-center justify-center gap-1 rounded-full bg-(--accent-green)/10 px-2 text-xs font-bold text-(--accent-green)">
+                      <span className="inline-flex h-7 w-28 items-center justify-center gap-1 rounded-full bg-success/10 px-2 text-xs font-bold text-success">
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         Đã xác minh
                       </span>
                     ) : (
-                      <span className="inline-flex h-7 w-28 items-center justify-center gap-1 rounded-full bg-(--accent-orange)/10 px-2 text-xs font-bold text-(--accent-orange)">
+                      <span className="inline-flex h-7 w-28 items-center justify-center gap-1 rounded-full bg-warning/10 px-2 text-xs font-bold text-warning">
                         <CircleDashed className="h-3.5 w-3.5" />
                         Chờ xác minh
                       </span>
@@ -184,9 +184,9 @@ export default function RecruiterCompanyListPage() {
 
 function SummaryPill({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-(--gray-200) bg-(--gray-100)/60 px-3 py-2">
-      <p className="text-xs font-semibold text-(--gray-500)">{label}</p>
-      <p className="text-base font-black text-(--gray-900)">{value}</p>
+    <div className="rounded-xl border border-border bg-muted/60 px-3 py-2">
+      <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+      <p className="text-base font-black text-foreground">{value}</p>
     </div>
   );
 }
@@ -199,11 +199,11 @@ function InlineInfo({
   value?: string | null;
 }) {
   return (
-    <span className="grid min-h-11 min-w-0 grid-cols-[2rem_1fr] items-center rounded-xl border border-(--gray-200) bg-(--gray-100)/45 px-2 py-2">
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-(--gray-500)">
+    <span className="grid min-h-11 min-w-0 grid-cols-[2rem_1fr] items-center rounded-xl border border-border bg-muted/45 px-2 py-2">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-card text-muted-foreground">
         <Icon className="h-4 w-4" />
       </span>
-      <span className="min-w-0 truncate pl-2 text-sm font-medium text-(--gray-700)">
+      <span className="min-w-0 truncate pl-2 text-sm font-medium text-foreground">
         {value || "Chưa cập nhật"}
       </span>
     </span>

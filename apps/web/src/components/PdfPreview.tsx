@@ -42,7 +42,7 @@ export default function PdfPreview({ pdfUrl }: Props) {
 
   return (
     <div className="w-full">
-      <div ref={setContainerRef} className="rounded-lg shadow-lg border border-gray-200 bg-white overflow-hidden">
+      <div ref={setContainerRef} className="rounded-lg shadow-lg border border-border bg-card overflow-hidden">
         <Document
           file={pdfUrl}
           onLoadSuccess={handleDocumentLoad}
@@ -64,19 +64,19 @@ export default function PdfPreview({ pdfUrl }: Props) {
           <button
             onClick={prevPage}
             disabled={pageNumber <= 1}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="text-sm text-gray-500">
-            Trang <span className="font-semibold text-gray-900">{pageNumber}</span> / {numPages}
+          <span className="text-sm text-muted-foreground">
+            Trang <span className="font-semibold text-foreground">{pageNumber}</span> / {numPages}
           </span>
           <button
             onClick={nextPage}
             disabled={pageNumber >= numPages}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

@@ -48,7 +48,7 @@ export default function RecruiterCompanyDetailPage() {
   if (loading) {
     return (
       <div className="flex h-32 items-center justify-center">
-        <p className="text-sm font-medium text-(--gray-500)">
+        <p className="text-sm font-medium text-muted-foreground">
           Đang tải thông tin công ty...
         </p>
       </div>
@@ -57,7 +57,7 @@ export default function RecruiterCompanyDetailPage() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-(--gray-200) bg-white px-4 py-3 text-sm font-medium text-(--gray-600)">
+      <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-muted-foreground">
         Không thể tải thông tin công ty. Vui lòng thử lại sau.
       </div>
     );
@@ -66,7 +66,7 @@ export default function RecruiterCompanyDetailPage() {
   if (!company) {
     return (
       <div className="flex h-32 items-center justify-center">
-        <p className="text-sm font-medium text-(--gray-500)">
+        <p className="text-sm font-medium text-muted-foreground">
           Không tìm thấy thông tin công ty.
         </p>
       </div>
@@ -78,15 +78,15 @@ export default function RecruiterCompanyDetailPage() {
         <div>
           <Link
             href="/recruiter/company/list"
-            className="inline-flex items-center gap-2 text-sm font-bold text-(--primary-blue) hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline"
           >
             <ArrowLeft className="h-4 w-4" />
             Quay lại danh sách
           </Link>
-          <h1 className="mt-3 text-2xl font-black text-(--gray-900)">
+          <h1 className="mt-3 text-2xl font-black text-foreground">
             Chi tiết công ty
           </h1>
-          <p className="mt-1 text-sm text-(--gray-500)">
+          <p className="mt-1 text-sm text-muted-foreground">
             Xem thông tin doanh nghiệp đã đăng ký trong hệ thống.
           </p>
         </div>
@@ -98,24 +98,24 @@ export default function RecruiterCompanyDetailPage() {
         </div>
       </header>
 
-      <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="flex h-18 w-18 items-center justify-center rounded-2xl bg-(--blue-light) text-(--primary-blue)">
+          <div className="flex h-18 w-18 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Building2 className="h-9 w-9" />
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-black text-(--gray-900)">
+              <h2 className="text-xl font-black text-foreground">
                 {company.name}
               </h2>
               {company.shortName ? (
-                <span className="rounded-full bg-(--gray-100) px-2 py-1 text-xs font-bold text-(--gray-500)">
+                <span className="rounded-full bg-muted px-2 py-1 text-xs font-bold text-muted-foreground">
                   {company.shortName}
                 </span>
               ) : null}
             </div>
-            <p className="mt-1 text-sm font-medium text-(--gray-500)">
+            <p className="mt-1 text-sm font-medium text-muted-foreground">
               {company.companyType || "Chưa cập nhật lĩnh vực"} ·{" "}
               {company.companySize} nhân sự
             </p>
@@ -168,22 +168,22 @@ export default function RecruiterCompanyDetailPage() {
       </section>
 
       <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
-          <h2 className="flex items-center gap-2 text-base font-black text-(--gray-900)">
-            <Users className="h-5 w-5 text-(--primary-blue)" />
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 text-base font-black text-foreground">
+            <Users className="h-5 w-5 text-primary" />
             Giới thiệu công ty
           </h2>
-          <p className="mt-3 text-sm leading-6 text-(--gray-600)">
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {company.description || "Chưa cập nhật mô tả công ty."}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
-          <h2 className="flex items-center gap-2 text-base font-black text-(--gray-900)">
-            <MapPin className="h-5 w-5 text-(--primary-blue)" />
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 text-base font-black text-foreground">
+            <MapPin className="h-5 w-5 text-primary" />
             Địa chỉ
           </h2>
-          <p className="mt-3 rounded-xl border border-(--gray-200) bg-(--gray-100)/60 px-3 py-3 text-sm font-medium leading-6 text-(--gray-700)">
+          <p className="mt-3 rounded-xl border border-border bg-muted/60 px-3 py-3 text-sm font-medium leading-6 text-foreground">
             {[
               company.location?.address,
               company.location?.wardName,
@@ -195,8 +195,8 @@ export default function RecruiterCompanyDetailPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-(--gray-200) bg-white p-5 shadow-sm">
-        <h2 className="text-base font-black text-(--gray-900)">Thông tin hệ thống</h2>
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <h2 className="text-base font-black text-foreground">Thông tin hệ thống</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <SystemInfo label="Trạng thái" value={company.status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động'} />
           <SystemInfo
@@ -223,11 +223,11 @@ function DetailCard({
   value?: string | null;
 }) {
   return (
-    <article className="rounded-xl border border-(--gray-200) p-3">
-      <p className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-(--gray-500)">
+    <article className="rounded-xl border border-border p-3">
+      <p className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         <Icon className="h-4 w-4" /> {label}
       </p>
-      <p className="mt-1 wrap-break-word text-sm font-bold text-(--gray-900)">
+      <p className="mt-1 wrap-break-word text-sm font-bold text-foreground">
         {value || "Chưa cập nhật"}
       </p>
     </article>
@@ -236,11 +236,11 @@ function DetailCard({
 
 function SystemInfo({ label, value }: { label: string; value: string }) {
   return (
-    <article className="rounded-xl border border-(--gray-200) bg-(--gray-100)/40 p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-(--gray-500)">
+    <article className="rounded-xl border border-border bg-muted/40 p-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1 text-sm font-black text-(--gray-900)">{value}</p>
+      <p className="mt-1 text-sm font-black text-foreground">{value}</p>
     </article>
   );
 }

@@ -2,11 +2,16 @@ import {
   Body,
   Controller,
   Get,
+  HttpStatus,
   Param,
+  ParseFilePipeBuilder,
   Patch,
   Request,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '@/modules/auth/Guards/jwt-auth.guard';
 import { User } from '@/modules/user/entities/user.entity';
 import { CandidateProfileResponseDto } from './dto/candidate-profile-response.dto';
@@ -36,6 +41,24 @@ export class CandidateProfilesController {
       req.user,
       updateCandidateProfileDto,
     );
+  }
+
+  @UseInterceptors(FileInterceptor('avatar'))
+  @Patch('me/avatar')
+  async updateMyAvatar(
+    @Request() req: Request & { user: User },
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({ fileType: /^image\/(png|jpeg|webp)$/ })
+        .addMaxSizeValidator({ maxSize: 5 * 1024 * 1024 })
+        .build({
+          fileIsRequired: true,
+          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        }),
+    )
+    avatar: Express.Multer.File,
+  ): Promise<CandidateProfileResponseDto> {
+    return this.candidateProfilesService.updateMyAvatar(req.user, avatar);
   }
 
   @Get(':userId')
