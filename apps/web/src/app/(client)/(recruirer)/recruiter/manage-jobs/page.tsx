@@ -20,11 +20,13 @@ const STATUS_LABEL: Record<JobPostStatus, string> = {
   DRAFT: "Nháp",
   OPEN: "Đang tuyển",
   CLOSED: "Đã đóng",
+  BLOCKED: "Bị khóa bởi quản trị viên",
 };
 
 function getStatusClass(status: JobPostStatus) {
   if (status === "OPEN") return "bg-success/15 text-success";
   if (status === "DRAFT") return "bg-warning/15 text-warning";
+  if (status === "BLOCKED") return "bg-destructive/15 text-destructive";
   return "bg-muted text-muted-foreground";
 }
 

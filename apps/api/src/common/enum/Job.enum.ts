@@ -2,6 +2,8 @@ export enum JobPostStatus {
   DRAFT = 'DRAFT',
   OPEN = 'OPEN',
   CLOSED = 'CLOSED',
+  // Admin khóa tin vi phạm — recruiter không thể tự mở lại
+  BLOCKED = 'BLOCKED',
 }
 
 export enum JobType {

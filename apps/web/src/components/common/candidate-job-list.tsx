@@ -1,11 +1,43 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Search, SearchX } from "lucide-react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { FilterX, Loader2, Search, SearchX } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { JobCard } from "@/components/common/job-card";
-import { getJobs, type Job } from "@/services/jobs.service";
+import { useAuth } from "@/context/auth-context";
+import {
+  getJobs,
+  type EmploymentType,
+  type Job,
+  type JobSortOption,
+  type JobsQuery,
+  type SeniorityLevel,
+} from "@/services/jobs.service";
+import {
+  getMySavedJobIds,
+  saveJob,
+  unsaveJob,
+} from "@/services/saved-job.service";
+import { getProvinces } from "@/services/location.service";
+import type { Province } from "@/types/location";
+import { SENIORITY_LEVEL_LABEL } from "@/types/job";
 
 const PAGE_SIZE = 8;
 
@@ -110,98 +142,252 @@ const CATEGORY_CONFIG: Record<
   },
 };
 
-function normalize(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
+const JOB_TYPE_LABEL: Record<EmploymentType, string> = {
+  FULL_TIME: "Toàn thời gian",
+  PART_TIME: "Bán thời gian",
+  CONTRACT: "Hợp đồng",
+  INTERN: "Thực tập",
+  FREELANCE: "Freelance",
+};
 
-function getSearchText(job: Job) {
-  return normalize(
-    [
-      job.title,
-      job.company,
-      job.department,
-      job.location,
-      job.description,
-      job.requirements,
-      job.employmentType,
-      job.seniorityLevel,
-    ].join(" "),
-  );
-}
+const SALARY_OPTIONS = [
+  { value: "5000000", label: "Từ 5 triệu" },
+  { value: "10000000", label: "Từ 10 triệu" },
+  { value: "15000000", label: "Từ 15 triệu" },
+  { value: "20000000", label: "Từ 20 triệu" },
+  { value: "30000000", label: "Từ 30 triệu" },
+  { value: "50000000", label: "Từ 50 triệu" },
+];
 
-function matchesCategory(job: Job, category: JobCategory) {
-  const keywords = CATEGORY_CONFIG[category].keywords;
-  if (keywords.length === 0) return true;
+// Radix Select không cho phép item có value rỗng — dùng sentinel "all"
+const ALL = "all";
 
-  const searchText = getSearchText(job);
-  return keywords.some((keyword) => searchText.includes(normalize(keyword)));
-}
+type Filters = {
+  keyword: string;
+  provinceCode: string;
+  jobType: string;
+  seniorityLevel: string;
+  salaryMin: string;
+  sort: string;
+};
 
-export function CandidateJobList({ category = "all" }: { category?: JobCategory }) {
+const FILTER_PARAM_KEYS: Record<keyof Filters, string> = {
+  keyword: "q",
+  provinceCode: "province",
+  jobType: "jobType",
+  seniorityLevel: "level",
+  salaryMin: "salaryMin",
+  sort: "sort",
+};
+
+function CandidateJobListInner({ category = "all" }: { category?: JobCategory }) {
   const config = CATEGORY_CONFIG[category];
-  const [allJobs, setAllJobs] = useState<Job[]>([]);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const isCandidate = user?.role === "CANDIDATE";
 
+  const filters = useMemo<Filters>(
+    () => ({
+      keyword: searchParams.get("q") ?? "",
+      provinceCode: searchParams.get("province") ?? "",
+      jobType: searchParams.get("jobType") ?? "",
+      seniorityLevel: searchParams.get("level") ?? "",
+      salaryMin: searchParams.get("salaryMin") ?? "",
+      sort: searchParams.get("sort") ?? "newest",
+    }),
+    [searchParams],
+  );
+
+  const updateFilters = useCallback(
+    (patch: Partial<Filters>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(patch)) {
+        const paramKey = FILTER_PARAM_KEYS[key as keyof Filters];
+        if (value && value !== ALL && !(key === "sort" && value === "newest")) {
+          params.set(paramKey, value);
+        } else {
+          params.delete(paramKey);
+        }
+      }
+      const queryString = params.toString();
+      router.replace(queryString ? `${pathname}?${queryString}` : pathname, {
+        scroll: false,
+      });
+    },
+    [searchParams, router, pathname],
+  );
+
+  // Ô tìm kiếm gõ tự do, debounce 400ms rồi mới đồng bộ lên URL
+  const [searchTerm, setSearchTerm] = useState(filters.keyword);
   useEffect(() => {
-    getJobs()
-      .then((data) => setAllJobs(data))
-      .catch((error: unknown) =>
-        toast.error(
-          error instanceof Error ? error.message : "Không thể tải danh sách việc làm",
-        ),
-      )
-      .finally(() => setLoading(false));
+    const timer = setTimeout(() => {
+      if (searchTerm.trim() !== filters.keyword) {
+        updateFilters({ keyword: searchTerm.trim() });
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm, filters.keyword, updateFilters]);
+
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  useEffect(() => {
+    getProvinces()
+      .then(setProvinces)
+      .catch(() => {});
   }, []);
 
-  const filteredJobs = useMemo(() => {
-    const normalizedSearch = normalize(searchTerm.trim());
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const requestIdRef = useRef(0);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-    return allJobs.filter((job) => {
-      const categoryMatched = matchesCategory(job, category);
-      if (!categoryMatched) return false;
-      if (!normalizedSearch) return true;
-      return getSearchText(job).includes(normalizedSearch);
-    });
-  }, [allJobs, category, searchTerm]);
+  const buildQuery = useCallback(
+    (pageNumber: number): JobsQuery => ({
+      keyword: filters.keyword || undefined,
+      keywords: config.keywords.length ? config.keywords : undefined,
+      provinceCode: filters.provinceCode || undefined,
+      jobType: (filters.jobType || undefined) as EmploymentType | undefined,
+      seniorityLevel: (filters.seniorityLevel || undefined) as
+        | SeniorityLevel
+        | undefined,
+      salaryMin: filters.salaryMin ? Number(filters.salaryMin) : undefined,
+      sort: filters.sort as JobSortOption,
+      page: pageNumber,
+      limit: PAGE_SIZE,
+    }),
+    [filters, config.keywords],
+  );
 
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [category, searchTerm]);
+    const requestId = ++requestIdRef.current;
+    setLoading(true);
+    getJobs(buildQuery(1))
+      .then((result) => {
+        if (requestId !== requestIdRef.current) return;
+        setJobs(result.items);
+        setTotal(result.total);
+        setPage(result.page);
+        setTotalPages(result.totalPages);
+      })
+      .catch((error: unknown) => {
+        if (requestId !== requestIdRef.current) return;
+        toast.error(
+          error instanceof Error ? error.message : "Không thể tải danh sách việc làm",
+        );
+      })
+      .finally(() => {
+        if (requestId === requestIdRef.current) setLoading(false);
+      });
+  }, [buildQuery]);
+
+  const hasMore = page < totalPages;
+
+  const loadMore = useCallback(() => {
+    if (loading || loadingMore || !hasMore) return;
+    const requestId = requestIdRef.current;
+    setLoadingMore(true);
+    getJobs(buildQuery(page + 1))
+      .then((result) => {
+        if (requestId !== requestIdRef.current) return;
+        setJobs((prev) => [...prev, ...result.items]);
+        setPage(result.page);
+        setTotalPages(result.totalPages);
+        setTotal(result.total);
+      })
+      .catch((error: unknown) =>
+        toast.error(
+          error instanceof Error ? error.message : "Không thể tải thêm việc làm",
+        ),
+      )
+      .finally(() => setLoadingMore(false));
+  }, [loading, loadingMore, hasMore, page, buildQuery]);
 
   useEffect(() => {
-    if (loading || visibleCount >= filteredJobs.length) return;
-
     const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    if (!sentinel || !hasMore) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filteredJobs.length));
-        }
+        if (entries[0]?.isIntersecting) loadMore();
       },
       { threshold: 0.1 },
     );
-
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [loading, visibleCount, filteredJobs.length]);
+  }, [hasMore, loadMore]);
 
-  const visibleJobs = filteredJobs.slice(0, visibleCount);
-  const hasMore = visibleCount < filteredJobs.length;
+  // Danh sách tin đã lưu để hiển thị trạng thái bookmark
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!isCandidate) return;
+    getMySavedJobIds()
+      .then((ids) => setSavedIds(new Set(ids)))
+      .catch(() => {});
+  }, [isCandidate]);
+
+  const toggleSave = useCallback(
+    async (job: Job) => {
+      const wasSaved = savedIds.has(job.id);
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (wasSaved) next.delete(job.id);
+        else next.add(job.id);
+        return next;
+      });
+      try {
+        if (wasSaved) {
+          await unsaveJob(job.id);
+        } else {
+          await saveJob(job.id);
+          toast.success("Đã lưu tin tuyển dụng");
+        }
+      } catch (error: unknown) {
+        setSavedIds((prev) => {
+          const next = new Set(prev);
+          if (wasSaved) next.add(job.id);
+          else next.delete(job.id);
+          return next;
+        });
+        toast.error(
+          error instanceof Error ? error.message : "Không thể cập nhật tin đã lưu",
+        );
+      }
+    },
+    [savedIds],
+  );
+
+  const hasActiveFilters =
+    Boolean(
+      filters.keyword ||
+        filters.provinceCode ||
+        filters.jobType ||
+        filters.seniorityLevel ||
+        filters.salaryMin,
+    ) || filters.sort !== "newest";
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    updateFilters({
+      keyword: "",
+      provinceCode: "",
+      jobType: "",
+      seniorityLevel: "",
+      salaryMin: "",
+      sort: "newest",
+    });
+  };
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">{config.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {loading ? "Đang tải..." : `${filteredJobs.length} vị trí phù hợp`}
+          {loading ? "Đang tải..." : `${total} vị trí phù hợp`}
         </p>
       </div>
 
@@ -215,6 +401,102 @@ export function CandidateJobList({ category = "all" }: { category?: JobCategory 
             className="h-11 rounded-xl border-border bg-muted/50 pl-10"
           />
         </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Select
+            value={filters.provinceCode || ALL}
+            onValueChange={(value) => updateFilters({ provinceCode: value })}
+          >
+            <SelectTrigger className="h-9 w-auto min-w-36 rounded-xl text-xs">
+              <SelectValue placeholder="Tỉnh/Thành phố" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Tất cả địa điểm</SelectItem>
+              {provinces.map((province) => (
+                <SelectItem key={province.province_code} value={province.province_code}>
+                  {province.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.jobType || ALL}
+            onValueChange={(value) => updateFilters({ jobType: value })}
+          >
+            <SelectTrigger className="h-9 w-auto min-w-36 rounded-xl text-xs">
+              <SelectValue placeholder="Loại công việc" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Mọi loại công việc</SelectItem>
+              {Object.entries(JOB_TYPE_LABEL).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.seniorityLevel || ALL}
+            onValueChange={(value) => updateFilters({ seniorityLevel: value })}
+          >
+            <SelectTrigger className="h-9 w-auto min-w-32 rounded-xl text-xs">
+              <SelectValue placeholder="Kinh nghiệm" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Mọi cấp độ</SelectItem>
+              {Object.entries(SENIORITY_LEVEL_LABEL).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.salaryMin || ALL}
+            onValueChange={(value) => updateFilters({ salaryMin: value })}
+          >
+            <SelectTrigger className="h-9 w-auto min-w-32 rounded-xl text-xs">
+              <SelectValue placeholder="Mức lương" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Mọi mức lương</SelectItem>
+              {SALARY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.sort}
+            onValueChange={(value) => updateFilters({ sort: value })}
+          >
+            <SelectTrigger className="h-9 w-auto min-w-32 rounded-xl text-xs">
+              <SelectValue placeholder="Sắp xếp" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Mới nhất</SelectItem>
+              <SelectItem value="salary_desc">Lương cao nhất</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-9 rounded-xl text-xs text-muted-foreground"
+            >
+              <FilterX className="mr-1 h-3.5 w-3.5" />
+              Xóa lọc
+            </Button>
+          )}
+        </div>
+
         <p className="mt-3 text-xs font-medium text-muted-foreground">
           {config.description}
         </p>
@@ -231,26 +513,47 @@ export function CandidateJobList({ category = "all" }: { category?: JobCategory 
         </div>
       )}
 
-      {!loading && visibleJobs.length === 0 && (
+      {!loading && jobs.length === 0 && (
         <div className="flex flex-col items-center justify-center gap-3 py-20 text-muted-foreground">
           <SearchX className="h-10 w-10 opacity-40" />
           <p className="font-medium">Không tìm thấy việc làm phù hợp</p>
+          {hasActiveFilters && (
+            <Button variant="outline" size="sm" onClick={clearFilters}>
+              Xóa bộ lọc
+            </Button>
+          )}
         </div>
       )}
 
-      {!loading && visibleJobs.length > 0 && (
+      {!loading && jobs.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2">
-          {visibleJobs.map((job) => (
-            <JobCard key={job.id} job={job} />
+          {jobs.map((job) => (
+            <JobCard
+              key={job.id}
+              job={job}
+              saved={isCandidate ? savedIds.has(job.id) : undefined}
+              onToggleSave={isCandidate ? () => toggleSave(job) : undefined}
+            />
           ))}
         </div>
       )}
 
       {!loading && (
         <div ref={sentinelRef} className="flex justify-center py-4">
-          {hasMore && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+          {(hasMore || loadingMore) && (
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          )}
         </div>
       )}
     </div>
+  );
+}
+
+export function CandidateJobList(props: { category?: JobCategory }) {
+  // useSearchParams yêu cầu Suspense boundary khi prerender
+  return (
+    <Suspense fallback={null}>
+      <CandidateJobListInner {...props} />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 import type { CompanyLocation, UserSummary } from "@/types/company";
 
-export type JobPostStatus = "DRAFT" | "OPEN" | "CLOSED";
+export type JobPostStatus = "DRAFT" | "OPEN" | "CLOSED" | "BLOCKED";
 export type JobType =
   | "FULL_TIME"
   | "PART_TIME"

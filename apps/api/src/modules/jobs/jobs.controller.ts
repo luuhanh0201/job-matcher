@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -12,7 +13,11 @@ import { JwtAuthGuard } from '../auth/Guards/jwt-auth.guard';
 import { User } from '../user/entities/user.entity';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
-import { JobPostResponseDto } from './dto/job-response.dto';
+import {
+  JobPostResponseDto,
+  PaginatedJobsResponseDto,
+} from './dto/job-response.dto';
+import { QueryJobsDto } from './dto/query-jobs.dto';
 import { JobsService } from './jobs.service';
 import { UpdateJobStatusDto } from './dto/update-job-status.dto';
 import { RolesGuard } from '@/common/guards/roles.guard';
@@ -34,8 +39,10 @@ export class JobsController {
   }
 
   @Get()
-  async findAll(): Promise<JobPostResponseDto[]> {
-    return this.jobsService.findPublicOpenJobs();
+  async findAll(
+    @Query() query: QueryJobsDto,
+  ): Promise<PaginatedJobsResponseDto> {
+    return this.jobsService.findPublicOpenJobs(query);
   }
 
   @UseGuards(JwtAuthGuard)

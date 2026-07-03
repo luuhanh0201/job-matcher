@@ -23,6 +23,8 @@ import { CandidateProfilesModule } from './modules/candidate-profiles/candidate-
 import { InterviewsModule } from './modules/interviews/interviews.module';
 import { AiProvidersModule } from './modules/ai-providers/ai-providers.module';
 import { AiUsageModule } from './modules/ai-usage/ai-usage.module';
+import { SavedJobsModule } from './modules/saved-jobs/saved-jobs.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { AiUsageModule } from './modules/ai-usage/ai-usage.module';
       useFactory: getDatabaseConfig,
     }),
     JobsModule,
+    SavedJobsModule,
+    AdminModule,
     UserModule,
     CvModule,
     MatchResultsModule,

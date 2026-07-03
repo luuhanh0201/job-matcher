@@ -10,5 +10,6 @@ import { CompanyEntity } from '../company/entity/company.entity';
   controllers: [JobsController],
   providers: [JobsService],
   imports: [TypeOrmModule.forFeature([JobPostEntity, User, CompanyEntity])],
+  exports: [JobsService],
 })
 export class JobsModule {}

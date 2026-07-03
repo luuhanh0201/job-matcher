@@ -18,6 +18,14 @@ export class JobCompanySummaryDto {
   logoUrl?: string;
 }
 
+export class PaginatedJobsResponseDto {
+  items!: JobPostResponseDto[];
+  total!: number;
+  page!: number;
+  limit!: number;
+  totalPages!: number;
+}
+
 export class JobPostResponseDto {
   id!: string;
   title!: string;

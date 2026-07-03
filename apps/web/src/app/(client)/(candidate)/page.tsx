@@ -63,10 +63,10 @@ export default function HomePage() {
 
   useEffect(() => {
     if (cachedJobs !== null) return;
-    getJobs()
-      .then((jobs) => {
-        cachedJobs = jobs;
-        setFeaturedJobs(jobs.slice(0, 4));
+    getJobs({ limit: 4 })
+      .then(({ items }) => {
+        cachedJobs = items;
+        setFeaturedJobs(items);
       })
       .catch(() => {})
       .finally(() => setLoadingJobs(false));

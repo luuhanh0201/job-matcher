@@ -1,6 +1,13 @@
 import { useState } from "react";
 import Link from "next/link";
-import { MapPin, Briefcase, BadgeDollarSign, TrendingUp, Clock } from "lucide-react";
+import {
+  MapPin,
+  Briefcase,
+  BadgeDollarSign,
+  TrendingUp,
+  Clock,
+  Bookmark,
+} from "lucide-react";
 import type { Job, EmploymentType } from "@/services/jobs.service";
 import { SENIORITY_LEVEL_LABEL } from "@/types/job";
 
@@ -46,7 +53,15 @@ function getCompanyColor(company: string) {
   return COMPANY_COLORS[hash % COMPANY_COLORS.length];
 }
 
-export function JobCard({ job }: { job: Job }) {
+export function JobCard({
+  job,
+  saved,
+  onToggleSave,
+}: {
+  job: Job;
+  saved?: boolean;
+  onToggleSave?: () => void;
+}) {
   const color = getCompanyColor(job.company);
   const [hasLogoError, setHasLogoError] = useState(false);
 
@@ -81,11 +96,30 @@ export function JobCard({ job }: { job: Job }) {
               </h3>
               <p className="mt-0.5 text-sm font-medium text-muted-foreground">{job.company}</p>
             </div>
-            {job.status === "OPEN" && (
-              <span className="shrink-0 rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-bold text-success">
-                Đang tuyển
-              </span>
-            )}
+            <div className="flex shrink-0 items-center gap-2">
+              {job.status === "OPEN" && (
+                <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-bold text-success">
+                  Đang tuyển
+                </span>
+              )}
+              {onToggleSave && (
+                <button
+                  type="button"
+                  aria-label={saved ? "Bỏ lưu tin" : "Lưu tin"}
+                  title={saved ? "Bỏ lưu tin" : "Lưu tin"}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onToggleSave();
+                  }}
+                  className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                >
+                  <Bookmark
+                    className={`h-4 w-4 ${saved ? "fill-primary text-primary" : ""}`}
+                  />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Meta row */}

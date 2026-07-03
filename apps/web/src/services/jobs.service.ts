@@ -3,7 +3,7 @@ import type { JobPostProfile } from "@/types/job";
 
 export type EmploymentType = "FULL_TIME" | "PART_TIME" | "CONTRACT" | "INTERN" | "FREELANCE";
 export type SeniorityLevel = "NO_EXPERIENCE" | "INTERN" | "JUNIOR" | "MID" | "SENIOR" | "LEAD";
-export type JobStatus = "DRAFT" | "OPEN" | "CLOSED";
+export type JobStatus = "DRAFT" | "OPEN" | "CLOSED" | "BLOCKED";
 
 export type Job = {
   id: string;
@@ -27,16 +27,65 @@ export type Job = {
 
 export type JobPayload = Record<string, unknown>;
 
-export async function getJobs() {
-  const jobPosts = await authFetchJson<JobPostProfile[]>(
-    "/jobs",
+export type JobSortOption = "newest" | "salary_desc";
+export type WorkMode = "ONSITE" | "HYBRID" | "REMOTE";
+
+export type JobsQuery = {
+  keyword?: string;
+  keywords?: string[];
+  provinceCode?: string;
+  skills?: string[];
+  jobType?: EmploymentType;
+  workMode?: WorkMode;
+  seniorityLevel?: SeniorityLevel;
+  salaryMin?: number;
+  sort?: JobSortOption;
+  page?: number;
+  limit?: number;
+};
+
+export type PaginatedJobs = {
+  items: Job[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+function buildJobsQueryString(query: JobsQuery) {
+  const params = new URLSearchParams();
+  if (query.keyword) params.set("keyword", query.keyword);
+  if (query.keywords?.length) params.set("keywords", query.keywords.join(","));
+  if (query.provinceCode) params.set("provinceCode", query.provinceCode);
+  if (query.skills?.length) params.set("skills", query.skills.join(","));
+  if (query.jobType) params.set("jobType", query.jobType);
+  if (query.workMode) params.set("workMode", query.workMode);
+  if (query.seniorityLevel) params.set("seniorityLevel", query.seniorityLevel);
+  if (query.salaryMin !== undefined)
+    params.set("salaryMin", String(query.salaryMin));
+  if (query.sort) params.set("sort", query.sort);
+  if (query.page) params.set("page", String(query.page));
+  if (query.limit) params.set("limit", String(query.limit));
+  const queryString = params.toString();
+  return queryString ? `?${queryString}` : "";
+}
+
+export async function getJobs(query: JobsQuery = {}): Promise<PaginatedJobs> {
+  const response = await authFetchJson<{
+    items: JobPostProfile[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }>(
+    `/jobs${buildJobsQueryString(query)}`,
     {
       method: "GET",
     },
     "Không thể tải danh sách việc làm",
   );
 
-  return jobPosts.map(toJobCardModel);
+  return { ...response, items: response.items.map(toJobCardModel) };
 }
 
 export async function getJobById(id: string) {
