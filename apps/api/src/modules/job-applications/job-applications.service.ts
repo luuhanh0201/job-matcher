@@ -5,7 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, Repository } from 'typeorm';
+import { MoreThan, Repository, SelectQueryBuilder } from 'typeorm';
 import { JobApplicationStatus } from '@/common/enum/JobApplication.enum';
 import { JobPostStatus } from '@/common/enum/Job.enum';
 import { UserRole } from '@/common/enum/index.enum';
@@ -16,6 +16,10 @@ import { MailService } from '@/modules/mail/mail.service';
 import { User } from '@/modules/user/entities/user.entity';
 import { CreateJobApplicationDto } from './dto/create-job-application.dto';
 import { JobApplicationResponseDto } from './dto/job-application-response.dto';
+import {
+  PaginatedJobApplicationsResponseDto,
+  QueryApplicationsDto,
+} from './dto/query-applications.dto';
 import { JobApplicationStatusLogResponseDto } from './dto/job-application-status-log-response.dto';
 import { JobApplicationEntity } from './entities/job-application.entity';
 import { JobApplicationStatusLogEntity } from './entities/job-application-status-log.entity';
@@ -143,7 +147,8 @@ export class JobApplicationsService {
   async findByJob(
     jobId: string,
     recruiter: User,
-  ): Promise<JobApplicationResponseDto[]> {
+    query: QueryApplicationsDto,
+  ): Promise<PaginatedJobApplicationsResponseDto> {
     this.ensureRecruiter(recruiter);
 
     const job = await this.jobPostRepository.findOne({
@@ -164,23 +169,11 @@ export class JobApplicationsService {
       );
     }
 
-    const applications = await this.jobApplicationRepository.find({
-      where: { jobId },
-      relations: {
-        job: {
-          company: true,
-        },
-        candidate: true,
-        cv: true,
-      },
-      order: {
-        createdAt: 'DESC',
-      },
-    });
-
-    return applications.map((application) =>
-      this.toJobApplicationResponse(application),
+    const qb = this.buildApplicationsQuery(query).andWhere(
+      'application.job_id = :jobId',
+      { jobId },
     );
+    return this.paginateApplications(qb, query);
   }
 
   async findStatusLogs(
@@ -217,50 +210,82 @@ export class JobApplicationsService {
 
   async findRecruiterApplications(
     recruiter: User,
-  ): Promise<JobApplicationResponseDto[]> {
+    query: QueryApplicationsDto,
+  ): Promise<PaginatedJobApplicationsResponseDto> {
     this.ensureRecruiter(recruiter);
 
-    const applications = await this.jobApplicationRepository
-      .createQueryBuilder('application')
-      .leftJoinAndSelect('application.job', 'job')
-      .leftJoinAndSelect('job.company', 'company')
-      .leftJoinAndSelect('application.candidate', 'candidate')
-      .leftJoinAndSelect('application.cv', 'cv')
-      .where("company.created_by ->> 'id' = :recruiterId", {
-        recruiterId: recruiter.id,
-      })
-      .orderBy('application.created_at', 'DESC')
-      .getMany();
-
-    return applications.map((application) =>
-      this.toJobApplicationResponse(application),
+    const qb = this.buildApplicationsQuery(query).andWhere(
+      "company.created_by ->> 'id' = :recruiterId",
+      { recruiterId: recruiter.id },
     );
+    if (query.jobId) {
+      qb.andWhere('application.job_id = :jobId', { jobId: query.jobId });
+    }
+    return this.paginateApplications(qb, query);
   }
 
-  async findMyApplications(user: User): Promise<JobApplicationResponseDto[]> {
+  async findMyApplications(
+    user: User,
+    query: QueryApplicationsDto,
+  ): Promise<PaginatedJobApplicationsResponseDto> {
     if (user.role !== UserRole.CANDIDATE) {
       throw new ForbiddenException(
         'Chỉ ứng viên mới có thể xem danh sách việc đã ứng tuyển',
       );
     }
 
-    const applications = await this.jobApplicationRepository.find({
-      where: { candidateId: user.id },
-      relations: {
-        job: {
-          company: true,
-        },
-        candidate: true,
-        cv: true,
-      },
-      order: {
-        createdAt: 'DESC',
-      },
-    });
-
-    return applications.map((application) =>
-      this.toJobApplicationResponse(application),
+    const qb = this.buildApplicationsQuery(query).andWhere(
+      'application.candidate_id = :candidateId',
+      { candidateId: user.id },
     );
+    return this.paginateApplications(qb, query);
+  }
+
+  private buildApplicationsQuery(query: QueryApplicationsDto) {
+    const qb = this.jobApplicationRepository
+      .createQueryBuilder('application')
+      .leftJoinAndSelect('application.job', 'job')
+      .leftJoinAndSelect('job.company', 'company')
+      .leftJoinAndSelect('application.candidate', 'candidate')
+      .leftJoinAndSelect('application.cv', 'cv');
+
+    if (query.keyword?.trim()) {
+      qb.andWhere(
+        `(unaccent(job.title) ILIKE unaccent(:kw)
+          OR unaccent(company.name) ILIKE unaccent(:kw)
+          OR unaccent(candidate.full_name) ILIKE unaccent(:kw)
+          OR candidate.email ILIKE :kw)`,
+        { kw: `%${query.keyword.trim()}%` },
+      );
+    }
+    if (query.status) {
+      qb.andWhere('application.status = :status', { status: query.status });
+    }
+    return qb;
+  }
+
+  private async paginateApplications(
+    qb: SelectQueryBuilder<JobApplicationEntity>,
+    query: QueryApplicationsDto,
+  ): Promise<PaginatedJobApplicationsResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const [applications, total] = await qb
+      .orderBy('application.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      items: applications.map((application) =>
+        this.toJobApplicationResponse(application),
+      ),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async updateStatus(

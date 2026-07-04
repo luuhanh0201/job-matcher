@@ -34,6 +34,13 @@ type ApplicationResultEmailPayload = {
   companyName: string;
 };
 
+type CompanyApprovalEmailPayload = {
+  to: string;
+  name: string;
+  companyName: string;
+  reason?: string | null;
+};
+
 @Injectable()
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
@@ -83,6 +90,52 @@ export class MailService {
       })
       .catch((error) => {
         console.error(`Lỗi gửi email thông báo recruiter đến ${email}:`, error);
+      });
+  }
+
+  async sendCompanyApprovedEmail(payload: CompanyApprovalEmailPayload) {
+    const dashboardUrl = `${process.env.FRONTEND_URL}/recruiter/post-job`;
+    await this.mailerService
+      .sendMail({
+        to: payload.to,
+        subject: `Công ty ${payload.companyName} đã được phê duyệt - Job Matcher`,
+        template: 'company-approved',
+        context: {
+          name: payload.name,
+          companyName: payload.companyName,
+          dashboardUrl,
+        },
+      })
+      .then(() => {
+        console.log(`Email duyệt công ty đã được gửi đến ${payload.to}`);
+      })
+      .catch((error) => {
+        console.error(`Lỗi gửi email duyệt công ty đến ${payload.to}:`, error);
+      });
+  }
+
+  async sendCompanyRejectedEmail(payload: CompanyApprovalEmailPayload) {
+    const companyUrl = `${process.env.FRONTEND_URL}/recruiter/company/list`;
+    await this.mailerService
+      .sendMail({
+        to: payload.to,
+        subject: `Hồ sơ công ty ${payload.companyName} chưa được phê duyệt - Job Matcher`,
+        template: 'company-rejected',
+        context: {
+          name: payload.name,
+          companyName: payload.companyName,
+          reason: payload.reason ?? null,
+          companyUrl,
+        },
+      })
+      .then(() => {
+        console.log(`Email từ chối công ty đã được gửi đến ${payload.to}`);
+      })
+      .catch((error) => {
+        console.error(
+          `Lỗi gửi email từ chối công ty đến ${payload.to}:`,
+          error,
+        );
       });
   }
 

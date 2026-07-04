@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -13,6 +14,10 @@ import { User } from '@/modules/user/entities/user.entity';
 import { CreateJobApplicationDto } from './dto/create-job-application.dto';
 import { JobApplicationResponseDto } from './dto/job-application-response.dto';
 import { JobApplicationStatusLogResponseDto } from './dto/job-application-status-log-response.dto';
+import {
+  PaginatedJobApplicationsResponseDto,
+  QueryApplicationsDto,
+} from './dto/query-applications.dto';
 import { JobApplicationsService } from './job-applications.service';
 import { UpdateJobApplicationStatusDto } from './dto/update-job-application-status.dto';
 
@@ -40,16 +45,21 @@ export class JobApplicationsController {
   @Get('applications/recruiter')
   async findRecruiterApplications(
     @Request() req: Request & { user: User },
-  ): Promise<JobApplicationResponseDto[]> {
-    return this.jobApplicationsService.findRecruiterApplications(req.user);
+    @Query() query: QueryApplicationsDto,
+  ): Promise<PaginatedJobApplicationsResponseDto> {
+    return this.jobApplicationsService.findRecruiterApplications(
+      req.user,
+      query,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('applications/me')
   async findMyApplications(
     @Request() req: Request & { user: User },
-  ): Promise<JobApplicationResponseDto[]> {
-    return this.jobApplicationsService.findMyApplications(req.user);
+    @Query() query: QueryApplicationsDto,
+  ): Promise<PaginatedJobApplicationsResponseDto> {
+    return this.jobApplicationsService.findMyApplications(req.user, query);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -80,7 +90,8 @@ export class JobApplicationsController {
   async findByJob(
     @Request() req: Request & { user: User },
     @Param('id') id: string,
-  ): Promise<JobApplicationResponseDto[]> {
-    return this.jobApplicationsService.findByJob(id, req.user);
+    @Query() query: QueryApplicationsDto,
+  ): Promise<PaginatedJobApplicationsResponseDto> {
+    return this.jobApplicationsService.findByJob(id, req.user, query);
   }
 }

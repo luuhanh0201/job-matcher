@@ -73,6 +73,23 @@ type RawStatsRow = {
   errorCount: string | null;
 };
 
+// Chu kỳ hiển thị → đơn vị bucket: xem theo ngày = từng giờ,
+// theo tuần/tháng = từng ngày trong tuần/tháng đó.
+const TRUNC_UNIT: Record<'day' | 'week' | 'month', 'hour' | 'day'> = {
+  day: 'hour',
+  week: 'day',
+  month: 'day',
+};
+
+// created_at là timestamptz; phải cắt bucket theo giờ Việt Nam thay vì theo
+// TimeZone của session DB (UTC), nếu không mốc 0h/đầu ngày sẽ lệch 7 tiếng.
+const DISPLAY_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+function periodBucketSql(unit: 'hour' | 'day'): string {
+  // timestamptz → giờ VN (naive) → cắt bucket → trả về lại timestamptz (instant chuẩn).
+  return `DATE_TRUNC('${unit}', log.created_at AT TIME ZONE '${DISPLAY_TIMEZONE}') AT TIME ZONE '${DISPLAY_TIMEZONE}'`;
+}
+
 function buildProviderName(
   providerName: string | null,
   vendor: AiProviderVendor,
@@ -128,7 +145,7 @@ export class AiUsageLogsService {
   ): Promise<AiUsageSeriesPoint[]> {
     const rows = await this.usageLogRepository
       .createQueryBuilder('log')
-      .select(`DATE_TRUNC('${groupBy}', log.createdAt)`, 'period')
+      .select(periodBucketSql(TRUNC_UNIT[groupBy]), 'period')
       .addSelect('COALESCE(SUM(log.inputTokens), 0)', 'inputTokens')
       .addSelect('COALESCE(SUM(log.outputTokens), 0)', 'outputTokens')
       .addSelect('COALESCE(SUM(log.totalTokens), 0)', 'totalTokens')
@@ -167,7 +184,7 @@ export class AiUsageLogsService {
       // innerJoin: chỉ tính token của các AI Provider hiện đang tồn tại,
       // provider đã bị xoá sẽ không xuất hiện trong biểu đồ/phân bổ.
       .innerJoin('log.provider', 'provider')
-      .select(`DATE_TRUNC('${groupBy}', log.createdAt)`, 'period')
+      .select(periodBucketSql(TRUNC_UNIT[groupBy]), 'period')
       .addSelect('log.providerId', 'providerId')
       .addSelect('provider.name', 'providerName')
       .addSelect('log.vendor', 'vendor')

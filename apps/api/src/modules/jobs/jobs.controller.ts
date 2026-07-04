@@ -18,6 +18,7 @@ import {
   PaginatedJobsResponseDto,
 } from './dto/job-response.dto';
 import { QueryJobsDto } from './dto/query-jobs.dto';
+import { QueryRecruiterJobsDto } from './dto/query-recruiter-jobs.dto';
 import { JobsService } from './jobs.service';
 import { UpdateJobStatusDto } from './dto/update-job-status.dto';
 import { RolesGuard } from '@/common/guards/roles.guard';
@@ -49,8 +50,9 @@ export class JobsController {
   @Get('recruiter/my')
   async findRecruiterJobs(
     @Request() req: Request & { user: User },
-  ): Promise<JobPostResponseDto[]> {
-    return this.jobsService.findRecruiterJobs(req.user);
+    @Query() query: QueryRecruiterJobsDto,
+  ): Promise<PaginatedJobsResponseDto> {
+    return this.jobsService.findRecruiterJobs(req.user, query);
   }
 
   @UseGuards(JwtAuthGuard)

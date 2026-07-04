@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -12,10 +12,12 @@ import {
   Loader2,
   Mail,
   Phone,
+  Search,
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { getJobApplications } from "@/services/job-application.service";
 import {
   JOB_APPLICATION_STATUS_LABEL,
@@ -47,33 +49,58 @@ function getStatusClass(status: JobApplicationStatus) {
   return "bg-warning/15 text-warning";
 }
 
+const PAGE_SIZE = 10;
+
 export default function RecruiterJobApplicationsPage() {
   const params = useParams<{ id: string }>();
   const [applications, setApplications] = useState<JobApplicationProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   useEffect(() => {
-    getJobApplications(params.id)
-      .then((items) => setApplications(items))
-      .catch((error) => {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Không thể tải danh sách ứng viên",
-        );
+    const timer = setTimeout(() => setKeyword(searchTerm.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchApplications = useCallback(
+    (pageNumber: number) => {
+      setIsLoading(true);
+      getJobApplications(params.id, {
+        keyword: keyword || undefined,
+        status: (statusFilter || undefined) as
+          | JobApplicationStatus
+          | undefined,
+        page: pageNumber,
+        limit: PAGE_SIZE,
       })
-      .finally(() => setIsLoading(false));
-  }, [params.id]);
+        .then((result) => {
+          setApplications(result.items);
+          setTotal(result.total);
+          setPage(result.page);
+          setTotalPages(result.totalPages);
+        })
+        .catch((error) => {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Không thể tải danh sách ứng viên",
+          );
+        })
+        .finally(() => setIsLoading(false));
+    },
+    [params.id, keyword, statusFilter],
+  );
+
+  useEffect(() => {
+    fetchApplications(1);
+  }, [fetchApplications]);
 
   const job = useMemo(() => applications[0]?.job, [applications]);
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-60 items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-5">
@@ -101,23 +128,57 @@ export default function RecruiterJobApplicationsPage() {
             <p className="text-xs font-bold uppercase text-muted-foreground">
               Tổng ứng viên
             </p>
-            <p className="mt-1 text-xl font-black text-foreground">
-              {applications.length}
-            </p>
+            <p className="mt-1 text-xl font-black text-foreground">{total}</p>
           </div>
         </div>
       </header>
 
-      {applications.length === 0 ? (
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1 sm:max-w-xl">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Tìm theo tên hoặc email ứng viên..."
+              className="h-11 rounded-xl border-border bg-muted/50 pl-10"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="h-11 rounded-xl border border-border bg-card px-3 text-sm font-bold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-48"
+          >
+            <option value="">Mọi trạng thái</option>
+            {Object.entries(JOB_APPLICATION_STATUS_LABEL).map(
+              ([status, label]) => (
+                <option key={status} value={status}>
+                  {label}
+                </option>
+              ),
+            )}
+          </select>
+        </div>
+      </section>
+
+      {isLoading ? (
+        <div className="flex min-h-60 items-center justify-center">
+          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+        </div>
+      ) : applications.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-border bg-card p-8 text-center shadow-sm">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <UserRound className="h-6 w-6" />
           </div>
           <h2 className="mt-4 text-base font-black text-foreground">
-            Chưa có ứng viên
+            {keyword || statusFilter
+              ? "Không tìm thấy ứng viên phù hợp"
+              : "Chưa có ứng viên"}
           </h2>
           <p className="mt-2 text-sm font-medium text-muted-foreground">
-            Khi ứng viên ứng tuyển, hồ sơ sẽ hiển thị tại đây theo từng tin.
+            {keyword || statusFilter
+              ? "Thử đổi từ khóa hoặc bộ lọc trạng thái."
+              : "Khi ứng viên ứng tuyển, hồ sơ sẽ hiển thị tại đây theo từng tin."}
           </p>
         </section>
       ) : (
@@ -209,6 +270,32 @@ export default function RecruiterJobApplicationsPage() {
             </article>
           ))}
         </section>
+      )}
+
+      {!isLoading && totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            Trang {page}/{totalPages}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => fetchApplications(page - 1)}
+            >
+              Trước
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => fetchApplications(page + 1)}
+            >
+              Sau
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

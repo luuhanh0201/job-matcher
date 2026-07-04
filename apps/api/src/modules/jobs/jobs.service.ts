@@ -9,8 +9,9 @@ import { Brackets, MoreThan, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { JobSortOption, QueryJobsDto } from './dto/query-jobs.dto';
+import { QueryRecruiterJobsDto } from './dto/query-recruiter-jobs.dto';
 import { User } from '../user/entities/user.entity';
-import { CompanyEntity } from '../company/entity/company.entity';
+import { CompanyEntity, CompanyStatus } from '../company/entity/company.entity';
 import {
   JobPostResponseDto,
   PaginatedJobsResponseDto,
@@ -51,6 +52,7 @@ export class JobsService {
         'Bạn không có quyền đăng tin cho công ty này',
       );
     }
+    this.assertCompanyApproved(company);
     if (createJobPostDto.salaryType === SalaryType.RANGE) {
       if (
         createJobPostDto.salaryMin === undefined ||
@@ -91,7 +93,10 @@ export class JobsService {
       .leftJoinAndSelect('job.company', 'company')
       .leftJoinAndSelect('job.createdBy', 'createdBy')
       .where('job.status = :status', { status: JobPostStatus.OPEN })
-      .andWhere('job.expired_at > NOW()');
+      .andWhere('job.expired_at > NOW()')
+      .andWhere('company.status = :companyStatus', {
+        companyStatus: CompanyStatus.ACTIVE,
+      });
 
     this.applyJobFilters(qb, query);
     this.applyJobSort(qb, query.sort ?? JobSortOption.NEWEST);
@@ -196,12 +201,24 @@ export class JobsService {
     );
   }
 
+  private assertCompanyApproved(company?: CompanyEntity | null): void {
+    if (!company || company.status === CompanyStatus.ACTIVE) {
+      return;
+    }
+    throw new ForbiddenException(
+      company.status === CompanyStatus.PENDING_APPROVAL
+        ? 'Công ty đang chờ quản trị viên phê duyệt, chưa thể đăng tin tuyển dụng'
+        : 'Công ty chưa được phê duyệt hoạt động, không thể đăng tin tuyển dụng',
+    );
+  }
+
   async findPublicOpenJobById(id: string): Promise<JobPostResponseDto> {
     const job = await this.jobPostRepository.findOne({
       where: {
         id,
         status: JobPostStatus.OPEN,
         expiredAt: MoreThan(new Date()),
+        company: { status: CompanyStatus.ACTIVE },
       },
       relations: {
         company: true,
@@ -216,16 +233,44 @@ export class JobsService {
     return this.toJobPostResponse(job);
   }
 
-  async findRecruiterJobs(user: User): Promise<JobPostResponseDto[]> {
-    const jobs = await this.jobPostRepository
+  async findRecruiterJobs(
+    user: User,
+    query: QueryRecruiterJobsDto,
+  ): Promise<PaginatedJobsResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const qb = this.jobPostRepository
       .createQueryBuilder('job')
       .leftJoinAndSelect('job.company', 'company')
       .leftJoinAndSelect('job.createdBy', 'createdBy')
-      .where("company.created_by ->> 'id' = :userId", { userId: user.id })
-      .orderBy('job.created_at', 'DESC')
-      .getMany();
+      .where("company.created_by ->> 'id' = :userId", { userId: user.id });
 
-    return jobs.map((job) => this.toJobPostResponse(job));
+    if (query.keyword?.trim()) {
+      qb.andWhere(
+        `(unaccent(job.title) ILIKE unaccent(:kw)
+          OR unaccent(job.department) ILIKE unaccent(:kw)
+          OR unaccent(company.name) ILIKE unaccent(:kw))`,
+        { kw: `%${query.keyword.trim()}%` },
+      );
+    }
+    if (query.status) {
+      qb.andWhere('job.status = :status', { status: query.status });
+    }
+
+    const [jobs, total] = await qb
+      .orderBy('job.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      items: jobs.map((job) => this.toJobPostResponse(job)),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findRecruiterJobById(
@@ -320,6 +365,9 @@ export class JobsService {
     }
     if (status === JobPostStatus.BLOCKED) {
       throw new ForbiddenException('Bạn không có quyền khóa tin tuyển dụng');
+    }
+    if (status === JobPostStatus.OPEN) {
+      this.assertCompanyApproved(job.company);
     }
 
     job.status = status;

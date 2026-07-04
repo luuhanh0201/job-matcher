@@ -1,6 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import {
+  PaginatedResult,
+  PaginationQueryDto,
+  toPaginatedResult,
+} from '@/common/dto/pagination-query.dto';
 import { JobPostStatus } from '@/common/enum/Job.enum';
 import { JobPostEntity } from '@/modules/jobs/entities/job.entity';
 import { JobPostResponseDto } from '@/modules/jobs/dto/job-response.dto';
@@ -47,18 +52,39 @@ export class SavedJobsService {
     return { jobId, saved: false, savedAt: null };
   }
 
-  async findMySavedJobs(user: User): Promise<JobPostResponseDto[]> {
-    const savedJobs = await this.savedJobRepository
+  async findMySavedJobs(
+    user: User,
+    query: PaginationQueryDto,
+  ): Promise<PaginatedResult<JobPostResponseDto>> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const qb = this.savedJobRepository
       .createQueryBuilder('saved')
       .innerJoinAndSelect('saved.job', 'job')
       .leftJoinAndSelect('job.company', 'company')
       .leftJoinAndSelect('job.createdBy', 'createdBy')
-      .where('saved.candidate_id = :userId', { userId: user.id })
-      .orderBy('saved.created_at', 'DESC')
-      .getMany();
+      .where('saved.candidate_id = :userId', { userId: user.id });
 
-    return savedJobs.map((saved) =>
-      this.jobsService.toJobPostResponse(saved.job),
+    if (query.keyword?.trim()) {
+      qb.andWhere(
+        `(unaccent(job.title) ILIKE unaccent(:kw)
+          OR unaccent(company.name) ILIKE unaccent(:kw))`,
+        { kw: `%${query.keyword.trim()}%` },
+      );
+    }
+
+    const [savedJobs, total] = await qb
+      .orderBy('saved.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return toPaginatedResult(
+      savedJobs.map((saved) => this.jobsService.toJobPostResponse(saved.job)),
+      total,
+      page,
+      limit,
     );
   }
 

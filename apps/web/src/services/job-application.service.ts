@@ -5,6 +5,11 @@ import type {
   JobApplicationStatusLog,
   JobApplicationStatus,
 } from "@/types/job-application";
+import {
+  toQueryString,
+  type Paginated,
+  type PaginationQuery,
+} from "@/types/pagination";
 
 export async function applyToJob(
   jobPostId: string,
@@ -23,9 +28,17 @@ export async function applyToJob(
   );
 }
 
-export async function getJobApplications(jobPostId: string) {
-  return protectedFetchJson<JobApplicationProfile[]>(
-    `/jobs/${jobPostId}/applications`,
+export type ApplicationsQuery = PaginationQuery & {
+  status?: JobApplicationStatus;
+  jobId?: string;
+};
+
+export async function getJobApplications(
+  jobPostId: string,
+  query: ApplicationsQuery = {},
+) {
+  return protectedFetchJson<Paginated<JobApplicationProfile>>(
+    `/jobs/${jobPostId}/applications${toQueryString(query)}`,
     {
       method: "GET",
     },
@@ -33,9 +46,9 @@ export async function getJobApplications(jobPostId: string) {
   );
 }
 
-export async function getRecruiterApplications() {
-  return protectedFetchJson<JobApplicationProfile[]>(
-    "/jobs/applications/recruiter",
+export async function getRecruiterApplications(query: ApplicationsQuery = {}) {
+  return protectedFetchJson<Paginated<JobApplicationProfile>>(
+    `/jobs/applications/recruiter${toQueryString(query)}`,
     {
       method: "GET",
     },
@@ -43,9 +56,9 @@ export async function getRecruiterApplications() {
   );
 }
 
-export async function getMyApplications() {
-  return protectedFetchJson<JobApplicationProfile[]>(
-    "/jobs/applications/me",
+export async function getMyApplications(query: ApplicationsQuery = {}) {
+  return protectedFetchJson<Paginated<JobApplicationProfile>>(
+    `/jobs/applications/me${toQueryString(query)}`,
     {
       method: "GET",
     },

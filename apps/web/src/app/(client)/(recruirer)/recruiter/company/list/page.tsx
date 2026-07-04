@@ -5,6 +5,8 @@ import {
   Building2,
   CheckCircle2,
   CircleDashed,
+  CircleSlash,
+  CircleX,
   Eye,
   Globe,
   MapPin,
@@ -15,7 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getMyCompany } from "@/services/company.service";
 import type { CompanyProfile } from "@/types/company";
 import { toast } from "sonner";
@@ -23,6 +25,25 @@ import { toast } from "sonner";
 export default function RecruiterCompanyListPage() {
   const [companies, setCompanies] = useState<CompanyProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Recruiter thường chỉ có vài công ty nên lọc client-side là đủ
+  const filteredCompanies = useMemo(() => {
+    const normalized = searchTerm.trim().toLowerCase();
+    if (!normalized) return companies;
+    return companies.filter((company) =>
+      [
+        company.name,
+        company.companyType,
+        company.location?.address,
+        company.location?.wardName,
+        company.location?.provinceName,
+      ]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(normalized)),
+    );
+  }, [companies, searchTerm]);
+
   useEffect(() => {
     getMyCompany()
       .then((data) => setCompanies(data || []))
@@ -56,6 +77,8 @@ export default function RecruiterCompanyListPage() {
           <div className="relative w-full lg:max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Tìm theo tên công ty, lĩnh vực, địa chỉ..."
               className="h-11 rounded-xl border-border bg-muted/60 pl-10"
             />
@@ -63,8 +86,11 @@ export default function RecruiterCompanyListPage() {
           <div className="grid grid-cols-2 gap-2 text-sm sm:flex sm:items-center">
             <SummaryPill label="Tổng công ty" value={companies.length} />
             <SummaryPill
-              label="Đã xác minh"
-              value={companies.filter((company) => company.isVerified).length}
+              label="Đã duyệt"
+              value={
+                companies.filter((company) => company.status === "ACTIVE")
+                  .length
+              }
             />
           </div>
         </div>
@@ -76,18 +102,29 @@ export default function RecruiterCompanyListPage() {
             </div>
           ) : null}
 
-          {!loading && companies.length === 0 ? (
-            <Link href="/recruiter/company/profile" className="rounded-2xl border border-dashed border-border p-6 text-center">
-              <p className="text-sm font-bold text-foreground">
-                Chưa có công ty nào
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Tạo hồ sơ công ty đầu tiên để bắt đầu đăng tuyển.
-              </p>
-            </Link>
+          {!loading && filteredCompanies.length === 0 ? (
+            searchTerm.trim() ? (
+              <div className="rounded-2xl border border-dashed border-border p-6 text-center">
+                <p className="text-sm font-bold text-foreground">
+                  Không tìm thấy công ty phù hợp
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Thử đổi từ khóa tìm kiếm.
+                </p>
+              </div>
+            ) : (
+              <Link href="/recruiter/company/profile" className="rounded-2xl border border-dashed border-border p-6 text-center">
+                <p className="text-sm font-bold text-foreground">
+                  Chưa có công ty nào
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Tạo hồ sơ công ty đầu tiên để bắt đầu đăng tuyển.
+                </p>
+              </Link>
+            )
           ) : null}
 
-          {companies.map((company) => (
+          {filteredCompanies.map((company) => (
             <article
               key={company.id}
               className="rounded-2xl border border-border p-4 transition-colors hover:border-primary/35 hover:bg-primary/10"
@@ -121,17 +158,7 @@ export default function RecruiterCompanyListPage() {
                       </p>
                     </div>
                     
-                    {company.isVerified ? (
-                      <span className="inline-flex h-7 w-28 items-center justify-center gap-1 rounded-full bg-success/10 px-2 text-xs font-bold text-success">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        Đã xác minh
-                      </span>
-                    ) : (
-                      <span className="inline-flex h-7 w-28 items-center justify-center gap-1 rounded-full bg-warning/10 px-2 text-xs font-bold text-warning">
-                        <CircleDashed className="h-3.5 w-3.5" />
-                        Chờ xác minh
-                      </span>
-                    )}
+                    <CompanyStatusBadge company={company} />
                   </div>
 
                   <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -179,6 +206,46 @@ export default function RecruiterCompanyListPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function CompanyStatusBadge({ company }: { company: CompanyProfile }) {
+  if (company.status === "ACTIVE") {
+    return (
+      <span className="inline-flex h-7 w-28 items-center justify-center gap-1 rounded-full bg-success/10 px-2 text-xs font-bold text-success">
+        <CheckCircle2 className="h-3.5 w-3.5" />
+        Đã duyệt
+      </span>
+    );
+  }
+  if (company.status === "REJECTED") {
+    return (
+      <span
+        title={
+          company.rejectionReason
+            ? `Lý do: ${company.rejectionReason}. Cập nhật hồ sơ để gửi duyệt lại.`
+            : "Cập nhật hồ sơ để gửi duyệt lại."
+        }
+        className="inline-flex h-7 w-28 items-center justify-center gap-1 rounded-full bg-destructive/10 px-2 text-xs font-bold text-destructive"
+      >
+        <CircleX className="h-3.5 w-3.5" />
+        Bị từ chối
+      </span>
+    );
+  }
+  if (company.status === "INACTIVE") {
+    return (
+      <span className="inline-flex h-7 w-28 items-center justify-center gap-1 rounded-full bg-muted px-2 text-xs font-bold text-muted-foreground">
+        <CircleSlash className="h-3.5 w-3.5" />
+        Ngừng hoạt động
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex h-7 w-28 items-center justify-center gap-1 rounded-full bg-warning/10 px-2 text-xs font-bold text-warning">
+      <CircleDashed className="h-3.5 w-3.5" />
+      Chờ duyệt
+    </span>
   );
 }
 

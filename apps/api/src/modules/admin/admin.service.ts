@@ -8,6 +8,13 @@ import { Repository } from 'typeorm';
 import { JobPostStatus } from '@/common/enum/Job.enum';
 import { UserRole, UserStatus } from '@/common/enum/index.enum';
 import { AiUsageLogEntity } from '@/modules/ai-usage/entities/ai-usage-log.entity';
+import {
+  CompanyEntity,
+  CompanyStatus,
+} from '@/modules/company/entity/company.entity';
+import { CompanyResponseDto } from '@/modules/company/dto/company-response.dto';
+import { MailService } from '@/modules/mail/mail.service';
+import { RecruiterEntity } from '@/modules/recruiters/entity/recruiter.entity';
 import { JobApplicationEntity } from '@/modules/job-applications/entities/job-application.entity';
 import { JobPostEntity } from '@/modules/jobs/entities/job.entity';
 import {
@@ -16,11 +23,15 @@ import {
 } from '@/modules/jobs/dto/job-response.dto';
 import { JobsService } from '@/modules/jobs/jobs.service';
 import { User } from '@/modules/user/entities/user.entity';
+import { QueryAdminCompaniesDto } from './dto/query-admin-companies.dto';
 import { QueryAdminJobsDto } from './dto/query-admin-jobs.dto';
 import { QueryAdminUsersDto } from './dto/query-admin-users.dto';
+import { UpdateAdminCompanyStatusDto } from './dto/update-admin-company-status.dto';
 import {
+  AdminCompanyDetailResponseDto,
   AdminStatsResponseDto,
   AdminUserResponseDto,
+  PaginatedAdminCompaniesResponseDto,
   PaginatedAdminUsersResponseDto,
 } from './dto/admin-response.dto';
 
@@ -35,7 +46,12 @@ export class AdminService {
     private readonly jobApplicationRepository: Repository<JobApplicationEntity>,
     @InjectRepository(AiUsageLogEntity)
     private readonly aiUsageLogRepository: Repository<AiUsageLogEntity>,
+    @InjectRepository(CompanyEntity)
+    private readonly companyRepository: Repository<CompanyEntity>,
+    @InjectRepository(RecruiterEntity)
+    private readonly recruiterRepository: Repository<RecruiterEntity>,
     private readonly jobsService: JobsService,
+    private readonly mailService: MailService,
   ) {}
 
   // ─── Users ────────────────────────────────────────────────────────────
@@ -100,6 +116,143 @@ export class AdminService {
     user.status = status;
     const savedUser = await this.userRepository.save(user);
     return this.toAdminUserResponse(savedUser);
+  }
+
+  // ─── Companies ────────────────────────────────────────────────────────
+
+  async findCompanies(
+    query: QueryAdminCompaniesDto,
+  ): Promise<PaginatedAdminCompaniesResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const qb = this.companyRepository.createQueryBuilder('company');
+
+    if (query.keyword?.trim()) {
+      qb.andWhere(
+        `(unaccent(company.name) ILIKE unaccent(:kw)
+          OR company.tax_code ILIKE :kw
+          OR company.created_by ->> 'email' ILIKE :kw)`,
+        { kw: `%${query.keyword.trim()}%` },
+      );
+    }
+    if (query.status) {
+      qb.andWhere('company.status = :status', { status: query.status });
+    }
+
+    const [companies, total] = await qb
+      .orderBy(
+        // Công ty chờ duyệt hiển thị trước để admin xử lý sớm
+        `CASE WHEN company.status = '${CompanyStatus.PENDING_APPROVAL}' THEN 0 ELSE 1 END`,
+        'ASC',
+      )
+      .addOrderBy('company.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      items: companies,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getCompanyDetail(
+    companyId: string,
+  ): Promise<AdminCompanyDetailResponseDto> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+    });
+    if (!company) {
+      throw new BadRequestException('Công ty không tồn tại');
+    }
+
+    const recruiterUserId = company.createdBy?.id;
+    if (!recruiterUserId) {
+      return { ...company, recruiter: null };
+    }
+
+    const [user, recruiterProfile] = await Promise.all([
+      this.userRepository.findOne({ where: { id: recruiterUserId } }),
+      this.recruiterRepository.findOne({
+        where: { userId: recruiterUserId },
+      }),
+    ]);
+    if (!user) {
+      return { ...company, recruiter: null };
+    }
+
+    return {
+      ...company,
+      recruiter: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone ?? null,
+        avatar: user.avatar ?? null,
+        status: user.status,
+        isVerify: user.isVerify,
+        lastLoginAt: user.lastLoginAt,
+        createdAt: user.createdAt,
+        contactPhone: recruiterProfile?.contactPhone ?? null,
+        contactEmail: recruiterProfile?.contactEmail ?? null,
+      },
+    };
+  }
+
+  async updateCompanyStatus(
+    companyId: string,
+    dto: UpdateAdminCompanyStatusDto,
+    admin: User,
+  ): Promise<CompanyResponseDto> {
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+    });
+    if (!company) {
+      throw new BadRequestException('Công ty không tồn tại');
+    }
+
+    const reason = dto.reason?.trim();
+    if (dto.status === CompanyStatus.REJECTED && !reason) {
+      throw new BadRequestException('Vui lòng nhập lý do từ chối');
+    }
+
+    const previousStatus = company.status;
+    company.status = dto.status;
+    company.isVerified = dto.status === CompanyStatus.ACTIVE;
+    company.rejectionReason =
+      dto.status === CompanyStatus.REJECTED ? reason : null;
+    company.updatedBy = {
+      id: admin.id,
+      name: admin.fullName,
+      email: admin.email,
+    };
+
+    const savedCompany = await this.companyRepository.save(company);
+
+    const recipient = savedCompany.createdBy?.email ?? savedCompany.email;
+    if (recipient && previousStatus !== savedCompany.status) {
+      const recipientName = savedCompany.createdBy?.name ?? 'bạn';
+      if (savedCompany.status === CompanyStatus.ACTIVE) {
+        await this.mailService.sendCompanyApprovedEmail({
+          to: recipient,
+          name: recipientName,
+          companyName: savedCompany.name,
+        });
+      } else if (savedCompany.status === CompanyStatus.REJECTED) {
+        await this.mailService.sendCompanyRejectedEmail({
+          to: recipient,
+          name: recipientName,
+          companyName: savedCompany.name,
+          reason: savedCompany.rejectionReason,
+        });
+      }
+    }
+
+    return savedCompany;
   }
 
   // ─── Jobs ─────────────────────────────────────────────────────────────

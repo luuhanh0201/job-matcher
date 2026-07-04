@@ -29,6 +29,7 @@ export class CompanyResponseDto {
   description?: string | null;
   isVerified!: boolean;
   status!: CompanyStatus;
+  rejectionReason?: string | null;
   createdAt!: Date;
   updatedAt!: Date;
   deletedAt!: Date | null;

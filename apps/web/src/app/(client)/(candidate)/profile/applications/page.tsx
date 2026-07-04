@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BriefcaseBusiness,
   CalendarClock,
@@ -10,12 +10,14 @@ import {
   ExternalLink,
   Loader2,
   MapPin,
+  Search,
   StickyNote,
   Video,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   getJobApplicationStatusLogs,
   getMyApplications,
@@ -62,6 +64,8 @@ function isInterviewExpired(interview: InterviewProfile) {
   return new Date(interview.scheduledAt) <= new Date();
 }
 
+const PAGE_SIZE = 10;
+
 export default function CandidateApplicationsPage() {
   const [applications, setApplications] = useState<JobApplicationProfile[]>([]);
   const [interviews, setInterviews] = useState<InterviewProfile[]>([]);
@@ -71,22 +75,60 @@ export default function CandidateApplicationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [respondingInterviewId, setRespondingInterviewId] = useState("");
 
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
   useEffect(() => {
-    Promise.all([getMyApplications(), getMyInterviews()])
-      .then(([applicationItems, interviewItems]) => {
-        setApplications(applicationItems);
-        setInterviews(interviewItems);
-        void loadStatusLogs(applicationItems.map((item) => item.id));
-      })
-      .catch((error) => {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Không thể tải danh sách việc đã ứng tuyển",
-        );
-      })
-      .finally(() => setIsLoading(false));
+    const timer = setTimeout(() => setKeyword(searchTerm.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    // Lịch phỏng vấn được ghép theo từng hồ sơ nên tải một lần (tối đa 100)
+    getMyInterviews({ limit: 100 })
+      .then((result) => setInterviews(result.items))
+      .catch(() => {
+        toast.error("Không thể tải lịch phỏng vấn");
+      });
   }, []);
+
+  const fetchApplications = useCallback(
+    (pageNumber: number) => {
+      setIsLoading(true);
+      getMyApplications({
+        keyword: keyword || undefined,
+        status: (statusFilter || undefined) as
+          | JobApplicationStatus
+          | undefined,
+        page: pageNumber,
+        limit: PAGE_SIZE,
+      })
+        .then((result) => {
+          setApplications(result.items);
+          setTotal(result.total);
+          setPage(result.page);
+          setTotalPages(result.totalPages);
+          void loadStatusLogs(result.items.map((item) => item.id));
+        })
+        .catch((error) => {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Không thể tải danh sách việc đã ứng tuyển",
+          );
+        })
+        .finally(() => setIsLoading(false));
+    },
+    [keyword, statusFilter],
+  );
+
+  useEffect(() => {
+    fetchApplications(1);
+  }, [fetchApplications]);
 
   const loadStatusLogs = async (applicationIds: string[]) => {
     try {
@@ -146,14 +188,6 @@ export default function CandidateApplicationsPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-60 items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-5">
       <header>
@@ -165,11 +199,48 @@ export default function CandidateApplicationsPage() {
         </p>
       </header>
 
-      {applications.length === 0 ? (
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1 sm:max-w-xl">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Tìm theo vị trí, công ty..."
+              className="h-11 rounded-xl border-border bg-muted/50 pl-10"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="h-11 rounded-xl border border-border bg-card px-3 text-sm font-bold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-48"
+          >
+            <option value="">Mọi trạng thái</option>
+            {Object.entries(JOB_APPLICATION_STATUS_LABEL).map(
+              ([status, label]) => (
+                <option key={status} value={status}>
+                  {label}
+                </option>
+              ),
+            )}
+          </select>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {isLoading ? "Đang tải..." : `${total} hồ sơ ứng tuyển`}
+        </p>
+      </section>
+
+      {isLoading ? (
+        <div className="flex min-h-60 items-center justify-center">
+          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+        </div>
+      ) : applications.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-border bg-card p-8 text-center shadow-sm">
           <BriefcaseBusiness className="mx-auto h-9 w-9 text-primary" />
           <p className="mt-3 text-sm font-bold text-foreground">
-            Bạn chưa ứng tuyển công việc nào
+            {keyword || statusFilter
+              ? "Không tìm thấy hồ sơ phù hợp với bộ lọc"
+              : "Bạn chưa ứng tuyển công việc nào"}
           </p>
         </section>
       ) : (
@@ -307,6 +378,32 @@ export default function CandidateApplicationsPage() {
             );
           })}
         </section>
+      )}
+
+      {!isLoading && totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            Trang {page}/{totalPages}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => fetchApplications(page - 1)}
+            >
+              Trước
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => fetchApplications(page + 1)}
+            >
+              Sau
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

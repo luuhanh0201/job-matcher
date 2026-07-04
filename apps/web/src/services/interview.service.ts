@@ -5,6 +5,15 @@ import type {
   InterviewStatus,
   UpdateInterviewPayload,
 } from "@/types/interview";
+import {
+  toQueryString,
+  type Paginated,
+  type PaginationQuery,
+} from "@/types/pagination";
+
+export type InterviewsQuery = PaginationQuery & {
+  status?: InterviewStatus;
+};
 
 export async function createInterview(
   applicationId: string,
@@ -23,9 +32,9 @@ export async function createInterview(
   );
 }
 
-export async function getRecruiterInterviews() {
-  return protectedFetchJson<InterviewProfile[]>(
-    "/interviews/recruiter",
+export async function getRecruiterInterviews(query: InterviewsQuery = {}) {
+  return protectedFetchJson<Paginated<InterviewProfile>>(
+    `/interviews/recruiter${toQueryString(query)}`,
     {
       method: "GET",
     },
@@ -33,9 +42,9 @@ export async function getRecruiterInterviews() {
   );
 }
 
-export async function getMyInterviews() {
-  return protectedFetchJson<InterviewProfile[]>(
-    "/interviews/me",
+export async function getMyInterviews(query: InterviewsQuery = {}) {
+  return protectedFetchJson<Paginated<InterviewProfile>>(
+    `/interviews/me${toQueryString(query)}`,
     {
       method: "GET",
     },

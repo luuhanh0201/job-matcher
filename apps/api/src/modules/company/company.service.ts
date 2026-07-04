@@ -1,4 +1,4 @@
-import { CompanyEntity } from './entity/company.entity';
+import { CompanyEntity, CompanyStatus } from './entity/company.entity';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -132,6 +132,11 @@ export class CompanyService {
       location: normalizedLocation,
       updatedBy,
     });
+    // Công ty bị từ chối sau khi chỉnh sửa sẽ được gửi duyệt lại
+    if (company.status === CompanyStatus.REJECTED) {
+      newCompany.status = CompanyStatus.PENDING_APPROVAL;
+      newCompany.rejectionReason = null;
+    }
     try {
       return await this.companyRepository.save(newCompany);
     } catch (error) {

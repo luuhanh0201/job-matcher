@@ -4,7 +4,12 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 import { InterviewStatus } from '@/common/enum/Interview.enum';
 import { JobApplicationStatus } from '@/common/enum/JobApplication.enum';
 import { UserRole } from '@/common/enum/index.enum';
@@ -14,6 +19,10 @@ import { MailService } from '@/modules/mail/mail.service';
 import { User } from '@/modules/user/entities/user.entity';
 import { CreateInterviewDto } from './dto/create-interview.dto';
 import { InterviewResponseDto } from './dto/interview-response.dto';
+import {
+  PaginatedInterviewsResponseDto,
+  QueryInterviewsDto,
+} from './dto/query-interviews.dto';
 import { RespondInterviewDto } from './dto/respond-interview.dto';
 import { UpdateInterviewDto } from './dto/update-interview.dto';
 import { InterviewEntity } from './entities/interview.entity';
@@ -137,52 +146,78 @@ export class InterviewsService {
 
   async findRecruiterInterviews(
     recruiter: User,
-  ): Promise<InterviewResponseDto[]> {
+    query: QueryInterviewsDto,
+  ): Promise<PaginatedInterviewsResponseDto> {
     this.ensureRecruiter(recruiter);
 
-    const interviews = await this.interviewRepository.find({
-      where: { recruiterId: recruiter.id },
-      relations: {
-        application: {
-          job: {
-            company: true,
-          },
-        },
-        candidate: true,
-        recruiter: true,
-      },
-      order: {
-        scheduledAt: 'DESC',
-      },
-    });
-
-    return interviews.map((interview) => this.toInterviewResponse(interview));
+    const qb = this.buildInterviewsQuery(query).andWhere(
+      'interview.recruiter_id = :recruiterId',
+      { recruiterId: recruiter.id },
+    );
+    return this.paginateInterviews(qb, query);
   }
 
-  async findMyInterviews(candidate: User): Promise<InterviewResponseDto[]> {
+  async findMyInterviews(
+    candidate: User,
+    query: QueryInterviewsDto,
+  ): Promise<PaginatedInterviewsResponseDto> {
     if (candidate.role !== UserRole.CANDIDATE) {
       throw new ForbiddenException(
         'Chỉ ứng viên mới có thể xem lịch phỏng vấn của mình',
       );
     }
 
-    const interviews = await this.interviewRepository.find({
-      where: { candidateId: candidate.id },
-      relations: {
-        application: {
-          job: {
-            company: true,
-          },
-        },
-        candidate: true,
-        recruiter: true,
-      },
-      order: {
-        scheduledAt: 'DESC',
-      },
-    });
+    const qb = this.buildInterviewsQuery(query).andWhere(
+      'interview.candidate_id = :candidateId',
+      { candidateId: candidate.id },
+    );
+    return this.paginateInterviews(qb, query);
+  }
 
-    return interviews.map((interview) => this.toInterviewResponse(interview));
+  private buildInterviewsQuery(query: QueryInterviewsDto) {
+    const qb = this.interviewRepository
+      .createQueryBuilder('interview')
+      .leftJoinAndSelect('interview.application', 'application')
+      .leftJoinAndSelect('application.job', 'job')
+      .leftJoinAndSelect('job.company', 'company')
+      .leftJoinAndSelect('interview.candidate', 'candidate')
+      .leftJoinAndSelect('interview.recruiter', 'recruiter');
+
+    if (query.keyword?.trim()) {
+      qb.andWhere(
+        `(unaccent(job.title) ILIKE unaccent(:kw)
+          OR unaccent(company.name) ILIKE unaccent(:kw)
+          OR unaccent(candidate.full_name) ILIKE unaccent(:kw)
+          OR candidate.email ILIKE :kw)`,
+        { kw: `%${query.keyword.trim()}%` },
+      );
+    }
+    if (query.status) {
+      qb.andWhere('interview.status = :status', { status: query.status });
+    }
+    return qb;
+  }
+
+  private async paginateInterviews(
+    qb: SelectQueryBuilder<InterviewEntity>,
+    query: QueryInterviewsDto,
+  ): Promise<PaginatedInterviewsResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const [interviews, total] = await qb
+      .orderBy('interview.scheduledAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      items: interviews.map((interview) => this.toInterviewResponse(interview)),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async updateInterview(

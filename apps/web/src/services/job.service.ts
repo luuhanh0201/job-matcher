@@ -21,9 +21,29 @@ export async function createJobPost(payload: CreateJobPostPayload) {
   );
 }
 
-export async function getJobPosts() {
-  return protectedFetchJson<JobPostProfile[]>(
-    "/jobs/recruiter/my",
+export type Paginated<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+export type RecruiterJobsQuery = {
+  keyword?: string;
+  status?: JobPostStatus;
+  page?: number;
+  limit?: number;
+};
+
+export async function getJobPosts(query: RecruiterJobsQuery = {}) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== "") params.set(key, String(value));
+  }
+  const queryString = params.toString();
+  return protectedFetchJson<Paginated<JobPostProfile>>(
+    `/jobs/recruiter/my${queryString ? `?${queryString}` : ""}`,
     {
       method: "GET",
     },

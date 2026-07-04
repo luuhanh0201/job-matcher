@@ -6,12 +6,6 @@ import { UserRole } from '@/common/enum/index.enum';
 import { AiUsageLogsService } from './ai-usage-logs.service';
 import { GetUsageSeriesDto } from './dto/get-usage-series.dto';
 
-const DEFAULT_RANGE_DAYS: Record<'day' | 'week' | 'month', number> = {
-  day: 30,
-  week: 84,
-  month: 180,
-};
-
 @Controller('admin/ai-usage')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -39,10 +33,23 @@ export class AiUsageController {
     const to = query.to ? new Date(query.to) : new Date();
     const from = query.from
       ? new Date(query.from)
-      : new Date(
-          to.getTime() -
-            DEFAULT_RANGE_DAYS[query.groupBy] * 24 * 60 * 60 * 1000,
-        );
+      : this.getPeriodStart(query.groupBy, to);
     return { from, to };
+  }
+
+  // Mặc định thống kê trong chu kỳ hiện tại: hôm nay / tuần này (từ thứ 2) / tháng này
+  private getPeriodStart(groupBy: 'day' | 'week' | 'month', to: Date): Date {
+    if (groupBy === 'day') {
+      return new Date(to.getFullYear(), to.getMonth(), to.getDate());
+    }
+    if (groupBy === 'week') {
+      const diffToMonday = (to.getDay() + 6) % 7;
+      return new Date(
+        to.getFullYear(),
+        to.getMonth(),
+        to.getDate() - diffToMonday,
+      );
+    }
+    return new Date(to.getFullYear(), to.getMonth(), 1);
   }
 }

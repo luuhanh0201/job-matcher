@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -12,6 +13,10 @@ import { JwtAuthGuard } from '@/modules/auth/Guards/jwt-auth.guard';
 import { User } from '@/modules/user/entities/user.entity';
 import { CreateInterviewDto } from './dto/create-interview.dto';
 import { InterviewResponseDto } from './dto/interview-response.dto';
+import {
+  PaginatedInterviewsResponseDto,
+  QueryInterviewsDto,
+} from './dto/query-interviews.dto';
 import { RespondInterviewDto } from './dto/respond-interview.dto';
 import { UpdateInterviewDto } from './dto/update-interview.dto';
 import { InterviewsService } from './interviews.service';
@@ -37,15 +42,17 @@ export class InterviewsController {
   @Get('recruiter')
   async findRecruiterInterviews(
     @Request() req: Request & { user: User },
-  ): Promise<InterviewResponseDto[]> {
-    return this.interviewsService.findRecruiterInterviews(req.user);
+    @Query() query: QueryInterviewsDto,
+  ): Promise<PaginatedInterviewsResponseDto> {
+    return this.interviewsService.findRecruiterInterviews(req.user, query);
   }
 
   @Get('me')
   async findMyInterviews(
     @Request() req: Request & { user: User },
-  ): Promise<InterviewResponseDto[]> {
-    return this.interviewsService.findMyInterviews(req.user);
+    @Query() query: QueryInterviewsDto,
+  ): Promise<PaginatedInterviewsResponseDto> {
+    return this.interviewsService.findMyInterviews(req.user, query);
   }
 
   @Patch(':id/respond')

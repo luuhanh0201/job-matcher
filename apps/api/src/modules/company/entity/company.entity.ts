@@ -7,8 +7,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 export enum CompanyStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
+  REJECTED = 'REJECTED',
 }
 export enum CompanySize {
   SMALL = '1-10',
@@ -62,8 +64,10 @@ export class CompanyEntity {
   description?: string;
   @Column({ name: 'is_verified', default: false })
   isVerified!: boolean;
-  @Column({ name: 'status', default: CompanyStatus.ACTIVE })
+  @Column({ name: 'status', default: CompanyStatus.PENDING_APPROVAL })
   status!: CompanyStatus;
+  @Column({ name: 'rejection_reason', nullable: true, type: 'text' })
+  rejectionReason?: string | null;
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
   @UpdateDateColumn({ name: 'updated_at' })

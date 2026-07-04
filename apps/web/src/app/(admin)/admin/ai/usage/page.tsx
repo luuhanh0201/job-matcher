@@ -44,12 +44,53 @@ const GROUP_BY_OPTIONS: { value: AiUsageGroupBy; label: string }[] = [
   { value: "month", label: "Tháng" },
 ];
 
+const GROUP_BY_CAPTION: Record<AiUsageGroupBy, string> = {
+  day: "Hôm nay — thống kê theo từng khung giờ",
+  week: "Tuần này — thống kê theo từng ngày (từ thứ 2)",
+  month: "Tháng này — thống kê theo từng ngày",
+};
+
 function formatPeriodLabel(iso: string, groupBy: AiUsageGroupBy): string {
   const date = new Date(iso);
-  if (groupBy === "month") {
-    return date.toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" });
+  if (groupBy === "day") {
+    return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  }
+  if (groupBy === "week") {
+    return date.toLocaleDateString("vi-VN", {
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+    });
   }
   return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+}
+
+// Sinh đủ mọi bucket (giờ trong hôm nay / ngày trong tuần này / ngày trong
+// tháng này) tính đến hiện tại, để biểu đồ hiện cả khung không có dữ liệu.
+function buildPeriodBuckets(groupBy: AiUsageGroupBy): Date[] {
+  const now = new Date();
+  const buckets: Date[] = [];
+  if (groupBy === "day") {
+    const cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    while (cursor <= now) {
+      buckets.push(new Date(cursor));
+      cursor.setHours(cursor.getHours() + 1);
+    }
+    return buckets;
+  }
+  const cursor =
+    groupBy === "week"
+      ? new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() - ((now.getDay() + 6) % 7),
+        )
+      : new Date(now.getFullYear(), now.getMonth(), 1);
+  while (cursor <= now) {
+    buckets.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return buckets;
 }
 
 function formatNumber(n: number): string {
@@ -165,7 +206,12 @@ export default function AdminAiUsagePage() {
     const namesInOrder: string[] = [];
     const namesSeen = new Set<string>();
     const vendorByName = new Map<string, string>();
-    const periodMap = new Map<string, Record<string, number | string>>();
+    // Key theo timestamp để khớp bucket backend (ISO UTC) với bucket sinh ở client
+    const periodMap = new Map<number, Record<string, number | string>>();
+
+    for (const bucket of buildPeriodBuckets(groupBy)) {
+      periodMap.set(bucket.getTime(), { period: bucket.toISOString() });
+    }
 
     for (const row of seriesByProvider) {
       if (!namesSeen.has(row.providerName)) {
@@ -173,18 +219,21 @@ export default function AdminAiUsagePage() {
         namesInOrder.push(row.providerName);
         vendorByName.set(row.providerName, row.vendor);
       }
-      if (!periodMap.has(row.period)) {
-        periodMap.set(row.period, { period: row.period });
+      const key = new Date(row.period).getTime();
+      if (!periodMap.has(key)) {
+        periodMap.set(key, { period: row.period });
       }
-      const entry = periodMap.get(row.period)!;
+      const entry = periodMap.get(key)!;
       entry[row.providerName] = (Number(entry[row.providerName]) || 0) + row.totalTokens;
     }
 
     const data = Array.from(periodMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([period, values]) => ({
+      .sort(([a], [b]) => a - b)
+      .map(([, values]) => ({
+        // Bucket không có dữ liệu vẫn hiện điểm 0 cho mọi provider
+        ...Object.fromEntries(namesInOrder.map((name) => [name, 0])),
         ...values,
-        label: formatPeriodLabel(period, groupBy),
+        label: formatPeriodLabel(String(values.period), groupBy),
       }));
 
     return { chartData: data, providerNames: namesInOrder, providerVendorByName: vendorByName };
@@ -216,7 +265,10 @@ export default function AdminAiUsagePage() {
 
       <Card className="border border-border bg-card p-6 shadow-sm">
         <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <h3 className="text-lg font-bold text-foreground">Lượng token theo thời gian</h3>
+          <div>
+            <h3 className="text-lg font-bold text-foreground">Lượng token theo thời gian</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">{GROUP_BY_CAPTION[groupBy]}</p>
+          </div>
           <div className="flex gap-1 rounded-lg border border-border p-1">
             {GROUP_BY_OPTIONS.map((option) => (
               <button
@@ -245,7 +297,7 @@ export default function AdminAiUsagePage() {
             <div className="flex h-full items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
             </div>
-          ) : chartData.length === 0 ? (
+          ) : providerNames.length === 0 ? (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               Chưa có dữ liệu sử dụng trong khoảng thời gian này.
             </div>

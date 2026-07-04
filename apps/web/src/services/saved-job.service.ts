@@ -1,5 +1,10 @@
 import { protectedFetchJson } from "@/services/auth.service";
 import type { JobPostProfile } from "@/types/job";
+import {
+  toQueryString,
+  type Paginated,
+  type PaginationQuery,
+} from "@/types/pagination";
 
 export type SavedJobResponse = {
   jobId: string;
@@ -27,9 +32,9 @@ export async function unsaveJob(jobId: string) {
   );
 }
 
-export async function getMySavedJobs() {
-  return protectedFetchJson<JobPostProfile[]>(
-    "/saved-jobs/my",
+export async function getMySavedJobs(query: PaginationQuery = {}) {
+  return protectedFetchJson<Paginated<JobPostProfile>>(
+    `/saved-jobs/my${toQueryString(query)}`,
     {
       method: "GET",
     },

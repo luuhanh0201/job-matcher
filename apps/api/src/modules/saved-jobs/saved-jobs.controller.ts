@@ -5,9 +5,14 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
+import {
+  PaginatedResult,
+  PaginationQueryDto,
+} from '@/common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '@/modules/auth/Guards/jwt-auth.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { RolesGuard } from '@/common/guards/roles.guard';
@@ -26,8 +31,9 @@ export class SavedJobsController {
   @Get('my')
   async findMySavedJobs(
     @Request() req: Request & { user: User },
-  ): Promise<JobPostResponseDto[]> {
-    return this.savedJobsService.findMySavedJobs(req.user);
+    @Query() query: PaginationQueryDto,
+  ): Promise<PaginatedResult<JobPostResponseDto>> {
+    return this.savedJobsService.findMySavedJobs(req.user, query);
   }
 
   @Get('my/ids')

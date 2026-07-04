@@ -6,6 +6,10 @@ import { JobPostEntity } from '@/modules/jobs/entities/job.entity';
 import { ParsedCv } from '@/modules/cv/entities/parsed-cv.entity';
 import { AiJobMatcherService } from '@/modules/ai/ai-job-matcher.service';
 import { JobPostStatus } from '@/common/enum/Job.enum';
+import {
+  PaginationQueryDto,
+  toPaginatedResult,
+} from '@/common/dto/pagination-query.dto';
 
 @Injectable()
 export class MatchResultsService {
@@ -105,8 +109,11 @@ export class MatchResultsService {
     }
   }
 
-  async getMyMatchResults(userId: string) {
-    const results = await this.matchResultRepository
+  async getMyMatchResults(userId: string, query: PaginationQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const qb = this.matchResultRepository
       .createQueryBuilder('match')
       .innerJoinAndSelect('match.job', 'job')
       .innerJoinAndSelect('match.parsedCv', 'parsedCv')
@@ -115,11 +122,28 @@ export class MatchResultsService {
       .andWhere('job.status = :openStatus', {
         openStatus: JobPostStatus.OPEN,
       })
-      .andWhere('(job.expiredAt IS NULL OR job.expiredAt > now())')
-      .orderBy('match.overallScore', 'DESC')
-      .getMany();
+      .andWhere('(job.expiredAt IS NULL OR job.expiredAt > now())');
 
-    return results.map((r) => this.toResponse(r));
+    if (query.keyword?.trim()) {
+      qb.andWhere(
+        `(unaccent(job.title) ILIKE unaccent(:kw)
+          OR unaccent(job.department) ILIKE unaccent(:kw))`,
+        { kw: `%${query.keyword.trim()}%` },
+      );
+    }
+
+    const [results, total] = await qb
+      .orderBy('match.overallScore', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return toPaginatedResult(
+      results.map((r) => this.toResponse(r)),
+      total,
+      page,
+      limit,
+    );
   }
 
   private toResponse(match: MatchResult) {

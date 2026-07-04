@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   CalendarRange,
   CalendarX,
@@ -12,6 +12,7 @@ import {
   Pencil,
   Phone,
   Save,
+  Search,
   StickyNote,
   UserRound,
   Video,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   cancelInterview,
   getRecruiterInterviews,
@@ -50,6 +52,8 @@ function toDateTimeLocalValue(value: Date) {
   const localDate = new Date(value.getTime() - value.getTimezoneOffset() * 60000);
   return localDate.toISOString().slice(0, 16);
 }
+
+const PAGE_SIZE = 10;
 
 function getInterviewFormState(interview: InterviewProfile): InterviewFormState {
   return {
@@ -87,40 +91,79 @@ export default function RecruiterInterviewsPage() {
   const [isUpdatingInterview, setIsUpdatingInterview] = useState(false);
   const [cancellingInterviewId, setCancellingInterviewId] = useState("");
 
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    accepted: 0,
+    cancelled: 0,
+  });
+
   useEffect(() => {
-    getRecruiterInterviews()
-      .then((items) => setInterviews(items))
-      .catch((error) => {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Không thể tải lịch phỏng vấn",
-        );
+    const timer = setTimeout(() => setKeyword(searchTerm.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchInterviews = useCallback(
+    (pageNumber: number) => {
+      setIsLoading(true);
+      getRecruiterInterviews({
+        keyword: keyword || undefined,
+        status: (statusFilter || undefined) as InterviewStatus | undefined,
+        page: pageNumber,
+        limit: PAGE_SIZE,
       })
-      .finally(() => setIsLoading(false));
+        .then((result) => {
+          setInterviews(result.items);
+          setTotal(result.total);
+          setPage(result.page);
+          setTotalPages(result.totalPages);
+        })
+        .catch((error) => {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Không thể tải lịch phỏng vấn",
+          );
+        })
+        .finally(() => setIsLoading(false));
+    },
+    [keyword, statusFilter],
+  );
+
+  useEffect(() => {
+    fetchInterviews(1);
+  }, [fetchInterviews]);
+
+  const loadStats = useCallback(() => {
+    // Đếm theo trạng thái trên toàn bộ dữ liệu (limit=1 chỉ lấy total)
+    Promise.all([
+      getRecruiterInterviews({ limit: 1 }),
+      getRecruiterInterviews({ limit: 1, status: "PENDING" }),
+      getRecruiterInterviews({ limit: 1, status: "ACCEPTED" }),
+      getRecruiterInterviews({ limit: 1, status: "CANCELLED" }),
+    ])
+      .then(([all, pending, accepted, cancelled]) =>
+        setStats({
+          total: all.total,
+          pending: pending.total,
+          accepted: accepted.total,
+          cancelled: cancelled.total,
+        }),
+      )
+      .catch(() => {
+        // Bỏ qua: các thẻ thống kê không chặn luồng chính
+      });
   }, []);
 
-  const stats = useMemo(() => {
-    return interviews.reduce(
-      (result, interview) => {
-        result.total += 1;
-        if (interview.status === "PENDING") result.pending += 1;
-        if (interview.status === "ACCEPTED") result.accepted += 1;
-        if (interview.status === "CANCELLED") result.cancelled += 1;
-        if (isInterviewExpired(interview) && interview.status === "PENDING") {
-          result.expired += 1;
-        }
-        return result;
-      },
-      {
-        total: 0,
-        pending: 0,
-        accepted: 0,
-        cancelled: 0,
-        expired: 0,
-      },
-    );
-  }, [interviews]);
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   const openEditModal = (interview: InterviewProfile) => {
     if (interview.status === "CANCELLED") {
@@ -186,6 +229,7 @@ export default function RecruiterInterviewsPage() {
           item.id === updatedInterview.id ? updatedInterview : item,
         ),
       );
+      loadStats();
       toast.success("Đã hủy lịch phỏng vấn và gửi mail cho ứng viên");
     } catch (error) {
       toast.error(
@@ -195,14 +239,6 @@ export default function RecruiterInterviewsPage() {
       setCancellingInterviewId("");
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-60 items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-5">
@@ -215,7 +251,7 @@ export default function RecruiterInterviewsPage() {
         </p>
       </header>
 
-      <section className="grid grid-cols-1 gap-3 md:grid-cols-5">
+      <section className="grid grid-cols-1 gap-3 md:grid-cols-4">
         <StatCard label="Tổng lịch" value={stats.total} />
         <StatCard label="Chờ xác nhận" value={stats.pending} />
         <StatCard
@@ -224,22 +260,52 @@ export default function RecruiterInterviewsPage() {
           className="text-success"
         />
         <StatCard
-          label="Quá hạn"
-          value={stats.expired}
-          className="text-destructive"
-        />
-        <StatCard
           label="Đã hủy"
           value={stats.cancelled}
           className="text-muted-foreground"
         />
       </section>
 
-      {interviews.length === 0 ? (
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1 sm:max-w-xl">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Tìm theo ứng viên, vị trí, công ty..."
+              className="h-11 rounded-xl border-border bg-muted/50 pl-10"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="h-11 rounded-xl border border-border bg-card px-3 text-sm font-bold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-48"
+          >
+            <option value="">Mọi trạng thái</option>
+            {Object.entries(INTERVIEW_STATUS_LABEL).map(([status, label]) => (
+              <option key={status} value={status}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {isLoading ? "Đang tải..." : `${total} lịch phỏng vấn`}
+        </p>
+      </section>
+
+      {isLoading ? (
+        <div className="flex min-h-60 items-center justify-center">
+          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+        </div>
+      ) : interviews.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-border bg-card p-8 text-center shadow-sm">
           <CalendarRange className="mx-auto h-9 w-9 text-primary" />
           <p className="mt-3 text-sm font-bold text-foreground">
-            Chưa có lịch phỏng vấn
+            {keyword || statusFilter
+              ? "Không tìm thấy lịch phỏng vấn phù hợp"
+              : "Chưa có lịch phỏng vấn"}
           </p>
         </section>
       ) : (
@@ -366,6 +432,32 @@ export default function RecruiterInterviewsPage() {
             );
           })}
         </section>
+      )}
+
+      {!isLoading && totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            Trang {page}/{totalPages}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => fetchInterviews(page - 1)}
+            >
+              Trước
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => fetchInterviews(page + 1)}
+            >
+              Sau
+            </Button>
+          </div>
+        </div>
       )}
 
       {editingInterview ? (

@@ -1,4 +1,5 @@
 import { protectedFetchJson } from "@/services/auth.service";
+import type { CompanyProfile, CompanyStatus } from "@/types/company";
 import type { JobPostProfile, JobPostStatus } from "@/types/job";
 import type { UserRole } from "@/types/user-role.type";
 
@@ -112,6 +113,63 @@ export async function updateAdminJobStatus(
       body: JSON.stringify({ status }),
     },
     "Không thể cập nhật trạng thái tin tuyển dụng",
+  );
+}
+
+export type AdminCompaniesQuery = {
+  keyword?: string;
+  status?: CompanyStatus;
+  page?: number;
+  limit?: number;
+};
+
+export async function getAdminCompanies(query: AdminCompaniesQuery = {}) {
+  return protectedFetchJson<Paginated<CompanyProfile>>(
+    `/admin/companies${toQueryString(query)}`,
+    { method: "GET" },
+    "Không thể tải danh sách công ty",
+  );
+}
+
+export type AdminCompanyRecruiter = {
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string | null;
+  avatar: string | null;
+  status: UserStatus;
+  isVerify: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  contactPhone: string | null;
+  contactEmail: string | null;
+};
+
+export type AdminCompanyDetail = CompanyProfile & {
+  recruiter: AdminCompanyRecruiter | null;
+};
+
+export async function getAdminCompanyDetail(companyId: string) {
+  return protectedFetchJson<AdminCompanyDetail>(
+    `/admin/companies/${companyId}`,
+    { method: "GET" },
+    "Không thể tải chi tiết công ty",
+  );
+}
+
+export async function updateAdminCompanyStatus(
+  companyId: string,
+  status: "ACTIVE" | "INACTIVE" | "REJECTED",
+  reason?: string,
+) {
+  return protectedFetchJson<CompanyProfile>(
+    `/admin/companies/${companyId}/status`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(reason ? { status, reason } : { status }),
+    },
+    "Không thể cập nhật trạng thái công ty",
   );
 }
 

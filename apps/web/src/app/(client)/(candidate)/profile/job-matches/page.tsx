@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AlertCircle,
   BriefcaseBusiness,
@@ -9,12 +9,17 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Search,
   Sparkles,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { getMyMatchResults } from "@/services/match-result.service";
 import type { MatchResult } from "@/types/match-result";
+
+const PAGE_SIZE = 10;
 
 function ScoreBar({ score, label }: { score: number; label: string }) {
   const color =
@@ -166,17 +171,44 @@ function MatchCard({ match }: { match: MatchResult }) {
 export default function JobMatchesPage() {
   const [matches, setMatches] = useState<MatchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [keyword, setKeyword] = useState("");
 
   useEffect(() => {
-    getMyMatchResults()
-      .then((data) => setMatches(data))
-      .catch((error) => {
-        toast.error(
-          error instanceof Error ? error.message : "Không thể tải kết quả phù hợp",
-        );
+    const timer = setTimeout(() => setKeyword(searchTerm.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchMatches = useCallback(
+    (pageNumber: number) => {
+      setIsLoading(true);
+      getMyMatchResults({
+        keyword: keyword || undefined,
+        page: pageNumber,
+        limit: PAGE_SIZE,
       })
-      .finally(() => setIsLoading(false));
-  }, []);
+        .then((result) => {
+          setMatches(result.items);
+          setTotal(result.total);
+          setPage(result.page);
+          setTotalPages(result.totalPages);
+        })
+        .catch((error) => {
+          toast.error(
+            error instanceof Error ? error.message : "Không thể tải kết quả phù hợp",
+          );
+        })
+        .finally(() => setIsLoading(false));
+    },
+    [keyword],
+  );
+
+  useEffect(() => {
+    fetchMatches(1);
+  }, [fetchMatches]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -187,9 +219,26 @@ export default function JobMatchesPage() {
         </p>
       </div>
 
+      <div className="relative max-w-xl">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder="Tìm theo vị trí, phòng ban..."
+          className="h-11 rounded-xl border-border bg-muted/50 pl-10"
+        />
+      </div>
+
       {isLoading ? (
         <div className="flex min-h-60 items-center justify-center">
           <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+        </div>
+      ) : matches.length === 0 && keyword ? (
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center text-muted-foreground">
+          <Search className="h-8 w-8 opacity-40" />
+          <p className="text-sm font-medium">
+            Không tìm thấy công việc phù hợp với từ khóa
+          </p>
         </div>
       ) : matches.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border py-16 text-center">
@@ -221,11 +270,37 @@ export default function JobMatchesPage() {
       ) : (
         <div className="space-y-4">
           <p className="text-sm font-medium text-muted-foreground">
-            {matches.length} công việc phù hợp, sắp xếp theo điểm giảm dần
+            {total} công việc phù hợp, sắp xếp theo điểm giảm dần
           </p>
           {matches.map((match) => (
             <MatchCard key={match.id} match={match} />
           ))}
+        </div>
+      )}
+
+      {!isLoading && totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            Trang {page}/{totalPages}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => fetchMatches(page - 1)}
+            >
+              Trước
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => fetchMatches(page + 1)}
+            >
+              Sau
+            </Button>
+          </div>
         </div>
       )}
     </div>

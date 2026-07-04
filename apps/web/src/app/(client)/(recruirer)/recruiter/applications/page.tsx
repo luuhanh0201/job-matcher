@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   BriefcaseBusiness,
   CalendarPlus,
@@ -13,11 +13,13 @@ import {
   Loader2,
   Mail,
   Phone,
+  Search,
   X,
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { getCandidateProfile } from "@/services/candidate-profile.service";
 import {
   getCandidateCvList,
@@ -67,9 +69,23 @@ function getStatusClass(status: JobApplicationStatus) {
   return "bg-warning/15 text-warning";
 }
 
+const PAGE_SIZE = 10;
+
 export default function RecruiterApplicationsPage() {
   const [applications, setApplications] = useState<JobApplicationProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    shortlisted: 0,
+    rejected: 0,
+  });
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [selectedProfile, setSelectedProfile] =
     useState<CandidateProfile | null>(null);
@@ -97,20 +113,68 @@ export default function RecruiterApplicationsPage() {
   });
 
   useEffect(() => {
-    getRecruiterApplications()
-      .then((items) => {
-        setApplications(items);
-        void loadStatusLogs(items.map((item) => item.id));
+    const timer = setTimeout(() => setKeyword(searchTerm.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchApplications = useCallback(
+    (pageNumber: number) => {
+      setIsLoading(true);
+      getRecruiterApplications({
+        keyword: keyword || undefined,
+        status: (statusFilter || undefined) as
+          | JobApplicationStatus
+          | undefined,
+        page: pageNumber,
+        limit: PAGE_SIZE,
       })
-      .catch((error) => {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Không thể tải danh sách ứng viên",
-        );
-      })
-      .finally(() => setIsLoading(false));
+        .then((result) => {
+          setApplications(result.items);
+          setTotal(result.total);
+          setPage(result.page);
+          setTotalPages(result.totalPages);
+          void loadStatusLogs(result.items.map((item) => item.id));
+        })
+        .catch((error) => {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Không thể tải danh sách ứng viên",
+          );
+        })
+        .finally(() => setIsLoading(false));
+    },
+    [keyword, statusFilter],
+  );
+
+  useEffect(() => {
+    fetchApplications(1);
+  }, [fetchApplications]);
+
+  const loadStats = useCallback(() => {
+    // Đếm theo trạng thái trên toàn bộ dữ liệu (limit=1 chỉ lấy total)
+    Promise.all([
+      getRecruiterApplications({ limit: 1 }),
+      getRecruiterApplications({ limit: 1, status: "PENDING" }),
+      getRecruiterApplications({ limit: 1, status: "SHORTLISTED" }),
+      getRecruiterApplications({ limit: 1, status: "REJECTED" }),
+    ])
+      .then(([all, pending, shortlisted, rejected]) =>
+        setStats({
+          total: all.total,
+          pending: pending.total,
+          shortlisted: shortlisted.total,
+          rejected: rejected.total,
+        }),
+      )
+      .catch(() => {
+        // Bỏ qua: các thẻ thống kê không chặn luồng chính
+      });
   }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   const loadStatusLogs = async (applicationIds: string[]) => {
     try {
@@ -128,24 +192,6 @@ export default function RecruiterApplicationsPage() {
       toast.error("Không thể tải lịch sử trạng thái hồ sơ");
     }
   };
-
-  const stats = useMemo(() => {
-    return applications.reduce(
-      (result, application) => {
-        result.total += 1;
-        if (application.status === "PENDING") result.pending += 1;
-        if (application.status === "SHORTLISTED") result.shortlisted += 1;
-        if (application.status === "REJECTED") result.rejected += 1;
-        return result;
-      },
-      {
-        total: 0,
-        pending: 0,
-        shortlisted: 0,
-        rejected: 0,
-      },
-    );
-  }, [applications]);
 
   const handleViewProfile = async (candidateId: string) => {
     try {
@@ -184,6 +230,7 @@ export default function RecruiterApplicationsPage() {
         ),
       );
       await loadStatusLogs([application.id]);
+      loadStats();
       toast.success("Đã cập nhật trạng thái ứng viên");
     } catch (error) {
       toast.error(
@@ -298,14 +345,6 @@ export default function RecruiterApplicationsPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-60 items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -334,16 +373,55 @@ export default function RecruiterApplicationsPage() {
         />
       </section>
 
-      {applications.length === 0 ? (
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1 sm:max-w-xl">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Tìm theo tên/email ứng viên, vị trí, công ty..."
+              className="h-11 rounded-xl border-border bg-muted/50 pl-10"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="h-11 rounded-xl border border-border bg-card px-3 text-sm font-bold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-48"
+          >
+            <option value="">Mọi trạng thái</option>
+            {Object.entries(JOB_APPLICATION_STATUS_LABEL).map(
+              ([status, label]) => (
+                <option key={status} value={status}>
+                  {label}
+                </option>
+              ),
+            )}
+          </select>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {isLoading ? "Đang tải..." : `${total} hồ sơ ứng tuyển`}
+        </p>
+      </section>
+
+      {isLoading ? (
+        <div className="flex min-h-60 items-center justify-center">
+          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+        </div>
+      ) : applications.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-border bg-card p-8 text-center shadow-sm">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <UserRound className="h-6 w-6" />
           </div>
           <h2 className="mt-4 text-base font-black text-foreground">
-            Chưa có ứng viên
+            {keyword || statusFilter
+              ? "Không tìm thấy ứng viên phù hợp"
+              : "Chưa có ứng viên"}
           </h2>
           <p className="mt-2 text-sm font-medium text-muted-foreground">
-            Khi candidate ứng tuyển, hồ sơ sẽ tự động xuất hiện tại đây.
+            {keyword || statusFilter
+              ? "Thử đổi từ khóa hoặc bộ lọc trạng thái."
+              : "Khi candidate ứng tuyển, hồ sơ sẽ tự động xuất hiện tại đây."}
           </p>
         </section>
       ) : (
@@ -490,6 +568,32 @@ export default function RecruiterApplicationsPage() {
             </article>
           ))}
         </section>
+      )}
+
+      {!isLoading && totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            Trang {page}/{totalPages}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => fetchApplications(page - 1)}
+            >
+              Trước
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => fetchApplications(page + 1)}
+            >
+              Sau
+            </Button>
+          </div>
+        </div>
       )}
 
       {isLoadingProfile ? (

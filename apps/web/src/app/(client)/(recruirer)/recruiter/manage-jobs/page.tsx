@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   CalendarDays,
   Eye,
@@ -13,8 +13,18 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getJobPosts } from "@/services/job.service";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getJobPosts, type Paginated } from "@/services/job.service";
 import type { JobPostProfile, JobPostStatus } from "@/types/job";
+
+const PAGE_SIZE = 10;
+const ALL = "all";
 
 const STATUS_LABEL: Record<JobPostStatus, string> = {
   DRAFT: "Nháp",
@@ -54,32 +64,50 @@ function formatSalary(job: JobPostProfile) {
 
 export default function RecruiterManageJobsPage() {
   const [jobs, setJobs] = useState<JobPostProfile[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
   useEffect(() => {
-    getJobPosts()
-      .then((items) => setJobs(items))
-      .catch((error) => {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Không thể tải danh sách tin tuyển dụng",
-        );
+    const timer = setTimeout(() => setKeyword(searchTerm.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchJobs = useCallback(
+    (pageNumber: number) => {
+      setIsLoading(true);
+      getJobPosts({
+        keyword: keyword || undefined,
+        status: (statusFilter || undefined) as JobPostStatus | undefined,
+        page: pageNumber,
+        limit: PAGE_SIZE,
       })
-      .finally(() => setIsLoading(false));
-  }, []);
+        .then((result: Paginated<JobPostProfile>) => {
+          setJobs(result.items);
+          setTotal(result.total);
+          setPage(result.page);
+          setTotalPages(result.totalPages);
+        })
+        .catch((error) => {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Không thể tải danh sách tin tuyển dụng",
+          );
+        })
+        .finally(() => setIsLoading(false));
+    },
+    [keyword, statusFilter],
+  );
 
-  const filteredJobs = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    if (!normalizedSearch) return jobs;
-
-    return jobs.filter((job) =>
-      [job.title, job.department, job.company?.name, job.status]
-        .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(normalizedSearch)),
-    );
-  }, [jobs, searchTerm]);
+  useEffect(() => {
+    fetchJobs(1);
+  }, [fetchJobs]);
 
   const expiringSoonCount = jobs.filter((job) => {
     if (!job.expiredAt || job.status !== "OPEN") return false;
@@ -108,15 +136,35 @@ export default function RecruiterManageJobsPage() {
       </header>
 
       <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <div className="relative max-w-xl">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Tìm theo vị trí, phòng ban, công ty..."
-            className="h-11 rounded-xl border-border bg-muted/50 pl-10"
-          />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1 sm:max-w-xl">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Tìm theo vị trí, phòng ban, công ty..."
+              className="h-11 rounded-xl border-border bg-muted/50 pl-10"
+            />
+          </div>
+          <Select
+            value={statusFilter || ALL}
+            onValueChange={(value) => setStatusFilter(value === ALL ? "" : value)}
+          >
+            <SelectTrigger className="h-11 w-full rounded-xl text-sm sm:w-48">
+              <SelectValue placeholder="Trạng thái" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Mọi trạng thái</SelectItem>
+              <SelectItem value="DRAFT">Nháp</SelectItem>
+              <SelectItem value="OPEN">Đang tuyển</SelectItem>
+              <SelectItem value="CLOSED">Đã đóng</SelectItem>
+              <SelectItem value="BLOCKED">Bị khóa</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {isLoading ? "Đang tải..." : `${total} tin tuyển dụng`}
+        </p>
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -124,7 +172,7 @@ export default function RecruiterManageJobsPage() {
           <div className="flex min-h-52 items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : filteredJobs.length === 0 ? (
+        ) : jobs.length === 0 ? (
           <div className="flex min-h-52 flex-col items-center justify-center gap-3 text-muted-foreground">
             <SearchX className="h-10 w-10 opacity-50" />
             <p className="text-sm font-bold">Chưa có tin tuyển dụng phù hợp</p>
@@ -143,7 +191,7 @@ export default function RecruiterManageJobsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredJobs.map((job) => (
+                {jobs.map((job) => (
                   <tr key={job.id} className="border-t border-border">
                     <td className="px-4 py-3">
                       <p className="font-bold text-foreground">{job.title}</p>
@@ -187,13 +235,39 @@ export default function RecruiterManageJobsPage() {
         )}
       </section>
 
+      {!isLoading && totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            Trang {page}/{totalPages}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => fetchJobs(page - 1)}
+            >
+              Trước
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => fetchJobs(page + 1)}
+            >
+              Sau
+            </Button>
+          </div>
+        </div>
+      )}
+
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase text-muted-foreground">
             Tin cần gia hạn
           </p>
           <p className="mt-2 text-sm font-bold text-foreground">
-            {expiringSoonCount} vị trí sắp hết hạn trong 7 ngày
+            {expiringSoonCount} vị trí sắp hết hạn trong 7 ngày (trang hiện tại)
           </p>
           <div className="mt-3 inline-flex items-center gap-1 text-xs text-muted-foreground">
             <CalendarDays className="h-4 w-4" />
@@ -205,7 +279,7 @@ export default function RecruiterManageJobsPage() {
             Tổng tin tuyển dụng
           </p>
           <p className="mt-2 text-sm font-bold text-foreground">
-            {jobs.length} tin trong hệ thống
+            {total} tin trong hệ thống
           </p>
           <p className="mt-3 text-xs text-muted-foreground">
             Bao gồm tin nháp, đang tuyển và đã đóng.

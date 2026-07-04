@@ -1,5 +1,9 @@
 export type CompanySize = "1-10" | "11-50" | "51-200" | "200+";
-export type CompanyStatus = "ACTIVE" | "INACTIVE";
+export type CompanyStatus =
+  | "PENDING_APPROVAL"
+  | "ACTIVE"
+  | "INACTIVE"
+  | "REJECTED";
 
 export type CompanyLocationPayload = {
   provinceCode: string;
@@ -56,6 +60,7 @@ export type CompanyProfile = {
   description?: string | null;
   isVerified: boolean;
   status: CompanyStatus;
+  rejectionReason?: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
