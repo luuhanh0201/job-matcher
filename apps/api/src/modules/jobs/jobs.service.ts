@@ -17,6 +17,7 @@ import {
   PaginatedJobsResponseDto,
 } from './dto/job-response.dto';
 import { JobPostStatus, SalaryType } from '@/common/enum/Job.enum';
+import { MatchingQueueService } from '../matching-queue/matching-queue.service';
 
 // Các cột text dùng để so khớp từ khóa (đều qua unaccent để tìm không dấu)
 const KEYWORD_MATCH_SQL = (param: string) =>
@@ -33,6 +34,7 @@ export class JobsService {
     private readonly jobPostRepository: Repository<JobPostEntity>,
     @InjectRepository(CompanyEntity)
     private readonly companyRepository: Repository<CompanyEntity>,
+    private readonly matchingQueueService: MatchingQueueService,
   ) {}
 
   async createPost(
@@ -79,6 +81,10 @@ export class JobsService {
       expiredAt: new Date(createJobPostDto.expiredAt),
     });
     const savedJob = await this.jobPostRepository.save(job);
+    if (savedJob.status === JobPostStatus.OPEN) {
+      // Matching theo sự kiện: job mới OPEN được chấm với các CV gần đây
+      void this.matchingQueueService.enqueueNewJobMatching(savedJob.id);
+    }
     return this.toJobPostResponse(savedJob);
   }
 
@@ -370,12 +376,19 @@ export class JobsService {
       this.assertCompanyApproved(job.company);
     }
 
+    const previousStatus = job.status;
     job.status = status;
     if (status === JobPostStatus.OPEN && !job.publishedAt) {
       job.publishedAt = new Date();
     }
 
     const savedJob = await this.jobPostRepository.save(job);
+    if (
+      savedJob.status === JobPostStatus.OPEN &&
+      previousStatus !== JobPostStatus.OPEN
+    ) {
+      void this.matchingQueueService.enqueueNewJobMatching(savedJob.id);
+    }
     return this.toJobPostResponse(savedJob);
   }
 

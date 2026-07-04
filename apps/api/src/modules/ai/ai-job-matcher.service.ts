@@ -29,21 +29,17 @@ export class AiJobMatcherService {
     );
   }
 
-  async matchJobWithCv(
-    job: JobPostEntity,
+  /**
+   * Chấm điểm NHIỀU job trong một lượt gọi AI: CV + system prompt chỉ tốn
+   * token một lần thay vì lặp lại theo từng job. Kết quả trả về theo job.id;
+   * job nào model bỏ sót/trả sai định dạng sẽ không có trong Map — caller tự
+   * quyết định fallback.
+   */
+  async matchJobsWithCv(
+    jobs: JobPostEntity[],
     parsedCv: ParsedCv,
-  ): Promise<MatchScores> {
+  ): Promise<Map<string, MatchScores>> {
     const userMessage = JSON.stringify({
-      job: {
-        title: job.title,
-        department: job.department,
-        jobType: job.jobType,
-        seniorityLevel: job.seniorityLevel,
-        description: job.description,
-        requirements: job.requirements,
-        responsibilities: job.responsibilities ?? null,
-        skills: job.skills ?? [],
-      },
       candidate: {
         currentTitle: parsedCv.currentTitle ?? null,
         totalExperienceYears: parsedCv.totalExperienceYears ?? null,
@@ -53,15 +49,29 @@ export class AiJobMatcherService {
         certifications: this.safeParseArray(parsedCv.certifications),
         languages: this.safeParseArray(parsedCv.languages),
       },
+      jobs: jobs.map((job) => ({
+        id: job.id,
+        title: job.title,
+        department: job.department,
+        jobType: job.jobType,
+        seniorityLevel: job.seniorityLevel,
+        description: job.description,
+        requirements: job.requirements,
+        responsibilities: job.responsibilities ?? null,
+        skills: job.skills ?? [],
+      })),
     });
 
     const raw = await this.aiService.chatWithSystem(
       this.systemPrompt,
       userMessage,
       AiUsageFeature.JOB_MATCHING,
+      // Output là mảng JSON điểm + explanation cho từng job — cần trần token
+      // cao hơn mặc định của provider để không bị cắt giữa chừng gây lỗi parse.
+      { minOutputTokens: 800 * jobs.length },
     );
 
-    return this.parseResult(raw);
+    return this.parseBatchResult(raw, jobs);
   }
 
   private safeParseArray(value?: string): unknown[] {
@@ -74,30 +84,53 @@ export class AiJobMatcherService {
     }
   }
 
-  private parseResult(raw: string): MatchScores {
+  private parseBatchResult(
+    raw: string,
+    jobs: JobPostEntity[],
+  ): Map<string, MatchScores> {
     let jsonStr = raw.trim();
     const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (codeBlockMatch?.[1]) {
       jsonStr = codeBlockMatch[1].trim();
     }
 
-    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
+    const parsed: unknown = JSON.parse(jsonStr);
+    // Chấp nhận cả dạng mảng trực tiếp lẫn dạng bọc { results: [...] }
+    const items = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray((parsed as Record<string, unknown>)?.results)
+        ? ((parsed as Record<string, unknown>).results as unknown[])
+        : [];
+
+    const validJobIds = new Set(jobs.map((job) => job.id));
+    const results = new Map<string, MatchScores>();
+
+    for (const item of items) {
+      if (typeof item !== 'object' || item === null) continue;
+      const record = item as Record<string, unknown>;
+      const jobId = typeof record.job_id === 'string' ? record.job_id : null;
+      if (!jobId || !validJobIds.has(jobId) || results.has(jobId)) {
+        this.logger.warn(
+          `Bỏ qua kết quả matching có job_id không hợp lệ/trùng: ${String(record.job_id)}`,
+        );
+        continue;
+      }
+      results.set(jobId, this.toMatchScores(record));
+    }
+
+    return results;
+  }
+
+  private toMatchScores(parsed: Record<string, unknown>): MatchScores {
+    const clampScore = (value: unknown) =>
+      Math.min(100, Math.max(0, Number(value) || 0));
 
     return {
-      overallScore: Math.min(
-        100,
-        Math.max(0, Number(parsed.overall_score) || 0),
-      ),
-      skillScore: Math.min(100, Math.max(0, Number(parsed.skill_score) || 0)),
-      experienceScore: Math.min(
-        100,
-        Math.max(0, Number(parsed.experience_score) || 0),
-      ),
-      educationScore: Math.min(
-        100,
-        Math.max(0, Number(parsed.education_score) || 0),
-      ),
-      titleScore: Math.min(100, Math.max(0, Number(parsed.title_score) || 0)),
+      overallScore: clampScore(parsed.overall_score),
+      skillScore: clampScore(parsed.skill_score),
+      experienceScore: clampScore(parsed.experience_score),
+      educationScore: clampScore(parsed.education_score),
+      titleScore: clampScore(parsed.title_score),
       matchedSkills: JSON.stringify(
         Array.isArray(parsed.matched_skills) ? parsed.matched_skills : [],
       ),

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { AllConfigType } from '@/config/config.type';
@@ -30,7 +31,7 @@ export const getDatabaseConfig = (
     synchronize: synchronize,
     entities: [__dirname + '/**/*.entity{.ts,.js}'],
     migrations: [__dirname + '/migrations/*{.ts,.js}'],
-    logging: isDev,
+    logging: false,
     ssl: useSsl ? { rejectUnauthorized: false } : false,
   };
 };

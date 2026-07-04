@@ -16,12 +16,11 @@ import { UploadCloudinaryService } from '@/modules/upload-cloudinary/upload-clou
 import { UploadStatus } from '@/common/enum/StatusUpload.enum';
 import { UserRole } from '@/common/enum/index.enum';
 import { SaveParsedCvDto } from '../dto/save-parsed-cv.dto';
-import { MatchResultsService } from '@/modules/match-results/match-results.service';
+import { MatchingQueueService } from '@/modules/matching-queue/matching-queue.service';
 import { JobApplicationEntity } from '@/modules/job-applications/entities/job-application.entity';
 import { isPdfMagicBytes } from './pdf-parser.service';
 
 const UPLOAD_COOLDOWN_MS = 5 * 60 * 1000;
-const MATCH_TRIGGER_COOLDOWN_MS = 60 * 1000;
 
 type UploadCvResult = {
   cv: Cv;
@@ -44,7 +43,6 @@ type CvPreview = {
 @Injectable()
 export class CvService {
   private readonly deviceUploadAt = new Map<string, number>();
-  private readonly matchTriggerAt = new Map<string, number>();
   private readonly logger = new Logger(CvService.name);
 
   constructor(
@@ -55,7 +53,7 @@ export class CvService {
     @InjectRepository(JobApplicationEntity)
     private readonly jobApplicationRepository: Repository<JobApplicationEntity>,
     private readonly uploadCloudinaryService: UploadCloudinaryService,
-    private readonly matchResultsService: MatchResultsService,
+    private readonly matchingQueueService: MatchingQueueService,
   ) {}
 
   async uploadCv(
@@ -256,24 +254,9 @@ export class CvService {
   }
 
   private triggerMatchingWithCooldown(userId: string, parsedCvId: string) {
-    const lastTriggeredAt = this.matchTriggerAt.get(userId);
-    if (
-      lastTriggeredAt &&
-      Date.now() - lastTriggeredAt < MATCH_TRIGGER_COOLDOWN_MS
-    ) {
-      this.logger.warn(
-        `Bỏ qua trigger matching cho user ${userId} do đang trong cooldown`,
-      );
-      return;
-    }
-    this.matchTriggerAt.set(userId, Date.now());
-
-    // Fire-and-forget: trigger job matching after CV parse completes
-    this.matchResultsService
-      .runMatchingForParsedCv(parsedCvId)
-      .catch((err: unknown) =>
-        this.logger.error('Background job matching failed', err),
-      );
+    // Đẩy vào BullMQ thay vì fire-and-forget: debounce bằng jobId (các trigger
+    // liên tiếp gộp thành 1), worker giới hạn concurrency + retry khi lỗi.
+    void this.matchingQueueService.enqueueCvMatching(parsedCvId);
   }
 
   async findOne(publicId: string): Promise<Cv> {

@@ -63,7 +63,7 @@ export class AiProvidersService implements OnModuleInit {
     }
 
     const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5';
-    const maxTokens = parseInt(process.env.ANTHROPIC_MAX_TOKENS ?? '1024', 10);
+    const maxTokens = parseInt(process.env.ANTHROPIC_MAX_TOKENS ?? '10240', 10);
 
     const encrypted = encryptSecret(envApiKey);
     const provider = this.aiProviderRepository.create({

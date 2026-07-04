@@ -3,18 +3,22 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Check, CircleDashed, FileText, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   analyzeCv,
   extractCvFromText,
+  getCvList,
   uploadCvFile,
 } from "@/services/cv.service";
 import { CvProcessingState } from "@/types/cv";
-import type { AnalyzerResult, CvProcessingStatus, ExtractedCvData, ParsedCvForm } from "@/types/cv";
+import type {
+  AnalyzerResult,
+  CvProcessingStatus,
+  CvRecord,
+  ExtractedCvData,
+  ParsedCvForm,
+} from "@/types/cv";
 import { toParsedCvForm } from "@/utils/cv.utils";
 import FormConfirmCvComponent, { DEFAULT_FORM } from "./formConfirmCv";
 import AiResultCard from "./aiResultCard";
@@ -31,7 +35,13 @@ function getStepState(
     hasSuggestedJobs: boolean;
   },
 ) {
-  const { hasCvProcessing, progress, hasParsedData, hasAiAnalysis, hasSuggestedJobs } = options;
+  const {
+    hasCvProcessing,
+    progress,
+    hasParsedData,
+    hasAiAnalysis,
+    hasSuggestedJobs,
+  } = options;
 
   if (step === 1) return hasCvProcessing ? "done" : "idle";
 
@@ -58,10 +68,17 @@ export default function AiCvPage() {
   const formConfirmRef = useRef<HTMLDivElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [cvId, setCvId] = useState("");
-  const [cvProcessingStatus, setCvProcessingStatus] = useState<CvProcessingStatus | null>(null);
+  const [cvProcessingStatus, setCvProcessingStatus] =
+    useState<CvProcessingStatus | null>(null);
   const [form, setForm] = useState<ParsedCvForm>(DEFAULT_FORM);
-  const [extractedData, setExtractedData] = useState<ExtractedCvData | null>(null);
-  const [analyzerResult, setAnalyzerResult] = useState<AnalyzerResult | null>(null);
+  const [uploadedCvs, setUploadedCvs] = useState<CvRecord[]>([]);
+  const [selectedCvId, setSelectedCvId] = useState("");
+  const [extractedData, setExtractedData] = useState<ExtractedCvData | null>(
+    null,
+  );
+  const [analyzerResult, setAnalyzerResult] = useState<AnalyzerResult | null>(
+    null,
+  );
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
 
   const [uploadLoading, setUploadLoading] = useState(false);
@@ -69,14 +86,44 @@ export default function AiCvPage() {
 
   const progress = Number(cvProcessingStatus?.progress ?? 0);
   const hasCvProcessing = Boolean(cvId && cvProcessingStatus);
-  const hasParsedData = Boolean(extractedData && (form.candidateName || form.skills || form.workExperience));
+  const hasParsedData = Boolean(
+    extractedData && (form.candidateName || form.skills || form.workExperience),
+  );
   const hasAiAnalysis = Boolean(analyzerResult);
   const hasSuggestedJobs = false;
+
+  const loadUploadedCvs = async () => {
+    try {
+      const cvs = await getCvList();
+      setUploadedCvs(cvs);
+      const latestCv = cvs.find((cv) => cv.fileUrl);
+      if (latestCv) {
+        setSelectedCvId((current) => current || latestCv.id);
+        setForm((prev) => ({
+          ...prev,
+          fileUrl: prev.fileUrl || latestCv.fileUrl,
+        }));
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Không thể tải danh sách CV đã upload.",
+      );
+    }
+  };
+
+  useEffect(() => {
+    void loadUploadedCvs();
+  }, []);
 
   useEffect(() => {
     if (hasParsedData && !hasAiAnalysis && formConfirmRef.current) {
       setTimeout(() => {
-        formConfirmRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        formConfirmRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 200);
     }
   }, [hasParsedData, hasAiAnalysis]);
@@ -88,7 +135,6 @@ export default function AiCvPage() {
       : analyzeLoading
         ? "Đang phân tích CV bằng AI..."
         : "";
-
 
   const steps = [
     { id: 1, title: "Tải lên", subtitle: "CV đã tải lên" },
@@ -142,10 +188,19 @@ export default function AiCvPage() {
 
       setPollLoading(true);
       const extracted = await extractCvFromText(response.parsedText);
+      const uploadedFileUrl = response.fileUrl ?? response.cv?.fileUrl ?? "";
       setExtractedData(extracted);
+      setSelectedCvId(currentCvId);
+      if (response.cv) {
+        setUploadedCvs((prev) => [
+          response.cv,
+          ...prev.filter((cv) => cv.id !== response.cv.id),
+        ]);
+      }
       setForm((prev) => ({
         ...prev,
-        ...toParsedCvForm(extracted)
+        ...toParsedCvForm(extracted),
+        fileUrl: uploadedFileUrl || prev.fileUrl,
       }));
 
       setCvProcessingStatus({
@@ -175,13 +230,13 @@ export default function AiCvPage() {
       toast.success("Phân tích CV thành công.");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Không thể phân tích CV.");
+      toast.error(
+        err instanceof Error ? err.message : "Không thể phân tích CV.",
+      );
     } finally {
       setAnalyzeLoading(false);
     }
   };
-
-
 
   return (
     <div className="flex flex-col gap-6">
@@ -198,12 +253,11 @@ export default function AiCvPage() {
                   <span className="text-accent">Job Matcher AI</span>
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Tải CV PDF lên, hệ thống sẽ trích xuất kỹ năng, phân tích điểm mạnh/yếu và
-                  gợi ý các công việc phù hợp nhất với hồ sơ của bạn.
+                  Tải CV PDF lên, hệ thống sẽ trích xuất kỹ năng, phân tích điểm
+                  mạnh/yếu và gợi ý các công việc phù hợp nhất với hồ sơ của
+                  bạn.
                 </p>
               </div>
-
-
             </div>
 
             <div className="space-y-4 rounded-2xl border border-dashed border-primary/35 bg-card px-4 py-4 sm:px-5">
@@ -233,12 +287,17 @@ export default function AiCvPage() {
                     <FileText className="h-8 w-8 text-primary" />
                   </div>
                   <div>
-                    <p className="font-bold text-foreground">Kéo thả CV PDF hoặc chọn file</p>
+                    <p className="font-bold text-foreground">
+                      Kéo thả CV PDF hoặc chọn file
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      Chỉ hỗ trợ PDF - tối đa 5MB - phân tích kỹ năng, kinh nghiệm và gợi ý job trong vài bước.
+                      Chỉ hỗ trợ PDF - tối đa 5MB - phân tích kỹ năng, kinh
+                      nghiệm và gợi ý job trong vài bước.
                     </p>
                     <p className="mt-1 text-xs font-semibold text-primary">
-                      {file?.name ? `Đã chọn: ${file.name}` : "Bấm vào bất kỳ vị trí nào trong khung để chọn file"}
+                      {file?.name
+                        ? `Đã chọn: ${file.name}`
+                        : "Bấm vào bất kỳ vị trí nào trong khung để chọn file"}
                     </p>
                   </div>
                 </div>
@@ -258,7 +317,9 @@ export default function AiCvPage() {
                     {uploadLoading || pollLoading ? (
                       <>
                         <CircleDashed className="mr-1.5 h-4 w-4 animate-spin" />
-                        {uploadLoading ? "Đang upload..." : "Đang trích xuất..."}
+                        {uploadLoading
+                          ? "Đang upload..."
+                          : "Đang trích xuất..."}
                       </>
                     ) : (
                       "Tải CV lên"
@@ -290,39 +351,58 @@ export default function AiCvPage() {
                 return (
                   <div
                     key={step.id}
-                    className={`rounded-2xl border px-3 py-3 transition-colors ${isDone
-                      ? "border-success/40 bg-success/10"
-                      : isActive
-                        ? "border-accent/40 bg-accent/10"
-                        : "border-border bg-card"
-                      }`}
+                    className={`rounded-2xl border px-3 py-3 transition-colors ${
+                      isDone
+                        ? "border-success/40 bg-success/10"
+                        : isActive
+                          ? "border-accent/40 bg-accent/10"
+                          : "border-border bg-card"
+                    }`}
                   >
                     <div className="mb-1 flex items-center gap-2">
                       <span
-                        className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${isDone
-                          ? "bg-success text-success-foreground"
-                          : isActive
-                            ? "bg-accent text-accent-foreground"
-                            : "bg-muted text-muted-foreground"
-                          }`}
+                        className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${
+                          isDone
+                            ? "bg-success text-success-foreground"
+                            : isActive
+                              ? "bg-accent text-accent-foreground"
+                              : "bg-muted text-muted-foreground"
+                        }`}
                       >
                         {isDone ? <Check className="h-3.5 w-3.5" /> : step.id}
                       </span>
                       <p className="font-bold text-foreground">{step.title}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">{step.subtitle}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {step.subtitle}
+                    </p>
                   </div>
                 );
               })}
             </div>
 
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              <ResumeProfile form={form} />
+              <ResumeProfile
+                form={form}
+                cvs={uploadedCvs}
+                selectedCvId={selectedCvId}
+                onSelectCv={(cv) => {
+                  setSelectedCvId(cv.id);
+                  setForm((prev) => ({
+                    ...prev,
+                    fileUrl: cv.fileUrl ?? prev.fileUrl,
+                  }));
+                }}
+              />
 
-              <AiResultCard form={form} hasParsedData={hasParsedData} analyzerResult={analyzerResult} onAnalyze={handleAnalyze} loading={analyzeLoading} />
-
+              <AiResultCard
+                form={form}
+                hasParsedData={hasParsedData}
+                analyzerResult={analyzerResult}
+                onAnalyze={handleAnalyze}
+                loading={analyzeLoading}
+              />
             </div>
-
           </div>
         </CardContent>
       </Card>

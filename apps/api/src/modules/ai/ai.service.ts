@@ -30,10 +30,19 @@ export class AiService {
     systemPrompt: string,
     userMessage: string,
     feature: AiUsageFeature,
+    options?: { minOutputTokens?: number },
   ): Promise<string> {
     const { adapter, config } = await this.resolveActiveAdapter();
+    // Các lượt gọi output dài (vd: chấm nhiều job/lượt) cần trần token cao hơn
+    // cấu hình chung của provider — chỉ nâng lên, không bao giờ hạ xuống.
+    const effectiveConfig = options?.minOutputTokens
+      ? {
+          ...config,
+          maxTokens: Math.max(config.maxTokens, options.minOutputTokens),
+        }
+      : config;
     return this.callAndLog(
-      () => adapter.chatWithSystem(systemPrompt, userMessage, config),
+      () => adapter.chatWithSystem(systemPrompt, userMessage, effectiveConfig),
       config,
       feature,
     );

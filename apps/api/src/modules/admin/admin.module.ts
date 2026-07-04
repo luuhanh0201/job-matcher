@@ -6,6 +6,7 @@ import { JobApplicationEntity } from '@/modules/job-applications/entities/job-ap
 import { JobPostEntity } from '@/modules/jobs/entities/job.entity';
 import { JobsModule } from '@/modules/jobs/jobs.module';
 import { MailModule } from '@/modules/mail/mail.module';
+import { MatchingQueueModule } from '@/modules/matching-queue/matching-queue.module';
 import { RecruiterEntity } from '@/modules/recruiters/entity/recruiter.entity';
 import { User } from '@/modules/user/entities/user.entity';
 import { AdminController } from './admin.controller';
@@ -23,6 +24,7 @@ import { AdminService } from './admin.service';
     ]),
     JobsModule,
     MailModule,
+    MatchingQueueModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],

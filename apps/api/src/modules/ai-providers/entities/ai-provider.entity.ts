@@ -51,7 +51,7 @@ export class AiProviderEntity {
   @Column({ name: 'api_key_masked' })
   apiKeyMasked!: string;
 
-  @Column({ name: 'max_tokens', default: 1024 })
+  @Column({ name: 'max_tokens', default: 10240 })
   maxTokens!: number;
 
   @Column({ name: 'is_active', default: false })

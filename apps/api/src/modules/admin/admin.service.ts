@@ -14,6 +14,7 @@ import {
 } from '@/modules/company/entity/company.entity';
 import { CompanyResponseDto } from '@/modules/company/dto/company-response.dto';
 import { MailService } from '@/modules/mail/mail.service';
+import { MatchingQueueService } from '@/modules/matching-queue/matching-queue.service';
 import { RecruiterEntity } from '@/modules/recruiters/entity/recruiter.entity';
 import { JobApplicationEntity } from '@/modules/job-applications/entities/job-application.entity';
 import { JobPostEntity } from '@/modules/jobs/entities/job.entity';
@@ -52,6 +53,7 @@ export class AdminService {
     private readonly recruiterRepository: Repository<RecruiterEntity>,
     private readonly jobsService: JobsService,
     private readonly mailService: MailService,
+    private readonly matchingQueueService: MatchingQueueService,
   ) {}
 
   // ─── Users ────────────────────────────────────────────────────────────
@@ -303,12 +305,20 @@ export class AdminService {
       throw new BadRequestException('Tin tuyển dụng không tồn tại');
     }
 
+    const previousStatus = job.status;
     job.status = status;
     if (status === JobPostStatus.OPEN && !job.publishedAt) {
       job.publishedAt = new Date();
     }
 
     const savedJob = await this.jobPostRepository.save(job);
+    if (
+      savedJob.status === JobPostStatus.OPEN &&
+      previousStatus !== JobPostStatus.OPEN
+    ) {
+      // Matching theo sự kiện: job vừa được admin mở → chấm với các CV gần đây
+      void this.matchingQueueService.enqueueNewJobMatching(savedJob.id);
+    }
     return this.jobsService.toJobPostResponse(savedJob);
   }
 

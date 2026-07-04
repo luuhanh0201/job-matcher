@@ -1,3 +1,4 @@
+import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -36,6 +37,17 @@ import { AdminModule } from './modules/admin/admin.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: getDatabaseConfig,
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          host: config.get<string>('REDIS_HOST', 'localhost'),
+          port: parseInt(config.get<string>('REDIS_PORT', '6379'), 10),
+          password: config.get<string>('REDIS_PASSWORD') || undefined,
+        },
+      }),
     }),
     JobsModule,
     SavedJobsModule,

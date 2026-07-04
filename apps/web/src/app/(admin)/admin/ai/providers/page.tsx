@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Plus,
   Trash2,
   CheckCircle2,
@@ -68,6 +75,34 @@ function formatRelativeTime(iso?: string | null): string {
   return `${Math.floor(diffHour / 24)} ngày trước`;
 }
 
+function formatDateTime(iso?: string | null): string {
+  if (!iso) return "Chưa có dữ liệu";
+  return new Date(iso).toLocaleString("vi-VN");
+}
+
+function getVendorLabel(vendor: AiProviderVendor): string {
+  return (
+    VENDOR_OPTIONS.find((option) => option.value === vendor)?.label ?? vendor
+  );
+}
+
+function DetailRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid gap-1 border-b border-border px-4 py-3.5 last:border-b-0 sm:grid-cols-[165px_1fr] sm:gap-5 sm:px-5">
+      <dt className="text-xs font-semibold uppercase text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="min-w-0 text-sm leading-6 text-foreground">{children}</dd>
+    </div>
+  );
+}
+
 export default function AdminAiProvidersPage() {
   const [providers, setProviders] = useState<AiProvider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,6 +112,9 @@ export default function AdminAiProvidersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<AiProvider | null>(
+    null,
+  );
 
   const loadProviders = async () => {
     setIsLoading(true);
@@ -84,7 +122,11 @@ export default function AdminAiProvidersPage() {
       const data = await getAiProviders();
       setProviders(data);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Không thể tải danh sách AI Provider");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Không thể tải danh sách AI Provider",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -97,12 +139,24 @@ export default function AdminAiProvidersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.name.trim()) { toast.error("Vui lòng nhập tên gợi nhớ cho AI Provider"); return; }
-    if (!form.model.trim()) { toast.error("Vui lòng nhập model"); return; }
-    if (!form.apiKey.trim()) { toast.error("Vui lòng nhập API key"); return; }
+    if (!form.name.trim()) {
+      toast.error("Vui lòng nhập tên gợi nhớ cho AI Provider");
+      return;
+    }
+    if (!form.model.trim()) {
+      toast.error("Vui lòng nhập model");
+      return;
+    }
+    if (!form.apiKey.trim()) {
+      toast.error("Vui lòng nhập API key");
+      return;
+    }
 
     const maxTokens = form.maxTokens ? Number(form.maxTokens) : undefined;
-    if (maxTokens !== undefined && (!Number.isInteger(maxTokens) || maxTokens <= 0)) {
+    if (
+      maxTokens !== undefined &&
+      (!Number.isInteger(maxTokens) || maxTokens <= 0)
+    ) {
       toast.error("Max tokens phải là số nguyên dương");
       return;
     }
@@ -127,7 +181,9 @@ export default function AdminAiProvidersPage() {
       setShowForm(false);
       await loadProviders();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Không thể thêm AI Provider");
+      toast.error(
+        err instanceof Error ? err.message : "Không thể thêm AI Provider",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -141,7 +197,9 @@ export default function AdminAiProvidersPage() {
       toast.success(`Đã kích hoạt "${provider.name}" cho toàn hệ thống`);
       await loadProviders();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Không thể kích hoạt AI Provider");
+      toast.error(
+        err instanceof Error ? err.message : "Không thể kích hoạt AI Provider",
+      );
     } finally {
       setPendingActionId(null);
     }
@@ -158,7 +216,9 @@ export default function AdminAiProvidersPage() {
       }
       await loadProviders();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Không thể kiểm tra kết nối");
+      toast.error(
+        err instanceof Error ? err.message : "Không thể kiểm tra kết nối",
+      );
     } finally {
       setTestingId(null);
     }
@@ -166,7 +226,12 @@ export default function AdminAiProvidersPage() {
 
   const handleDelete = async (provider: AiProvider) => {
     if (provider.isActive) return;
-    if (!confirm(`Xoá AI Provider "${provider.name}"? Hành động này không thể hoàn tác.`)) return;
+    if (
+      !confirm(
+        `Xoá AI Provider "${provider.name}"? Hành động này không thể hoàn tác.`,
+      )
+    )
+      return;
 
     setPendingActionId(provider.id);
     try {
@@ -174,7 +239,9 @@ export default function AdminAiProvidersPage() {
       toast.success("Đã xoá AI Provider");
       await loadProviders();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Không thể xoá AI Provider");
+      toast.error(
+        err instanceof Error ? err.message : "Không thể xoá AI Provider",
+      );
     } finally {
       setPendingActionId(null);
     }
@@ -189,7 +256,8 @@ export default function AdminAiProvidersPage() {
             Quản lý AI
           </h1>
           <p className="text-sm text-muted-foreground">
-            Thêm nhà cung cấp AI bằng API key và chọn 1 AI đang dùng cho toàn hệ thống.
+            Thêm nhà cung cấp AI bằng API key và chọn 1 AI đang dùng cho toàn hệ
+            thống.
           </p>
         </div>
         <Button
@@ -205,15 +273,22 @@ export default function AdminAiProvidersPage() {
 
       {showForm && (
         <Card className="border border-border bg-card p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold text-foreground">Thêm AI Provider</h3>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <h3 className="mb-4 text-lg font-bold text-foreground">
+            Thêm AI Provider
+          </h3>
+          <form
+            onSubmit={handleSubmit}
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+          >
             <div className="space-y-1.5">
               <Label htmlFor="ai-name">Tên gợi nhớ</Label>
               <Input
                 id="ai-name"
                 placeholder="Vd: Anthropic Production"
                 value={form.name}
-                onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, name: e.target.value }))
+                }
               />
             </div>
 
@@ -222,7 +297,12 @@ export default function AdminAiProvidersPage() {
               <select
                 id="ai-vendor"
                 value={form.vendor}
-                onChange={(e) => setForm((prev) => ({ ...prev, vendor: e.target.value as AiProviderVendor }))}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    vendor: e.target.value as AiProviderVendor,
+                  }))
+                }
                 className="h-8 w-full rounded-lg border border-border bg-card px-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               >
                 {VENDOR_OPTIONS.map((option) => (
@@ -239,7 +319,9 @@ export default function AdminAiProvidersPage() {
                 id="ai-model"
                 placeholder="Vd: claude-sonnet-4-5, gpt-4o, gemini-1.5-pro"
                 value={form.model}
-                onChange={(e) => setForm((prev) => ({ ...prev, model: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, model: e.target.value }))
+                }
               />
             </div>
 
@@ -250,7 +332,9 @@ export default function AdminAiProvidersPage() {
                 type="number"
                 min={1}
                 value={form.maxTokens}
-                onChange={(e) => setForm((prev) => ({ ...prev, maxTokens: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, maxTokens: e.target.value }))
+                }
               />
             </div>
 
@@ -262,7 +346,9 @@ export default function AdminAiProvidersPage() {
                   type={showApiKey ? "text" : "password"}
                   placeholder="Dán API key của nhà cung cấp"
                   value={form.apiKey}
-                  onChange={(e) => setForm((prev) => ({ ...prev, apiKey: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, apiKey: e.target.value }))
+                  }
                   className="pr-9"
                 />
                 <button
@@ -270,19 +356,35 @@ export default function AdminAiProvidersPage() {
                   onClick={() => setShowApiKey((prev) => !prev)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showApiKey ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                API key được mã hoá trước khi lưu, không thể xem lại sau khi lưu. Hệ thống sẽ tự kiểm tra kết nối ngay sau khi lưu.
+                API key được mã hoá trước khi lưu, không thể xem lại sau khi
+                lưu. Hệ thống sẽ tự kiểm tra kết nối ngay sau khi lưu.
               </p>
             </div>
 
             <div className="flex items-center gap-2 sm:col-span-2">
-              <Button type="submit" disabled={isSubmitting} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
                 {isSubmitting ? "Đang lưu..." : "Lưu AI Provider"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowForm(false);
+                  setForm(EMPTY_FORM);
+                }}
+              >
                 Huỷ
               </Button>
             </div>
@@ -304,26 +406,51 @@ export default function AdminAiProvidersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted">
-                  <th className="px-4 py-3 text-left font-semibold text-foreground">Tên</th>
-                  <th className="px-4 py-3 text-left font-semibold text-foreground">Nhà cung cấp</th>
-                  <th className="px-4 py-3 text-left font-semibold text-foreground">Model</th>
-                  <th className="px-4 py-3 text-left font-semibold text-foreground">API key</th>
-                  <th className="px-4 py-3 text-left font-semibold text-foreground">Trạng thái</th>
-                  <th className="px-4 py-3 text-left font-semibold text-foreground">Kết nối</th>
-                  <th className="px-4 py-3 text-left font-semibold text-foreground">Hành động</th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">
+                    Tên
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">
+                    Nhà cung cấp
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">
+                    Model
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">
+                    API key
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">
+                    Trạng thái
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">
+                    Kết nối
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">
+                    Hành động
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {providers.map((provider) => (
-                  <tr key={provider.id} className="border-b border-border transition-colors hover:bg-muted">
-                    <td className="px-4 py-3 font-medium text-foreground">{provider.name}</td>
+                  <tr
+                    key={provider.id}
+                    className="border-b border-border transition-colors hover:bg-muted"
+                  >
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      {provider.name}
+                    </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${VENDOR_BADGE_CLASS[provider.vendor]}`}>
+                      <span
+                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${VENDOR_BADGE_CLASS[provider.vendor]}`}
+                      >
                         {provider.vendor}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{provider.model}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{provider.maskedApiKey}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {provider.model}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      {provider.maskedApiKey}
+                    </td>
                     <td className="px-4 py-3">
                       {provider.isActive ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-medium text-success">
@@ -340,7 +467,13 @@ export default function AdminAiProvidersPage() {
                       {provider.lastCheckStatus === "SUCCESS" && (
                         <span
                           className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-medium text-success"
-                          title={provider.lastCheckedAt ? new Date(provider.lastCheckedAt).toLocaleString("vi-VN") : ""}
+                          title={
+                            provider.lastCheckedAt
+                              ? new Date(provider.lastCheckedAt).toLocaleString(
+                                  "vi-VN",
+                                )
+                              : ""
+                          }
                         >
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           Đã kết nối
@@ -371,11 +504,22 @@ export default function AdminAiProvidersPage() {
                           variant="outline"
                           size="icon"
                           className="h-7 w-7"
+                          title="Xem chi tiết"
+                          onClick={() => setSelectedProvider(provider)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
                           disabled={testingId === provider.id}
                           title="Kiểm tra kết nối"
                           onClick={() => handleTestConnection(provider)}
                         >
-                          <RefreshCw className={`h-3.5 w-3.5 ${testingId === provider.id ? "animate-spin" : ""}`} />
+                          <RefreshCw
+                            className={`h-3.5 w-3.5 ${testingId === provider.id ? "animate-spin" : ""}`}
+                          />
                         </Button>
                         {!provider.isActive && (
                           <Button
@@ -392,8 +536,14 @@ export default function AdminAiProvidersPage() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40"
-                          disabled={provider.isActive || pendingActionId === provider.id}
-                          title={provider.isActive ? "Không thể xoá AI Provider đang dùng" : "Xoá"}
+                          disabled={
+                            provider.isActive || pendingActionId === provider.id
+                          }
+                          title={
+                            provider.isActive
+                              ? "Không thể xoá AI Provider đang dùng"
+                              : "Xoá"
+                          }
                           onClick={() => handleDelete(provider)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -407,6 +557,117 @@ export default function AdminAiProvidersPage() {
           </div>
         )}
       </Card>
+
+      <Dialog
+        open={Boolean(selectedProvider)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedProvider(null);
+        }}
+      >
+        <DialogContent className="overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="px-6 pb-3 pt-6 pr-14">
+            <DialogTitle>Chi tiết AI Provider</DialogTitle>
+            <DialogDescription>
+              Thông tin cấu hình và trạng thái kết nối hiện tại của AI Provider.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedProvider && (
+            <dl className="mx-6 mb-6 rounded-lg border border-border">
+              <DetailRow label="Tên">
+                <span className="font-medium">{selectedProvider.name}</span>
+              </DetailRow>
+              <DetailRow label="Nhà cung cấp">
+                <span
+                  className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${VENDOR_BADGE_CLASS[selectedProvider.vendor]}`}
+                >
+                  {getVendorLabel(selectedProvider.vendor)}
+                </span>
+              </DetailRow>
+              <DetailRow label="Model">
+                <span className="break-all font-mono text-xs">
+                  {selectedProvider.model}
+                </span>
+              </DetailRow>
+              <DetailRow label="API key">
+                <span className="font-mono text-xs text-muted-foreground">
+                  {selectedProvider.maskedApiKey}
+                </span>
+              </DetailRow>
+              <DetailRow label="Max tokens">
+                {selectedProvider.maxTokens.toLocaleString("vi-VN")}
+              </DetailRow>
+              <DetailRow label="Trạng thái">
+                {selectedProvider.isActive ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-medium text-success">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Đang dùng
+                  </span>
+                ) : (
+                  <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                    Chưa kích hoạt
+                  </span>
+                )}
+              </DetailRow>
+              <DetailRow label="Kết nối">
+                <div className="space-y-1">
+                  {selectedProvider.lastCheckStatus === "SUCCESS" && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-medium text-success">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Đã kết nối
+                    </span>
+                  )}
+                  {selectedProvider.lastCheckStatus === "FAILED" && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-1 text-xs font-medium text-destructive">
+                      <XCircle className="h-3.5 w-3.5" />
+                      Lỗi kết nối
+                    </span>
+                  )}
+                  {selectedProvider.lastCheckStatus === "UNKNOWN" && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      Chưa kiểm tra
+                    </span>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {formatDateTime(selectedProvider.lastCheckedAt)}
+                  </p>
+                </div>
+              </DetailRow>
+              {selectedProvider.lastCheckMessage && (
+                <DetailRow label="Thông báo lỗi">
+                  <p className="whitespace-pre-wrap rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                    {selectedProvider.lastCheckMessage}
+                  </p>
+                </DetailRow>
+              )}
+              <DetailRow label="Người tạo">
+                {selectedProvider.createdBy ? (
+                  <div className="space-y-0.5">
+                    <p>{selectedProvider.createdBy.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedProvider.createdBy.email}
+                    </p>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">Chưa có dữ liệu</span>
+                )}
+              </DetailRow>
+              <DetailRow label="Ngày tạo">
+                {formatDateTime(selectedProvider.createdAt)}
+              </DetailRow>
+              <DetailRow label="Cập nhật">
+                {formatDateTime(selectedProvider.updatedAt)}
+              </DetailRow>
+              <DetailRow label="ID">
+                <span className="break-all font-mono text-xs text-muted-foreground">
+                  {selectedProvider.id}
+                </span>
+              </DetailRow>
+            </dl>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
