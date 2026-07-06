@@ -8,6 +8,7 @@ export type AllConfigType = {
   DB_NAME?: string;
   DB_SSL?: string;
   DB_SYNCHRONIZE?: boolean | string;
+  DB_SEARCH_PATH?: string;
   NODE_ENV: 'development' | 'production';
 
   FRONTEND_URL: string;

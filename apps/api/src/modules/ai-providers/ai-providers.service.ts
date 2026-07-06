@@ -7,8 +7,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { randomUUID } from 'crypto';
 import {
-  decryptSecret,
+  assertEncryptionSecretConfigured,
+  decryptSecretWithMeta,
   encryptSecret,
   maskSecret,
 } from '@/common/helpers/crypto.helper';
@@ -51,6 +53,9 @@ export class AiProvidersService implements OnModuleInit {
   async onModuleInit() {
     const count = await this.aiProviderRepository.count();
     if (count > 0) {
+      // AI đang được dùng → bắt buộc có khoá mã hoá hợp lệ. Fail fast nếu thiếu
+      // (vd: production quên set AI_CREDENTIALS_SECRET) thay vì lỗi lúc gọi model.
+      assertEncryptionSecretConfigured();
       return;
     }
 
@@ -65,8 +70,10 @@ export class AiProvidersService implements OnModuleInit {
     const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5';
     const maxTokens = parseInt(process.env.ANTHROPIC_MAX_TOKENS ?? '10240', 10);
 
-    const encrypted = encryptSecret(envApiKey);
+    const id = randomUUID();
+    const encrypted = encryptSecret(envApiKey, id);
     const provider = this.aiProviderRepository.create({
+      id,
       name: 'Mặc định từ .env',
       vendor: AiProviderVendor.ANTHROPIC,
       model,
@@ -87,9 +94,12 @@ export class AiProvidersService implements OnModuleInit {
     dto: CreateAiProviderDto,
     admin: User,
   ): Promise<AiProviderResponseDto> {
-    const encrypted = encryptSecret(dto.apiKey);
+    // Sinh id trước để dùng làm AAD ràng buộc ciphertext với đúng bản ghi này.
+    const id = randomUUID();
+    const encrypted = encryptSecret(dto.apiKey, id);
 
     const provider = this.aiProviderRepository.create({
+      id,
       name: dto.name,
       vendor: dto.vendor,
       model: dto.model,
@@ -135,7 +145,7 @@ export class AiProvidersService implements OnModuleInit {
     if (dto.maxTokens !== undefined) provider.maxTokens = dto.maxTokens;
 
     if (dto.apiKey) {
-      const encrypted = encryptSecret(dto.apiKey);
+      const encrypted = encryptSecret(dto.apiKey, provider.id);
       provider.apiKeyCipherText = encrypted.cipherText;
       provider.apiKeyIv = encrypted.iv;
       provider.apiKeyAuthTag = encrypted.authTag;
@@ -189,11 +199,7 @@ export class AiProvidersService implements OnModuleInit {
     id: string,
   ): Promise<{ success: boolean; message: string }> {
     const provider = await this.findOrFail(id);
-    const apiKey = decryptSecret(
-      provider.apiKeyCipherText,
-      provider.apiKeyIv,
-      provider.apiKeyAuthTag,
-    );
+    const apiKey = await this.resolveApiKey(provider);
     const adapter = this.aiAdapterFactory.getAdapter(provider.vendor);
 
     try {
@@ -250,11 +256,7 @@ export class AiProvidersService implements OnModuleInit {
       return null;
     }
 
-    const apiKey = decryptSecret(
-      provider.apiKeyCipherText,
-      provider.apiKeyIv,
-      provider.apiKeyAuthTag,
-    );
+    const apiKey = await this.resolveApiKey(provider);
 
     return {
       id: provider.id,
@@ -263,6 +265,37 @@ export class AiProvidersService implements OnModuleInit {
       apiKey,
       maxTokens: provider.maxTokens,
     };
+  }
+
+  /**
+   * Giải mã API key với AAD = id của provider. Nếu bản ghi còn ở dạng cũ (mã hoá
+   * trước khi bật AAD, hoặc bằng khoá cũ khi đang xoay khoá) thì mã hoá lại ngay
+   * bằng khoá chính + AAD — dữ liệu tự di trú dần qua các lần đọc.
+   */
+  private async resolveApiKey(provider: AiProviderEntity): Promise<string> {
+    const { value, legacy } = decryptSecretWithMeta(
+      provider.apiKeyCipherText,
+      provider.apiKeyIv,
+      provider.apiKeyAuthTag,
+      provider.id,
+    );
+
+    if (legacy) {
+      const encrypted = encryptSecret(value, provider.id);
+      provider.apiKeyCipherText = encrypted.cipherText;
+      provider.apiKeyIv = encrypted.iv;
+      provider.apiKeyAuthTag = encrypted.authTag;
+      await this.aiProviderRepository.update(provider.id, {
+        apiKeyCipherText: encrypted.cipherText,
+        apiKeyIv: encrypted.iv,
+        apiKeyAuthTag: encrypted.authTag,
+      });
+      this.logger.log(
+        `Đã mã hoá lại API key của provider ${provider.id} bằng khoá chính + AAD.`,
+      );
+    }
+
+    return value;
   }
 
   private async findOrFail(id: string): Promise<AiProviderEntity> {

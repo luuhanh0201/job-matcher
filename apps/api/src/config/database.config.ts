@@ -20,6 +20,8 @@ export const getDatabaseConfig = (
   const synchronize =
     String(configService.get('DB_SYNCHRONIZE', { infer: true }) ?? 'false') ===
     'true';
+  const searchPath =
+    configService.get('DB_SEARCH_PATH', { infer: true }) ?? 'public,extensions';
   return {
     type: 'postgres',
     host: configService.get('DB_HOST', { infer: true }),
@@ -33,5 +35,8 @@ export const getDatabaseConfig = (
     migrations: [__dirname + '/migrations/*{.ts,.js}'],
     logging: false,
     ssl: useSsl ? { rejectUnauthorized: false } : false,
+    extra: {
+      options: `-c search_path=${searchPath}`,
+    },
   };
 };

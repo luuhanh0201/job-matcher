@@ -26,6 +26,7 @@ import { AiProvidersModule } from './modules/ai-providers/ai-providers.module';
 import { AiUsageModule } from './modules/ai-usage/ai-usage.module';
 import { SavedJobsModule } from './modules/saved-jobs/saved-jobs.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { DatabasePrerequisitesService } from './config/database-prerequisites.service';
 
 @Module({
   imports: [
@@ -70,7 +71,7 @@ import { AdminModule } from './modules/admin/admin.module';
     AiUsageModule,
   ],
   controllers: [AppController, HealthController],
-  providers: [AppService],
+  providers: [AppService, DatabasePrerequisitesService],
 })
 export class AppModule {
   // configure(consumer: MiddlewareConsumer) {

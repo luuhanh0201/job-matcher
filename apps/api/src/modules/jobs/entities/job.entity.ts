@@ -132,4 +132,13 @@ export class JobPostEntity {
 
   @Column({ name: 'updated_by', type: 'jsonb', nullable: true })
   updatedBy?: UserSummary;
+
+  @Column({
+    name: 'embedding',
+    type: 'vector',
+    length: '768',
+    nullable: true,
+    select: false,
+  })
+  embedding?: number[] | null;
 }

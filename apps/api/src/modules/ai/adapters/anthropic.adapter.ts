@@ -32,7 +32,13 @@ export class AnthropicAdapter implements AiProviderAdapter {
     const response = await client.messages.create({
       model: options.model,
       max_tokens: options.maxTokens,
-      system: systemPrompt,
+      system: [
+        {
+          type: 'text',
+          text: systemPrompt,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
       messages: [{ role: 'user', content: userMessage }],
     });
 
@@ -59,11 +65,18 @@ export class AnthropicAdapter implements AiProviderAdapter {
       throw new Error('Unexpected response type from Anthropic API');
     }
 
+    // Cộng cả token đọc/ghi cache vào input để thống kê phản ánh đúng khối lượng
+    // xử lý thực tế (token đọc từ cache được tính phí ~0.1x nhưng vẫn là input).
+    const usage = response.usage;
+    const cachedTokens =
+      (usage.cache_read_input_tokens ?? 0) +
+      (usage.cache_creation_input_tokens ?? 0);
+
     return {
       text: block.text,
       usage: {
-        inputTokens: response.usage.input_tokens,
-        outputTokens: response.usage.output_tokens,
+        inputTokens: usage.input_tokens + cachedTokens,
+        outputTokens: usage.output_tokens,
       },
     };
   }

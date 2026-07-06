@@ -37,4 +37,13 @@ export class ParsedCv {
   languages?: string;
   @CreateDateColumn({ name: 'parsed_at' })
   parsedAt!: Date;
+
+  @Column({
+    name: 'embedding',
+    type: 'vector',
+    length: '768',
+    nullable: true,
+    select: false,
+  })
+  embedding?: number[] | null;
 }

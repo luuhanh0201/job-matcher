@@ -39,7 +39,10 @@ export class AiJobMatcherService {
     jobs: JobPostEntity[],
     parsedCv: ParsedCv,
   ): Promise<Map<string, MatchScores>> {
-    const userMessage = JSON.stringify({
+    // Ứng viên là phần ổn định trong 1 CV (không đổi giữa các lô job) nên đưa
+    // vào system prompt: (1) làm prefix cache được cho Anthropic prompt caching,
+    // (2) tách rõ "ngữ cảnh ứng viên" khỏi "danh sách job cần chấm".
+    const candidateBlock = JSON.stringify({
       candidate: {
         currentTitle: parsedCv.currentTitle ?? null,
         totalExperienceYears: parsedCv.totalExperienceYears ?? null,
@@ -49,6 +52,10 @@ export class AiJobMatcherService {
         certifications: this.safeParseArray(parsedCv.certifications),
         languages: this.safeParseArray(parsedCv.languages),
       },
+    });
+    const systemWithCandidate = `${this.systemPrompt}\n\n## Ứng viên cần đánh giá (JSON)\n${candidateBlock}`;
+
+    const userMessage = JSON.stringify({
       jobs: jobs.map((job) => ({
         id: job.id,
         title: job.title,
@@ -63,7 +70,7 @@ export class AiJobMatcherService {
     });
 
     const raw = await this.aiService.chatWithSystem(
-      this.systemPrompt,
+      systemWithCandidate,
       userMessage,
       AiUsageFeature.JOB_MATCHING,
       // Output là mảng JSON điểm + explanation cho từng job — cần trần token

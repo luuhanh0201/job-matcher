@@ -7,6 +7,7 @@ import { AiController } from './ai.controller';
 import { AiExtractorService } from './ai-extractor.service';
 import { AiAnalyzerService } from './ai-analyzer.service';
 import { AiJobMatcherService } from './ai-job-matcher.service';
+import { EmbeddingService } from './embedding.service';
 import { AiAdaptersModule } from './adapters/ai-adapters.module';
 
 @Module({
@@ -24,12 +25,14 @@ import { AiAdaptersModule } from './adapters/ai-adapters.module';
     AiExtractorService,
     AiAnalyzerService,
     AiJobMatcherService,
+    EmbeddingService,
   ],
   exports: [
     AiService,
     AiExtractorService,
     AiAnalyzerService,
     AiJobMatcherService,
+    EmbeddingService,
   ],
   controllers: [AiController],
 })

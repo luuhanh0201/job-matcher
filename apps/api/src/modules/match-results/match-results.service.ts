@@ -8,6 +8,12 @@ import {
   AiJobMatcherService,
   MatchScores,
 } from '@/modules/ai/ai-job-matcher.service';
+import { EmbeddingService } from '@/modules/ai/embedding.service';
+import {
+  buildCvEmbeddingText,
+  buildJobEmbeddingText,
+  toVectorLiteral,
+} from '@/modules/ai/embedding-text.util';
 import { JobPostStatus } from '@/common/enum/Job.enum';
 import { CompanyStatus } from '@/modules/company/entity/company.entity';
 import {
@@ -35,6 +41,7 @@ export class MatchResultsService {
     @InjectRepository(ParsedCv)
     private readonly parsedCvRepository: Repository<ParsedCv>,
     private readonly aiJobMatcherService: AiJobMatcherService,
+    private readonly embeddingService: EmbeddingService,
   ) {}
 
   // Lỗi bất ngờ được ném ra ngoài để BullMQ retry theo cấu hình queue;
@@ -48,7 +55,9 @@ export class MatchResultsService {
       return;
     }
 
-    const jobs = await this.findCandidateJobsForMatching(parsedCv);
+    // Sinh (nếu chưa có) embedding của CV để lọc thô bằng cosine similarity.
+    const cvEmbedding = await this.ensureCvEmbedding(parsedCv);
+    const jobs = await this.findCandidateJobsForMatching(parsedCv, cvEmbedding);
 
     if (jobs.length === 0) {
       this.logger.log('No open jobs found for matching');
@@ -111,6 +120,10 @@ export class MatchResultsService {
       return;
     }
 
+    // Sinh embedding cho job (nếu chưa có) để lần sau CV khác có thể lọc thô
+    // job này bằng vector mà không cần đợi re-index.
+    await this.ensureJobEmbedding(job);
+
     const parsedCvs = await this.parsedCvRepository.find({
       order: { parsedAt: 'DESC' },
       take: MatchResultsService.NEW_JOB_CV_LIMIT,
@@ -168,15 +181,75 @@ export class MatchResultsService {
   }
 
   /**
-   * Lọc thô bằng SQL trước khi gọi AI: ưu tiên job có skill trùng với CV
-   * (không phân biệt hoa thường/dấu, dùng GIN index trên job_posts.skills),
-   * loại job hết hạn và job của công ty chưa được duyệt. Nếu ít job trùng
-   * skill thì phần còn lại tự bù bằng job mới nhất (ORDER BY phụ) — user mới
-   * hoặc skill hiếm vẫn có kết quả.
+   * Lọc thô ứng viên job trước khi gọi AI, hai tầng:
+   *  1. Nếu CV có embedding → shortlist theo cosine similarity (pgvector, index
+   *     HNSW) — nắm được liên quan ngữ nghĩa mà lọc theo skill không thấy.
+   *  2. Nếu chưa đủ MATCH_JOB_LIMIT (CV chưa embedding, hoặc còn ít job đã
+   *     embedding) → bù bằng lọc skill-overlap cũ, loại các job đã chọn.
+   * Nhờ vậy hệ thống hoạt động xuyên suốt giai đoạn backfill embedding và không
+   * bao giờ bị chặn nếu embedding lỗi/thiếu.
    */
   private async findCandidateJobsForMatching(
     parsedCv: ParsedCv,
+    cvEmbedding: string | null,
   ): Promise<JobPostEntity[]> {
+    let jobs: JobPostEntity[] = [];
+
+    if (cvEmbedding) {
+      jobs = await this.vectorShortlist(cvEmbedding, MATCH_JOB_LIMIT);
+    }
+
+    if (jobs.length < MATCH_JOB_LIMIT) {
+      const fill = await this.skillOverlapShortlist(
+        parsedCv,
+        MATCH_JOB_LIMIT - jobs.length,
+        jobs.map((job) => job.id),
+      );
+      jobs = [...jobs, ...fill];
+    }
+
+    return jobs;
+  }
+
+  /** Shortlist theo khoảng cách cosine giữa embedding CV và embedding job. */
+  private async vectorShortlist(
+    cvEmbedding: string,
+    limit: number,
+  ): Promise<JobPostEntity[]> {
+    if (limit <= 0) return [];
+
+    return (
+      this.jobRepository
+        .createQueryBuilder('job')
+        .innerJoin('job.company', 'company')
+        .where('job.status = :open', { open: JobPostStatus.OPEN })
+        .andWhere('(job.expired_at IS NULL OR job.expired_at > NOW())')
+        .andWhere('company.status = :companyStatus', {
+          companyStatus: CompanyStatus.ACTIVE,
+        })
+        .andWhere('job.embedding IS NOT NULL')
+        // Với take(), ORDER BY phải là alias có trong SELECT
+        .addSelect('job.embedding <=> CAST(:cvEmbedding AS vector)', 'distance')
+        .setParameter('cvEmbedding', cvEmbedding)
+        .orderBy('distance', 'ASC')
+        .take(limit)
+        .getMany()
+    );
+  }
+
+  /**
+   * Lọc thô cũ: ưu tiên job có skill trùng CV (không phân biệt hoa thường/dấu,
+   * dùng GIN index trên job_posts.skills), loại job hết hạn/công ty chưa duyệt
+   * và các job đã được shortlist bằng vector. Ít job trùng skill thì bù bằng
+   * job mới nhất.
+   */
+  private async skillOverlapShortlist(
+    parsedCv: ParsedCv,
+    limit: number,
+    excludeJobIds: string[],
+  ): Promise<JobPostEntity[]> {
+    if (limit <= 0) return [];
+
     const skills = this.safeParseStringArray(parsedCv.skills)
       .map((skill) => skill.trim())
       .filter(Boolean)
@@ -190,6 +263,10 @@ export class MatchResultsService {
       .andWhere('company.status = :companyStatus', {
         companyStatus: CompanyStatus.ACTIVE,
       });
+
+    if (excludeJobIds.length > 0) {
+      qb.andWhere('job.id NOT IN (:...excludeJobIds)', { excludeJobIds });
+    }
 
     if (skills.length > 0) {
       const skillMatchExpr = `(
@@ -211,7 +288,54 @@ export class MatchResultsService {
       qb.orderBy('job.publishedAt', 'DESC', 'NULLS LAST');
     }
 
-    return qb.take(MATCH_JOB_LIMIT).getMany();
+    return qb.take(limit).getMany();
+  }
+
+  /**
+   * Lấy embedding hiện có của CV, hoặc sinh mới + lưu nếu chưa có. Trả về literal
+   * pgvector (`[...]`) để dùng trực tiếp làm tham số truy vấn, hoặc null nếu
+   * embedding bị tắt/lỗi (caller fallback sang lọc skill).
+   */
+  private async ensureCvEmbedding(parsedCv: ParsedCv): Promise<string | null> {
+    const rows: Array<{ emb: string | null }> =
+      await this.parsedCvRepository.query(
+        'SELECT embedding::text AS emb FROM parsed_cv WHERE id = $1',
+        [parsedCv.id],
+      );
+    const existing = rows[0]?.emb;
+    if (existing) return existing;
+
+    const values = await this.embeddingService.embed(
+      buildCvEmbeddingText(parsedCv),
+    );
+    if (!values) return null;
+
+    const literal = toVectorLiteral(values);
+    await this.parsedCvRepository.query(
+      'UPDATE parsed_cv SET embedding = $1::vector WHERE id = $2',
+      [literal, parsedCv.id],
+    );
+    return literal;
+  }
+
+  /** Sinh + lưu embedding cho job nếu chưa có (bỏ qua khi embedding tắt/lỗi). */
+  private async ensureJobEmbedding(job: JobPostEntity): Promise<void> {
+    const rows: Array<{ has_embedding: boolean }> =
+      await this.jobRepository.query(
+        'SELECT (embedding IS NOT NULL) AS has_embedding FROM job_posts WHERE id = $1',
+        [job.id],
+      );
+    if (rows[0]?.has_embedding) return;
+
+    const values = await this.embeddingService.embed(
+      buildJobEmbeddingText(job),
+    );
+    if (!values) return;
+
+    await this.jobRepository.query(
+      'UPDATE job_posts SET embedding = $1::vector WHERE id = $2',
+      [toVectorLiteral(values), job.id],
+    );
   }
 
   private safeParseStringArray(value?: string): string[] {

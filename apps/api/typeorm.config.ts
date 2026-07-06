@@ -12,6 +12,7 @@ if (typeof process.loadEnvFile === 'function') {
 
 const isSslEnabled = String(process.env.DB_SSL ?? 'false') === 'true';
 const isTsRuntime = __filename.endsWith('.ts');
+const searchPath = process.env.DB_SEARCH_PATH ?? 'public,extensions';
 
 export default new DataSource({
   type: 'postgres',
@@ -25,4 +26,7 @@ export default new DataSource({
   ssl: isSslEnabled ? { rejectUnauthorized: false } : false,
   entities: [isTsRuntime ? 'src/**/*.entity.ts' : 'dist/**/*.entity.js'],
   migrations: [isTsRuntime ? 'src/migrations/*.ts' : 'dist/migrations/*.js'],
+  extra: {
+    options: `-c search_path=${searchPath}`,
+  },
 });
